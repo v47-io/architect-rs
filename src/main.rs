@@ -9,6 +9,7 @@ use crate::dirs::{create_target_dir, is_valid_target_dir};
 use crate::git::{open_git_repo_or_init, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
 
+mod config;
 mod dirs;
 mod git;
 mod helpers;
@@ -144,7 +145,7 @@ In that case the new branch is created on top of the remote branch."#,
 
     git::fetch(
         &template_spec,
-        &target_dir,
+        working_dir.path(),
         FetchOptions {
             branch: matches.value_of("branch"),
             dirty: matches.is_present("dirty"),
