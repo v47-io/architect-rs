@@ -45,6 +45,8 @@ dependencies = [
  "git2",
  "handlebars",
  "handlebars_misc_helpers",
+ "lazy_static",
+ "regex",
  "serde",
  "serde_json",
  "tempfile",

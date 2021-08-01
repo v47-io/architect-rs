@@ -1,7 +1,29 @@
+use std::collections::HashMap;
+use std::fs::{metadata, read_to_string};
 use std::io;
 use std::io::{Error, ErrorKind};
+use std::path::Path;
+use std::rc::Rc;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use crate::utils::is_identifier;
+
+pub fn load_config_file(base_path: &Path, verbose: bool) -> io::Result<Option<String>> {
+    let config_file_path = base_path.join(".architect.json");
+
+    if verbose {
+        println!(
+            "Loading config file from path {}",
+            config_file_path.display()
+        )
+    }
+
+    if let Ok(_) = metadata(&config_file_path) {
+        Ok(Some(read_to_string(config_file_path)?))
+    } else {
+        Ok(None)
+    }
+}
 
 pub fn read_config(input: &str) -> io::Result<Config> {
     let json: ConfigJson = serde_json::from_str(input)?;
@@ -13,17 +35,45 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         ));
     }
 
+    let question_names_tree = Rc::new(HashMap::new());
+
     let questions = json
         .questions
         .iter()
         .map(|raw_question| {
-            if !raw_question.name.trim().is_ascii() {
-                eprintln!("{} is not a valid question name", raw_question.name);
+            let path = match QuestionPath::parse(raw_question.name) {
+                Some(path) => path,
+                None => {
+                    eprintln!("{} is not a valid question name", raw_question.name);
+                    return None;
+                }
+            };
+
+            if *path.names().first().unwrap() == "__template__" {
+                eprintln!(
+                    "{} is not a valid question name (__template__)",
+                    raw_question.name
+                );
                 return None;
             }
 
+            {
+                let mut question_names_tree = Rc::clone(&question_names_tree);
+
+                if !check_duplicate_name(
+                    Rc::get_mut(&mut question_names_tree).unwrap(),
+                    &path.names(),
+                ) {
+                    eprintln!(
+                        "{} is not a valid question name (conflict with nested property container)",
+                        raw_question.name
+                    );
+                    return None;
+                }
+            }
+
             Some(Question {
-                name: raw_question.name.trim(),
+                path,
                 pretty: match raw_question.pretty {
                     Some(pretty) => {
                         if pretty.trim().is_empty() {
@@ -42,8 +92,8 @@ pub fn read_config(input: &str) -> io::Result<Config> {
                         let items = if let Some(raw_items) = &raw_question.items {
                             raw_items
                                 .iter()
-                                .map(|item| item.trim())
-                                .filter(|it| !it.is_empty())
+                                .map(|&item| item.trim())
+                                .filter(|&it| is_identifier(it))
                                 .collect()
                         } else {
                             vec![]
@@ -72,6 +122,50 @@ pub fn read_config(input: &str) -> io::Result<Config> {
     })
 }
 
+fn check_duplicate_name<'cfg>(
+    tree: &'cfg mut HashMap<&'cfg str, ValueMapItem<'cfg>>,
+    names: &'cfg [&'cfg str],
+) -> bool {
+    let first_name = *names.first().unwrap();
+
+    if tree.contains_key(first_name) {
+        // Name found in tree
+        match tree.get_mut(first_name).unwrap() {
+            ValueMapItem::Map(map) => {
+                if names.len() == 1 {
+                    // Can't proceed, conflict with Map
+                    false
+                } else {
+                    // Name and tree refer to map, we can continue
+                    check_duplicate_name(map, &names[1..])
+                }
+            }
+            ValueMapItem::Value(_) => {
+                // Duplicate item, can't proceed
+                false
+            }
+        }
+    } else {
+        // Name not found in tree, we populate, my brothers
+        if names.len() == 1 {
+            tree.insert(first_name, ValueMapItem::Value(first_name));
+
+            true
+        } else {
+            {
+                tree.insert(first_name, ValueMapItem::Map(HashMap::new()));
+            }
+
+            let map = match tree.get_mut(first_name).unwrap() {
+                ValueMapItem::Map(map) => map,
+                _ => panic!(),
+            };
+
+            check_duplicate_name(map, &names[1..])
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct ConfigJson<'cfg> {
     name: &'cfg str,
@@ -97,16 +191,43 @@ enum RawQuestionType {
     Text,
 }
 
+enum ValueMapItem<'cfg> {
+    Map(HashMap<&'cfg str, ValueMapItem<'cfg>>),
+    Value(&'cfg str),
+}
+
+#[derive(Serialize)]
 pub struct Config<'cfg> {
     pub name: &'cfg str,
     pub version: &'cfg str,
+    #[serde(skip)]
     pub questions: Vec<Question<'cfg>>,
 }
 
 pub struct Question<'cfg> {
-    pub name: &'cfg str,
+    pub path: QuestionPath<'cfg>,
     pub pretty: Option<&'cfg str>,
     pub spec: QuestionSpec<'cfg>,
+}
+
+pub struct QuestionPath<'cfg> {
+    names: Vec<&'cfg str>,
+}
+
+impl<'cfg> QuestionPath<'cfg> {
+    pub fn parse(name: &'cfg str) -> Option<Self> {
+        let names: Vec<&'cfg str> = name.trim().split('.').collect();
+
+        if names.is_empty() || names.iter().any(|&it| !is_identifier(it)) {
+            None
+        } else {
+            Some(QuestionPath { names })
+        }
+    }
+
+    pub fn names(self: &Self) -> &Vec<&'cfg str> {
+        &self.names
+    }
 }
 
 pub enum QuestionSpec<'cfg> {

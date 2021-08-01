@@ -3,16 +3,22 @@ use std::process::exit;
 use std::{env, io};
 
 use clap::{crate_authors, crate_version, App, Arg};
+use handlebars::Context;
+use serde_json::{Map, Value};
 use tempfile::tempdir;
 
+use crate::config::{load_config_file, read_config};
+use crate::context::build_context;
 use crate::dirs::{create_target_dir, is_valid_target_dir};
 use crate::git::{open_git_repo_or_init, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
 
 mod config;
+mod context;
 mod dirs;
 mod git;
 mod helpers;
+mod render;
 mod spec;
 mod utils;
 
@@ -162,6 +168,15 @@ In that case the new branch is created on top of the remote branch."#,
             target_dir.display()
         );
     }
+
+    let config_json = load_config_file(working_dir.path(), verbose)?;
+    let config = if let Some(config_json) = &config_json {
+        Some(read_config(config_json)?)
+    } else {
+        None
+    };
+
+    let context = config.map_or(Ok(Context::null()), |it| build_context(&it))?;
 
     todo!();
 }
