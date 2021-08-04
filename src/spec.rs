@@ -91,24 +91,21 @@ mod tests {
     #[test]
     #[cfg(windows)]
     fn test_is_valid_template_spec_win() {
-        assert_eq!(is_valid_template_spec("C:\\Windows\\System32"), true);
-        assert_eq!(is_valid_template_spec("/Windows/System32"), false);
+        assert!(is_valid_template_spec("C:\\Windows\\System32"));
+        assert!(!is_valid_template_spec("/Windows/System32"));
     }
 
     #[test]
     fn test_is_valid_template_spec() {
-        assert_eq!(
-            is_valid_template_spec("git@github.com:v47-io/architect-rs.git"),
-            true
-        );
-        assert_eq!(
-            is_valid_template_spec("git@github.com/v47-io/architect-rs.git"),
-            false
-        );
-        assert_eq!(
-            is_valid_template_spec("https://github.com/v47-io/architect-rs.git"),
-            true
-        );
-        assert_eq!(is_valid_template_spec("https://github.com/v47-io/"), false);
+        assert!(is_valid_template_spec(
+            "git@github.com:v47-io/architect-rs.git"
+        ),);
+        assert!(!is_valid_template_spec(
+            "git@github.com/v47-io/architect-rs.git"
+        ));
+        assert!(is_valid_template_spec(
+            "https://github.com/v47-io/architect-rs.git"
+        ));
+        assert!(!is_valid_template_spec("https://github.com/v47-io/"));
     }
 }

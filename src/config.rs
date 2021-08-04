@@ -226,7 +226,7 @@ impl<'cfg> QuestionPath<'cfg> {
         }
     }
 
-    pub fn names(self: &Self) -> &Vec<&'cfg str> {
+    pub fn names(&self) -> &Vec<&'cfg str> {
         &self.names
     }
 }

@@ -4,7 +4,6 @@ use std::{env, io};
 
 use clap::{crate_authors, crate_version, App, Arg};
 use handlebars::Context;
-use serde_json::{Map, Value};
 use tempfile::tempdir;
 
 use crate::config::{load_config_file, read_config};
@@ -178,5 +177,5 @@ In that case the new branch is created on top of the remote branch."#,
 
     let context = config.map_or(Ok(Context::null()), |it| build_context(&it))?;
 
-    todo!();
+    todo!()
 }
