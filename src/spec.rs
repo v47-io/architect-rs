@@ -1,6 +1,7 @@
 use std::fmt::{Display, Error, Formatter};
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, PartialEq)]
 pub enum TemplateSpec<'spec> {
     Local(PathBuf),
     Remote(&'spec str),
@@ -43,6 +44,67 @@ pub fn parse_template_spec(template_spec_raw: &str) -> TemplateSpec {
 fn template_spec_as_path(template_spec: &str) -> Option<PathBuf> {
     match Path::new(template_spec).canonicalize() {
         Ok(dir) => Some(dir),
-        Err(_) => None,
+        Err(err) => {
+            eprintln!("Not pointing to a valid path: {} ({})", template_spec, err);
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(windows)]
+    fn test_template_spec_as_path_win() {
+        assert_eq!(
+            template_spec_as_path("C:\\Windows\\System32"),
+            Some(PathBuf::from("\\\\?\\C:\\Windows\\System32"))
+        );
+
+        assert_eq!(
+            template_spec_as_path("C:\\Windows\\..\\Data\\SomeRandomPath"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_parse_template_spec() {
+        let path_spec =
+            TemplateSpec::Local(template_spec_as_path("C:\\Windows\\System32").unwrap());
+
+        assert_eq!(parse_template_spec("C:\\Windows\\System32"), path_spec);
+
+        let remote_spec = "git@github.com:v47-io/architect-rs.git";
+
+        assert_eq!(
+            parse_template_spec(remote_spec),
+            TemplateSpec::Remote(remote_spec)
+        );
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_is_valid_template_spec_win() {
+        assert_eq!(is_valid_template_spec("C:\\Windows\\System32"), true);
+        assert_eq!(is_valid_template_spec("/Windows/System32"), false);
+    }
+
+    #[test]
+    fn test_is_valid_template_spec() {
+        assert_eq!(
+            is_valid_template_spec("git@github.com:v47-io/architect-rs.git"),
+            true
+        );
+        assert_eq!(
+            is_valid_template_spec("git@github.com/v47-io/architect-rs.git"),
+            false
+        );
+        assert_eq!(
+            is_valid_template_spec("https://github.com/v47-io/architect-rs.git"),
+            true
+        );
+        assert_eq!(is_valid_template_spec("https://github.com/v47-io/"), false);
     }
 }

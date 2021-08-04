@@ -6,6 +6,7 @@ use std::path::Path;
 use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
+
 use crate::utils::is_identifier;
 
 pub fn load_config_file(base_path: &Path, verbose: bool) -> io::Result<Option<String>> {
@@ -106,7 +107,7 @@ pub fn read_config(input: &str) -> io::Result<Config> {
 
                         QuestionSpec::Selection {
                             items,
-                            multi_select: raw_question.multi_select.unwrap_or(false),
+                            multi_select: raw_question.multi.unwrap_or(false),
                         }
                     }
                 },
@@ -180,7 +181,7 @@ struct RawQuestion<'cfg> {
     question_type: RawQuestionType,
     pretty: Option<&'cfg str>,
     items: Option<Vec<&'cfg str>>,
-    multi_select: Option<bool>,
+    multi: Option<bool>,
 }
 
 #[derive(Deserialize)]
