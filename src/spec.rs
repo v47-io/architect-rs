@@ -70,12 +70,16 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_template_spec() {
+    #[cfg(windows)]
+    fn test_parse_template_spec_win() {
         let path_spec =
             TemplateSpec::Local(template_spec_as_path("C:\\Windows\\System32").unwrap());
 
         assert_eq!(parse_template_spec("C:\\Windows\\System32"), path_spec);
+    }
 
+    #[test]
+    fn test_parse_template_spec() {
         let remote_spec = "git@github.com:v47-io/architect-rs.git";
 
         assert_eq!(
