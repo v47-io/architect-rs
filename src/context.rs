@@ -39,7 +39,7 @@ fn ask(question: &Question) -> io::Result<Value> {
         QuestionSpec::Option => ask_for_option(question),
         QuestionSpec::Selection {
             items,
-            multi_select,
+            multi: multi_select,
         } => ask_for_selection(question, items, *multi_select),
     }
 }
@@ -57,7 +57,7 @@ fn ask_for_text(question: &Question, must_be_identifier: bool) -> io::Result<Val
 
         let result_trimmed = result_text.trim();
 
-        if must_be_identifier && !is_identifier(result_trimmed) {
+        if must_be_identifier && !result_trimmed.split(".").all(|it| is_identifier(it)) {
             eprintln!("Not a valid identifier: {}", result_trimmed);
             continue;
         } else if result_trimmed.is_empty() {

@@ -35,76 +35,80 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         ));
     }
 
-    let mut question_names_tree = HashMap::new();
-    let mut questions = Vec::new();
+    let mut context_tree = HashMap::new();
 
-    for raw_question in json.questions.iter() {
-        let path = match QuestionPath::parse(raw_question.name) {
-            Some(path) => path,
-            None => {
-                eprintln!("{} is not a valid question name", raw_question.name);
-                continue;
+    let questions = json
+        .questions
+        .unwrap_or(vec![])
+        .iter()
+        .filter_map(|raw_question| {
+            let path = match QuestionPath::parse(raw_question.name) {
+                Some(path) => path,
+                None => {
+                    eprintln!("\"{}\" is not a valid question name", raw_question.name);
+                    return None;
+                }
+            };
+
+            if *path.names().first().unwrap() == "__template__" {
+                eprintln!(
+                    "\"{}\" is not a valid question name (__template__)",
+                    raw_question.name
+                );
+
+                return None;
             }
-        };
 
-        if *path.names().first().unwrap() == "__template__" {
-            eprintln!(
-                "{} is not a valid question name (__template__)",
-                raw_question.name
-            );
+            if !check_context_tree(&mut context_tree, &path.names()) {
+                eprintln!(
+                    "\"{}\" is not a valid question name (cannot add children to value)",
+                    raw_question.name
+                );
 
-            continue;
-        }
+                return None;
+            }
 
-        if !check_duplicate_name(&mut question_names_tree, &path.names()) {
-            eprintln!(
-                "{} is not a valid question name (conflict with nested property container)",
-                raw_question.name
-            );
-
-            continue;
-        }
-
-        questions.push(Question {
-            path,
-            pretty: match raw_question.pretty {
-                Some(pretty) => {
-                    if pretty.trim().is_empty() {
-                        None
-                    } else {
-                        Some(pretty.trim())
+            Some(Question {
+                path,
+                pretty: match raw_question.pretty {
+                    Some(pretty) => {
+                        if pretty.trim().is_empty() {
+                            None
+                        } else {
+                            Some(pretty.trim())
+                        }
                     }
-                }
-                None => None,
-            },
-            spec: match raw_question.question_type {
-                RawQuestionType::Identifier => QuestionSpec::Identifier,
-                RawQuestionType::Option => QuestionSpec::Option,
-                RawQuestionType::Text => QuestionSpec::Text,
-                RawQuestionType::Selection => {
-                    let items = if let Some(raw_items) = &raw_question.items {
-                        raw_items
-                            .iter()
-                            .map(|&item| item.trim())
-                            .filter(|&it| is_identifier(it))
-                            .collect()
-                    } else {
-                        vec![]
-                    };
+                    None => None,
+                },
+                spec: match raw_question.question_type {
+                    RawQuestionType::Identifier => QuestionSpec::Identifier,
+                    RawQuestionType::Option => QuestionSpec::Option,
+                    RawQuestionType::Text => QuestionSpec::Text,
+                    RawQuestionType::Selection => {
+                        let items = if let Some(raw_items) = &raw_question.items {
+                            raw_items
+                                .iter()
+                                .map(|&item| item.trim())
+                                .filter(|&it| is_identifier(it))
+                                .collect()
+                        } else {
+                            vec![]
+                        };
 
-                    if items.is_empty() {
-                        eprintln!("Question {} doesn't specify any items", raw_question.name);
-                        continue;
-                    }
+                        if items.is_empty() {
+                            eprintln!("Question {} doesn't specify any items", raw_question.name);
+                            return None;
+                        }
 
-                    QuestionSpec::Selection {
-                        items,
-                        multi_select: raw_question.multi.unwrap_or(false),
+                        QuestionSpec::Selection {
+                            items,
+                            multi: raw_question.multi.unwrap_or(false),
+                        }
                     }
-                }
-            },
-        });
-    }
+                },
+            })
+        })
+        .collect();
 
     Ok(Config {
         name: json.name.trim(),
@@ -113,7 +117,7 @@ pub fn read_config(input: &str) -> io::Result<Config> {
     })
 }
 
-fn check_duplicate_name<'cfg>(
+fn check_context_tree<'cfg>(
     tree: &'cfg mut HashMap<String, ValueMapItem>,
     names: &'cfg [&'cfg str],
 ) -> bool {
@@ -128,7 +132,7 @@ fn check_duplicate_name<'cfg>(
                     false
                 } else {
                     // Name and tree refer to map, we can continue
-                    check_duplicate_name(map, &names[1..])
+                    check_context_tree(map, &names[1..])
                 }
             }
             ValueMapItem::Value(_) => {
@@ -155,7 +159,7 @@ fn check_duplicate_name<'cfg>(
                 _ => panic!(),
             };
 
-            check_duplicate_name(map, &names[1..])
+            check_context_tree(map, &names[1..])
         }
     }
 }
@@ -164,7 +168,7 @@ fn check_duplicate_name<'cfg>(
 struct ConfigJson<'cfg> {
     name: &'cfg str,
     version: &'cfg str,
-    questions: Vec<RawQuestion<'cfg>>,
+    questions: Option<Vec<RawQuestion<'cfg>>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -230,10 +234,7 @@ impl<'cfg> QuestionPath<'cfg> {
 pub enum QuestionSpec<'cfg> {
     Identifier,
     Option,
-    Selection {
-        items: Vec<&'cfg str>,
-        multi_select: bool,
-    },
+    Selection { items: Vec<&'cfg str>, multi: bool },
     Text,
 }
 
@@ -270,7 +271,7 @@ mod tests {
         let config_json = serde_json::to_string_pretty(&ConfigJson {
             name: "Some Template",
             version: "0.1.0",
-            questions: vec![
+            questions: Some(vec![
                 RawQuestion {
                     name: "author",
                     pretty: Some("Who is the author of this project?"),
@@ -299,7 +300,7 @@ mod tests {
                     multi: Some(true),
                     pretty: None,
                 },
-            ],
+            ]),
         })
         .unwrap();
 
@@ -338,11 +339,174 @@ mod tests {
                         },
                         spec: QuestionSpec::Selection {
                             items: vec!["feature_1", "feature_2", "feature_3"],
-                            multi_select: true
+                            multi: true
                         },
                         pretty: None
                     }
                 ]
+            }
+        );
+
+        assert_eq!(
+            read_config(r#"{ "name": "Some Template", "version": "" }"#).unwrap(),
+            Config {
+                name: "Some Template",
+                version: "",
+                questions: vec![]
+            }
+        )
+    }
+
+    #[test]
+    fn test_read_config_failures() {
+        let empty_name_error = read_config(r#"{ "name": "  ", "version": "" }"#);
+
+        assert!(empty_name_error.is_err());
+        assert_eq!(
+            empty_name_error.unwrap_err().to_string(),
+            "The template name cannot be empty"
+        );
+
+        let malformed_names_json = serde_json::to_string_pretty(&ConfigJson {
+            name: "Some Template",
+            version: "0.1.0",
+            questions: Some(vec![
+                RawQuestion {
+                    name: "$author",
+                    pretty: Some("Who is the author of this project?"),
+                    question_type: RawQuestionType::Text,
+                    items: None,
+                    multi: None,
+                },
+                RawQuestion {
+                    name: "1.debug",
+                    question_type: RawQuestionType::Option,
+                    pretty: None,
+                    items: None,
+                    multi: None,
+                },
+                RawQuestion {
+                    name: "main..package",
+                    question_type: RawQuestionType::Identifier,
+                    pretty: None,
+                    items: None,
+                    multi: None,
+                },
+                RawQuestion {
+                    name: "",
+                    question_type: RawQuestionType::Selection,
+                    items: Some(vec!["feature_1", "feature_2", "feature_3"]),
+                    multi: Some(true),
+                    pretty: None,
+                },
+                RawQuestion {
+                    name: "__template__.something",
+                    question_type: RawQuestionType::Selection,
+                    items: Some(vec!["feature_1", "feature_2", "feature_3"]),
+                    multi: Some(true),
+                    pretty: None,
+                },
+            ]),
+        })
+        .unwrap();
+
+        assert_eq!(
+            read_config(&malformed_names_json).unwrap(),
+            Config {
+                name: "Some Template",
+                version: "0.1.0",
+                questions: vec![]
+            }
+        );
+
+        let malformed_context_tree = serde_json::to_string_pretty(&ConfigJson {
+            name: "Some Template",
+            version: "0.1.0",
+            questions: Some(vec![
+                RawQuestion {
+                    name: "author",
+                    pretty: Some("Who is the author of this project?"),
+                    question_type: RawQuestionType::Text,
+                    items: None,
+                    multi: None,
+                },
+                RawQuestion {
+                    name: "author.email",
+                    question_type: RawQuestionType::Identifier,
+                    pretty: None,
+                    items: None,
+                    multi: None,
+                },
+                RawQuestion {
+                    name: "author.email.domain",
+                    question_type: RawQuestionType::Identifier,
+                    pretty: None,
+                    items: None,
+                    multi: None,
+                },
+            ]),
+        })
+        .unwrap();
+
+        assert_eq!(
+            read_config(&malformed_context_tree).unwrap(),
+            Config {
+                name: "Some Template",
+                version: "0.1.0",
+                questions: vec![Question {
+                    path: QuestionPath {
+                        names: vec!["author"]
+                    },
+                    pretty: Some("Who is the author of this project?"),
+                    spec: QuestionSpec::Text
+                },]
+            }
+        );
+
+        let malformed_selection_items = serde_json::to_string_pretty(&ConfigJson {
+            name: "Some Template",
+            version: "0.1.0",
+            questions: Some(vec![
+                RawQuestion {
+                    name: "features1",
+                    question_type: RawQuestionType::Selection,
+                    items: None,
+                    pretty: None,
+                    multi: Some(true),
+                },
+                RawQuestion {
+                    name: "features2",
+                    question_type: RawQuestionType::Selection,
+                    items: Some(vec!["$feature1", "feature2", "abc.def"]),
+                    pretty: None,
+                    multi: None,
+                },
+                RawQuestion {
+                    name: "features3",
+                    question_type: RawQuestionType::Selection,
+                    items: Some(vec![]),
+                    pretty: None,
+                    multi: None,
+                },
+            ]),
+        })
+        .unwrap();
+
+        assert_eq!(
+            read_config(&malformed_selection_items).unwrap(),
+            Config {
+                name: "Some Template",
+                version: "0.1.0",
+                questions: vec![Question {
+                    path: QuestionPath {
+                        names: vec!["features2"]
+                    },
+                    spec: QuestionSpec::Selection {
+                        items: vec!["feature2"],
+                        multi: false
+                    },
+                    pretty: None
+                }]
             }
         )
     }
