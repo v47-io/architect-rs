@@ -22,7 +22,7 @@ impl HelperDef for DirIfHelper {
         let value = param.value().is_truthy();
 
         if value {
-            out.write("1")?;
+            out.write(DIR_IF_YES)?;
         }
 
         Ok(())
@@ -30,6 +30,8 @@ impl HelperDef for DirIfHelper {
 }
 
 pub static DIR_IF_HELPER: DirIfHelper = DirIfHelper {};
+
+pub static DIR_IF_YES: &'static str = "/DIR_IF_YES/";
 
 trait JsonTruthy {
     fn is_truthy(&self) -> bool;
