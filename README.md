@@ -286,3 +286,10 @@ cargo test --bin architect
 ```
 
 The result should be an `architect(\.exe)?` file in the `./target/debug` directory, ready for execution.
+
+## License and Contributions
+
+Architect is provided under the terms of the BSD 3-Clause License.
+
+Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it
+under the terms of the aforementioned BSD 3-Clause License.
