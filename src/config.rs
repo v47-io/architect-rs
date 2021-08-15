@@ -404,7 +404,7 @@ mod tests {
             version: "0.1.0",
             questions: Some(vec![
                 RawQuestion {
-                    name: "$author",
+                    name: "&author",
                     pretty: Some("Who is the author of this project?"),
                     question_type: RawQuestionType::Text,
                     items: None,
@@ -509,7 +509,7 @@ mod tests {
                 RawQuestion {
                     name: "features2",
                     question_type: RawQuestionType::Selection,
-                    items: Some(vec!["$feature1", "feature2", "abc.def"]),
+                    items: Some(vec!["#feature1", "feature2", "abc.def"]),
                     pretty: None,
                     multi: None,
                 },
