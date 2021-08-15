@@ -297,11 +297,14 @@ fn build_render_specs(
             let source_file_name = entry.file_name().to_string_lossy().to_string();
             let is_template = source_file_name.to_lowercase().ends_with(".hbs");
 
-            let target_file_name = if it_contains_template(&source_file_name) {
-                create_entry_target_file_name(&source_file_name, hbs, ctx)
-            } else {
-                source_file_name
-            };
+            let target_file_name = strip_handlebars_xt(
+                if it_contains_template(&source_file_name) {
+                    create_entry_target_file_name(&source_file_name, hbs, ctx)
+                } else {
+                    source_file_name
+                },
+                is_template,
+            );
 
             let singular_target_path = check_if_child_of_target_dir(
                 target_dir,
@@ -386,6 +389,15 @@ fn create_entry_target_file_name(
         source_name.to_string()
     } else {
         result
+    }
+}
+
+fn strip_handlebars_xt(name: String, is_template: bool) -> String {
+    if is_template {
+        let last_dot_i = name.rfind(".").unwrap();
+        String::from(&name[..last_dot_i])
+    } else {
+        name
     }
 }
 
