@@ -84,20 +84,6 @@ This defaults to the Git repository name as a child of the current working direc
                 .index(2),
         )
         .arg(
-            Arg::with_name("local-branch")
-                .long("local-branch")
-                .short("B")
-                .takes_value(true)
-                .default_value("main")
-                .help("The name of the local branch where to commit the final project")
-                .long_help(
-                    r#"The name of the local branch where to commit the final project.
-
-This can be different from the remote branch that serves as the template source.
-In that case the new branch is created on top of the remote branch."#,
-                ),
-        )
-        .arg(
             Arg::with_name("verbose")
                 .long("verbose")
                 .help("Enables verbose output"),

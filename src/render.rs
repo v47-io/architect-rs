@@ -8,6 +8,7 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
 use handlebars::{Context, Handlebars};
+use handlebars_misc_helpers::register;
 use indicatif::{MultiProgress, ProgressBar};
 use walkdir::WalkDir;
 
@@ -21,86 +22,19 @@ pub fn render(
     verbose: bool,
 ) -> io::Result<RenderResult> {
     let mut handlebars = Handlebars::new();
+    register(&mut handlebars);
     handlebars.register_helper("dir-if", Box::new(DIR_IF_HELPER));
 
-    let mut render_specs: HashMap<PathBuf, Vec<RenderSpec>> = HashMap::new();
-    let mut dir_context_stack = vec![DirContext {
-        source_path: root_dir.to_path_buf(),
-        target_path: target_dir.to_path_buf(),
-    }];
+    let render_specs = build_render_specs(root_dir, target_dir, &handlebars, context, verbose)?;
 
-    let walk = WalkDir::new(root_dir);
-
-    for entry_result in walk
-        .into_iter()
-        .filter_entry(|entry| entry.path() != root_dir.join(".git"))
-    {
-        let entry = entry_result?;
-        let metadata = entry.metadata()?;
-
-        while !dir_context_stack.is_empty()
-            && !entry
-                .path()
-                .starts_with(&dir_context_stack.last().unwrap().source_path)
-        {
-            dir_context_stack.pop();
-        }
-
-        if verbose {
-            println!("Processing path:   {}", entry.path().display());
-            println!("Directory context: {:?}", dir_context_stack.last())
-        }
-
-        if metadata.is_dir() {
-            let entry_dir_name = entry
-                .path()
-                .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .to_string();
-
-            let entry_target_dir_name = if it_contains_template(&entry_dir_name) {
-                create_entry_target_dir_name(&entry_dir_name, &handlebars, &context)
-            } else {
-                entry_dir_name
-            };
-
-            dir_context_stack.push(DirContext {
-                source_path: entry.path().to_path_buf(),
-                target_path: dir_context_stack
-                    .last()
-                    .unwrap()
-                    .target_path
-                    .join(entry_target_dir_name),
-            })
-        } else {
-            let current_dir_ctx = dir_context_stack.last().unwrap();
-
-            let source_file_name = entry.file_name().to_string_lossy().to_string();
-            let is_template = source_file_name.to_lowercase().ends_with(".hbs");
-
-            let target_file_name = if it_contains_template(&source_file_name) {
-                create_entry_target_file_name(&source_file_name, &handlebars, &context)
-            } else {
-                source_file_name
-            };
-
-            let singular_target_path = current_dir_ctx.target_path.join(target_file_name);
-
-            let render_specs_vec = get_render_specs_vec(&mut render_specs, &singular_target_path);
-
-            render_specs_vec.push(RenderSpec {
-                source: entry.into_path(),
-                target: get_numbered_path(singular_target_path, render_specs_vec.len()),
-                is_template,
-            })
-        };
-    }
+    // We don't need dir-if in the actual templates
+    handlebars = Handlebars::new();
+    register(&mut handlebars);
 
     let parallelism = min(1, max(4, num_cpus::get() / 2));
 
-    let (input_tx, input_rx) = channel::<RenderSpec>();
-    let input_rx = Arc::new(Mutex::new(input_rx));
+    let (rspec_sender, rspec_receiver) = channel::<RenderSpec>();
+    let rspec_receiver = Arc::new(Mutex::new(rspec_receiver));
 
     let rendered_files = Arc::new(Mutex::new(Vec::<RenderSpec>::new()));
 
@@ -110,7 +44,7 @@ pub fn render(
         let handlebars = &handlebars;
 
         (0..parallelism).for_each(|_| {
-            let input_rx = Arc::clone(&input_rx);
+            let rspec_receiver = Arc::clone(&rspec_receiver);
             let rendered_files = Arc::clone(&rendered_files);
 
             let progress = all_progress.add(ProgressBar::new_spinner());
@@ -118,7 +52,7 @@ pub fn render(
             scope.spawn(move |_| loop {
                 progress.set_message("Waiting...");
 
-                match input_rx.lock().unwrap().recv() {
+                match rspec_receiver.lock().unwrap().recv() {
                     Ok(render_spec) => {
                         if render_spec.is_template {
                             progress.set_message(format!(
@@ -191,7 +125,7 @@ pub fn render(
                         sources: render_specs
                             .into_iter()
                             .map(|it| {
-                                input_tx.send(it.clone()).unwrap();
+                                rspec_sender.send(it.clone()).unwrap();
                                 it.source
                             })
                             .collect(),
@@ -199,14 +133,14 @@ pub fn render(
                 } else {
                     render_specs
                         .into_iter()
-                        .for_each(|it| input_tx.send(it).unwrap());
+                        .for_each(|it| rspec_sender.send(it).unwrap());
 
                     None
                 }
             })
             .collect();
 
-        drop(input_tx);
+        drop(rspec_sender);
 
         result
     })
@@ -242,10 +176,125 @@ fn render_template_to_file(
     target_file.write_all(rendered.as_bytes())
 }
 
-#[derive(Clone, Debug)]
-struct DirContext {
-    source_path: PathBuf,
-    target_path: PathBuf,
+fn build_render_specs(
+    root_dir: &Path,
+    target_dir: &Path,
+    hbs: &Handlebars,
+    ctx: &Context,
+    verbose: bool,
+) -> io::Result<HashMap<PathBuf, Vec<RenderSpec>>> {
+    let mut render_specs: HashMap<PathBuf, Vec<RenderSpec>> = HashMap::new();
+    let mut dir_context_stack = vec![DirContext {
+        source_path: root_dir.to_path_buf(),
+        target_path: Some(target_dir.to_path_buf()),
+    }];
+
+    let walk = WalkDir::new(root_dir);
+
+    for entry_result in walk
+        .into_iter()
+        .filter_entry(|entry| entry.path() != root_dir.join(".git"))
+    {
+        let entry = entry_result?;
+        let metadata = entry.metadata()?;
+
+        while !dir_context_stack.is_empty()
+            && !entry
+                .path()
+                .starts_with(&dir_context_stack.last().unwrap().source_path)
+        {
+            dir_context_stack.pop();
+        }
+
+        if let None = dir_context_stack.last().unwrap().target_path {
+            if verbose {
+                println!("Skipping path:     {}", entry.path().display())
+            }
+
+            continue;
+        }
+
+        if verbose {
+            println!("Processing path:   {}", entry.path().display());
+            println!("Directory context: {:?}", dir_context_stack.last())
+        }
+
+        if metadata.is_dir() {
+            let entry_dir_name = entry
+                .path()
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+
+            let entry_target_dir_name = if it_contains_template(&entry_dir_name) {
+                create_entry_target_dir_name(&entry_dir_name, hbs, ctx)
+            } else {
+                Some(entry_dir_name)
+            };
+
+            let target_path = entry_target_dir_name.map(|it| {
+                check_if_child_of_target_dir(
+                    target_dir,
+                    dir_context_stack
+                        .last()
+                        .unwrap()
+                        .target_path
+                        .as_ref()
+                        .unwrap(),
+                    &it,
+                )
+                .unwrap_or_else(|| {
+                    dir_context_stack
+                        .last()
+                        .unwrap()
+                        .target_path
+                        .as_ref()
+                        .unwrap()
+                        .join(entry.file_name())
+                })
+            });
+
+            dir_context_stack.push(DirContext {
+                source_path: entry.path().to_path_buf(),
+                target_path,
+            })
+        } else {
+            let current_dir_ctx = dir_context_stack.last().unwrap();
+
+            let source_file_name = entry.file_name().to_string_lossy().to_string();
+            let is_template = source_file_name.to_lowercase().ends_with(".hbs");
+
+            let target_file_name = if it_contains_template(&source_file_name) {
+                create_entry_target_file_name(&source_file_name, hbs, ctx)
+            } else {
+                source_file_name
+            };
+
+            let singular_target_path = check_if_child_of_target_dir(
+                target_dir,
+                current_dir_ctx.target_path.as_ref().unwrap(),
+                &target_file_name,
+            )
+            .unwrap_or_else(|| {
+                current_dir_ctx
+                    .target_path
+                    .as_ref()
+                    .unwrap()
+                    .join(entry.file_name())
+            });
+
+            let render_specs_vec = get_render_specs_vec(&mut render_specs, &singular_target_path);
+
+            render_specs_vec.push(RenderSpec {
+                source: entry.into_path(),
+                target: get_numbered_path(singular_target_path, render_specs_vec.len()),
+                is_template,
+            })
+        };
+    }
+
+    Ok(render_specs)
 }
 
 fn it_contains_template(value: &str) -> bool {
@@ -260,17 +309,36 @@ fn it_contains_template(value: &str) -> bool {
     }
 }
 
+fn get_render_specs_vec<'spec>(
+    render_specs: &'spec mut HashMap<PathBuf, Vec<RenderSpec>>,
+    target_path: &PathBuf,
+) -> &'spec mut Vec<RenderSpec> {
+    if render_specs.contains_key(target_path) {
+        render_specs.get_mut(target_path).unwrap()
+    } else {
+        {
+            render_specs.insert(target_path.clone(), vec![]);
+        }
+
+        render_specs.get_mut(target_path).unwrap()
+    }
+}
+
 fn create_entry_target_dir_name(
     source_name: &str,
     handlebars: &Handlebars,
     context: &Context,
-) -> String {
+) -> Option<String> {
     let (result, was_rendered) = render_line_template(source_name, handlebars, context);
 
-    if was_rendered && result == DIR_IF_YES {
-        String::from(".")
+    if was_rendered {
+        if result == DIR_IF_YES {
+            Some(String::from("."))
+        } else {
+            None
+        }
     } else {
-        result
+        Some(result)
     }
 }
 
@@ -302,18 +370,23 @@ fn render_line_template(template: &str, handlebars: &Handlebars, ctx: &Context) 
     }
 }
 
-fn get_render_specs_vec<'spec>(
-    render_specs: &'spec mut HashMap<PathBuf, Vec<RenderSpec>>,
-    target_path: &PathBuf,
-) -> &'spec mut Vec<RenderSpec> {
-    if render_specs.contains_key(target_path) {
-        render_specs.get_mut(target_path).unwrap()
-    } else {
-        {
-            render_specs.insert(target_path.clone(), vec![]);
-        }
+fn check_if_child_of_target_dir(
+    target_dir: &Path,
+    parent_dir: &Path,
+    target_name: &str,
+) -> Option<PathBuf> {
+    let result = parent_dir.join(target_name);
 
-        render_specs.get_mut(target_path).unwrap()
+    if result.starts_with(target_dir) {
+        Some(result)
+    } else {
+        eprintln!(
+            "Generated path '{}' would leave target directory '{}'",
+            result.display(),
+            target_dir.display()
+        );
+
+        None
     }
 }
 
@@ -338,16 +411,22 @@ fn get_numbered_path(base_path: PathBuf, number: usize) -> PathBuf {
     }
 }
 
-pub struct RenderResult {
-    pub rendered_files: Vec<RenderSpec>,
-    pub conflicts: Vec<RenderConflict>,
-}
-
 #[derive(Clone, Debug)]
 pub struct RenderSpec {
     pub source: PathBuf,
     pub target: PathBuf,
     is_template: bool,
+}
+
+#[derive(Clone, Debug)]
+struct DirContext {
+    source_path: PathBuf,
+    target_path: Option<PathBuf>,
+}
+
+pub struct RenderResult {
+    pub rendered_files: Vec<RenderSpec>,
+    pub conflicts: Vec<RenderConflict>,
 }
 
 pub struct RenderConflict {

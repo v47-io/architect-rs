@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 lazy_static! {
-    static ref ID_REGEX: Regex = Regex::new("^[a-zA-Z_][a-zA-Z0-9_$]*$").unwrap();
+    static ref ID_REGEX: Regex = Regex::new("^[a-zA-Z_$][a-zA-Z0-9_$]*$").unwrap();
     pub static ref NEW_LINE_REGEX: Regex = Regex::new("(\r?\n)+").unwrap();
 }
 
