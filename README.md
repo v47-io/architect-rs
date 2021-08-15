@@ -231,7 +231,7 @@ The Handlebars context contains the following predefined values that cannot be o
 
 ```
 USAGE:
-    architect.exe [FLAGS] [OPTIONS] <REPOSITORY> [TARGET]
+    architect [FLAGS] [OPTIONS] <REPOSITORY> [TARGET]
 
 FLAGS:
         --dirty
