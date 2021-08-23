@@ -52,6 +52,12 @@ impl UnsafeContext {
     }
 }
 
+impl Into<Context> for UnsafeContext {
+    fn into(self) -> Context {
+        unsafe { transmute(self) }
+    }
+}
+
 pub fn build_context(config: &Config) -> io::Result<Context> {
     let mut context_json = Map::new();
     context_json.insert("__template__".to_string(), to_value(config)?);
@@ -61,7 +67,7 @@ pub fn build_context(config: &Config) -> io::Result<Context> {
         insert_into_context(&mut context_json, question.path.names(), answer);
     }
 
-    Ok(unsafe { transmute(UnsafeContext::new(context_json)) })
+    Ok(UnsafeContext::new(context_json).into())
 }
 
 fn ask(question: &Question) -> io::Result<Value> {
@@ -140,7 +146,7 @@ fn insert_into_context(context: &mut Map<String, Value>, path: &[&str], value: V
         let new_context = if let Some(item) = context.get_mut(name) {
             match item {
                 Value::Object(map) => map,
-                _ => panic!(),
+                _ => panic!("not an object"),
             }
         } else {
             {
@@ -154,5 +160,86 @@ fn insert_into_context(context: &mut Map<String, Value>, path: &[&str], value: V
         };
 
         insert_into_context(new_context, &path[1..], value);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Number;
+
+    use super::*;
+
+    #[test]
+    fn test_into_context() {
+        let context_map = create_test_value();
+        let check_map = context_map.clone();
+
+        let context: Context = UnsafeContext::new(context_map).into();
+
+        assert_eq!(context.data(), &Value::Object(check_map));
+    }
+
+    #[test]
+    fn test_insert_into_context() {
+        let mut context = Map::new();
+
+        insert_into_context(
+            &mut context,
+            &["test"],
+            Value::String(String::from("value")),
+        );
+
+        insert_into_context(
+            &mut context,
+            &["a", "container", "value"],
+            Value::Bool(true),
+        );
+
+        insert_into_context(
+            &mut context,
+            &["a", "container", "child"],
+            Value::Number(Number::from_f64(256.0).unwrap()),
+        );
+
+        let check_map = create_test_value();
+
+        assert_eq!(context, check_map)
+    }
+
+    #[test]
+    #[should_panic(expected = "not an object")]
+    fn test_insert_into_context_not_an_object() {
+        let mut context = Map::new();
+
+        insert_into_context(
+            &mut context,
+            &["test"],
+            Value::String(String::from("value")),
+        );
+
+        insert_into_context(
+            &mut context,
+            &["test", "property"],
+            Value::String(String::from("won't work")),
+        );
+    }
+
+    fn create_test_value() -> Map<String, Value> {
+        let mut check_map = Map::new();
+        check_map.insert(String::from("test"), Value::String(String::from("value")));
+
+        let mut container_map = Map::new();
+        container_map.insert(String::from("value"), Value::Bool(true));
+        container_map.insert(
+            String::from("child"),
+            Value::Number(Number::from_f64(256.0).unwrap()),
+        );
+
+        let mut a_map = Map::new();
+        a_map.insert(String::from("container"), Value::Object(container_map));
+
+        check_map.insert(String::from("a"), Value::Object(a_map));
+
+        check_map
     }
 }
