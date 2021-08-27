@@ -1,5 +1,10 @@
 # Architect
 
+[![.github/workflows/rust.yml][build-badge]][workflow-url]
+
+[build-badge]: https://github.com/v47-io/architect-rs/actions/workflows/rust.yml/badge.svg
+[workflow-url]: https://github.com/v47-io/architect-rs/actions/workflows/rust.yml
+
 > A straightforward and technology-agnostic project scaffolding tool
 
 Architect works using a few simple features:
