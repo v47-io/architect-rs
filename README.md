@@ -1,9 +1,13 @@
 # Architect
 
 [![.github/workflows/rust.yml][build-badge]][workflow-url]
+[![codecov][codecov-badge]][codecov-url]
 
 [build-badge]: https://github.com/v47-io/architect-rs/actions/workflows/rust.yml/badge.svg
 [workflow-url]: https://github.com/v47-io/architect-rs/actions/workflows/rust.yml
+
+[codecov-badge]: https://codecov.io/gh/v47-io/architect-rs/branch/master/graph/badge.svg?token=FDASC57M7H
+[codecov-url]: https://codecov.io/gh/v47-io/architect-rs
 
 > A straightforward and technology-agnostic project scaffolding tool
 
