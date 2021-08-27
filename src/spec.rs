@@ -102,12 +102,31 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
+    fn test_template_spec_as_path_unix() {
+        assert_eq!(
+            template_spec_as_path("/usr/bin"),
+            Some(PathBuf::from("/usr/bin"))
+        );
+
+        assert_eq!(template_spec_as_path("/home/random/../invalid/dir"), None);
+    }
+
+    #[test]
     #[cfg(windows)]
     fn test_parse_template_spec_win() {
         let path_spec =
             TemplateSpec::Local(template_spec_as_path("C:\\Windows\\System32").unwrap());
 
         assert_eq!(parse_template_spec("C:\\Windows\\System32"), path_spec);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_parse_template_spec_unix() {
+        let path_spec = TemplateSpec::Local(template_spec_as_path("/usr/bin").unwrap());
+
+        assert_eq!(parse_template_spec("/usr/bin"), path_spec);
     }
 
     #[test]
@@ -125,6 +144,13 @@ mod tests {
     fn test_is_valid_template_spec_win() {
         assert!(is_valid_template_spec("C:\\Windows\\System32"));
         assert!(!is_valid_template_spec("/Windows/System32"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_is_valid_template_spec_unix() {
+        assert!(is_valid_template_spec("/usr/bin"));
+        assert!(!is_valid_template_spec("C:\\Windows\\System32"));
     }
 
     #[test]
