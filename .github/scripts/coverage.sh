@@ -31,20 +31,25 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+export PROFILE=+nightly
+
+export LIBDIR=$(rustc ${PROFILE} --print target-libdir)
+export TOOLDIR=${LIBDIR}/bin
+
 export RUSTFLAGS="-Z instrument-coverage"
 export LLVM_PROFILE_FILE="architect-rs.profraw"
 
-cargo +nightly test --package architect-rs --bin architect
+cargo ${PROFILE} test --package architect-rs --bin architect
 
 export PROFDATA_FILE="architect-rs.profdata"
 
-cargo profdata -- merge -sparse ${LLVM_PROFILE_FILE} -o ${PROFDATA_FILE}
+"${TOOLDIR}/llvm-profdata" merge -sparse ${LLVM_PROFILE_FILE} -o ${PROFDATA_FILE}
 
 export OBJECT_NAME=$(ls target/debug/deps | grep -E -e 'architect-[a-f0-9]+$')
 
 mkdir -p coverage
 
-cargo cov -- export \
+"${TOOLDIR}/llvm-cov" export \
   -format=lcov \
   -ignore-filename-regex='/.cargo/registry|/library/std' \
   -instr-profile=${PROFDATA_FILE} \
