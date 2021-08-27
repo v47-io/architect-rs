@@ -34,7 +34,7 @@
 export RUSTFLAGS="-Z instrument-coverage"
 export LLVM_PROFILE_FILE="architect-rs.profraw"
 
-cargo test --package architect-rs --bin architect
+cargo +nightly test --package architect-rs --bin architect
 
 export PROFDATA_FILE="architect-rs.profdata"
 
