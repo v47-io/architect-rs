@@ -34,11 +34,13 @@ __Example:__
 
 ```
 Template: {{app.name}}.rs
+
 Context: {
   "app": {
     "name": "my_app"
   }
 }
+
 Result: my_app.rs
 ```
 
@@ -49,11 +51,13 @@ __Example:__
 
 ```
 Template: {{replace src.package "." "/"}}
+
 Context: {
   "src": {
     "package": "io.v47"
   }
 }
+
 Result: io/v47
 ```
 
@@ -85,9 +89,11 @@ Directory Tree:
      - test1.txt
      - test2.txt
   - anotherfile.txt
+
 Context: {
   "include_tests": false
 }
+
 Result Tree:
   - some dir
   - another dir
@@ -104,9 +110,11 @@ Directory tree:
      - test1.txt
      - test2.txt
   - anotherfile.txt
+
 Context: {
   "include_tests": true
 }
+
 Result Tree:
   - some dir
   - another dir
