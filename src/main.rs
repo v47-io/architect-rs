@@ -30,6 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+use std::ffi::OsString;
 use std::io::{Error, ErrorKind};
 use std::process::exit;
 use std::{env, io};
@@ -55,7 +56,7 @@ mod spec;
 mod utils;
 
 fn main() {
-    exit(match run() {
+    exit(match run(&mut env::args_os()) {
         Ok(code) => code,
         Err(err) => {
             eprintln!("Error ({:?}): {}", err.kind(), err.to_string());
@@ -64,7 +65,11 @@ fn main() {
     })
 }
 
-fn run() -> io::Result<i32> {
+fn run<I, T>(args: I) -> io::Result<i32>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
+{
     let matches = App::new("Architect")
         .version(crate_version!())
         .author(crate_authors!(",\n"))
@@ -120,7 +125,7 @@ This defaults to the Git repository name as a child of the current working direc
                 .long("verbose")
                 .help("Enables verbose output"),
         )
-        .get_matches();
+        .get_matches_from(args);
 
     let verbose = matches.is_present("verbose");
     if verbose {
