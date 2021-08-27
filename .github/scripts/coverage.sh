@@ -33,8 +33,7 @@
 
 export PROFILE=+nightly
 
-export LIBDIR=$(rustc ${PROFILE} --print target-libdir)
-export TOOLDIR=${LIBDIR}/bin
+cargo ${PROFILE} install cargo-binutils
 
 export RUSTFLAGS="-Z instrument-coverage"
 export LLVM_PROFILE_FILE="architect-rs.profraw"
@@ -43,13 +42,13 @@ cargo ${PROFILE} test --package architect-rs --bin architect
 
 export PROFDATA_FILE="architect-rs.profdata"
 
-"${TOOLDIR}/llvm-profdata" merge -sparse ${LLVM_PROFILE_FILE} -o ${PROFDATA_FILE}
+cargo ${PROFILE} profdata -- merge -sparse ${LLVM_PROFILE_FILE} -o ${PROFDATA_FILE}
 
 export OBJECT_NAME=$(ls target/debug/deps | grep -E -e 'architect-[a-f0-9]+$')
 
 mkdir -p coverage
 
-"${TOOLDIR}/llvm-cov" export \
+cargo ${PROFILE} cov -- export \
   -format=lcov \
   -ignore-filename-regex='/.cargo/registry|/library/std' \
   -instr-profile=${PROFDATA_FILE} \
