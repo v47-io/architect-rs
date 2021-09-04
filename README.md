@@ -50,7 +50,7 @@ of subdirectories. Should a path you create this way leave the target directory 
 __Example:__
 
 ```
-Template: {{replace src.package "." "/"}}
+Template: {{package src.package}}
 
 Context: {
   "src": {
@@ -64,12 +64,11 @@ Result: io/v47
 ### Helpers
 
 Architect provides the basic helpers included in the handlebars library, and also includes all helpers provided by
-the [handlebars_misc_helpers](https://docs.rs/crate/handlebars_misc_helpers/0.12.1) library. The previously mentioned 
-`replace` is such a helper.
+the [handlebars_misc_helpers](https://docs.rs/crate/handlebars_misc_helpers/0.12.1) library.
+
+In addition to those helpers Architect offers a few more helper: `dir-if`, and `package`
 
 #### dir-if
-
-In addition to those helpers Architect offers one more helper: `dir-if`
 
 This helper can be used to determine whether a certain directory/file tree should be included or not. 
 
@@ -121,6 +120,29 @@ Result Tree:
   - test1.txt
   - test2.txt
   - anotherfile.txt
+```
+
+#### package
+
+This helper is used to create a path from a value from dot-separated values, e.g. a Java package.
+
+Use this to create a nested directory structure for your files.
+
+`package` is not available in the actual Handlebars template files, there you should just use `replace` 
+to swap the dots for any other character you like.
+
+__Example:__
+
+```
+Template: {{package src.package}}
+
+Context: {
+  "src": {
+    "package": "io.v47"
+  }
+}
+
+Result: io/v47
 ```
 
 ## Configuration

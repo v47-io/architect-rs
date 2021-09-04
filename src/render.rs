@@ -44,7 +44,7 @@ use handlebars_misc_helpers::register;
 use indicatif::{MultiProgress, ProgressBar};
 use walkdir::WalkDir;
 
-use crate::helpers::{DIR_IF_HELPER, DIR_IF_YES};
+use crate::helpers::{DIR_IF_HELPER, DIR_IF_NO, DIR_IF_YES, PACKAGE_HELPER};
 use crate::utils::NEW_LINE_REGEX;
 
 pub fn render(
@@ -56,6 +56,7 @@ pub fn render(
     let mut handlebars = Handlebars::new();
     register(&mut handlebars);
     handlebars.register_helper("dir-if", Box::new(DIR_IF_HELPER));
+    handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
 
     let render_specs = build_render_specs(root_dir, target_dir, &handlebars, context, verbose)?;
 
@@ -369,8 +370,10 @@ fn create_entry_target_dir_name(
     if was_rendered {
         if result == DIR_IF_YES {
             Some(String::from("."))
-        } else {
+        } else if result == DIR_IF_NO {
             None
+        } else {
+            Some(result)
         }
     } else {
         Some(result)
@@ -384,7 +387,7 @@ fn create_entry_target_file_name(
 ) -> String {
     let (result, was_rendered) = render_line_template(&source_name, handlebars, context);
 
-    if was_rendered && result.contains(DIR_IF_YES) {
+    if was_rendered && (result.contains(DIR_IF_YES) || result.contains(DIR_IF_NO)) {
         eprintln!("File name template contains 'dir-if': {}", source_name);
         source_name.to_string()
     } else {

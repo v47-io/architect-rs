@@ -36,9 +36,9 @@ use handlebars::{
 use serde_json::Value as Json;
 
 #[derive(Clone, Copy)]
-pub struct DirIfHelper;
+pub struct PackageHelper;
 
-impl HelperDef for DirIfHelper {
+impl HelperDef for PackageHelper {
     fn call<'reg: 'rc, 'rc>(
         &self,
         h: &Helper<'reg, 'rc>,
@@ -49,41 +49,22 @@ impl HelperDef for DirIfHelper {
     ) -> HelperResult {
         let param = h
             .param(0)
-            .ok_or_else(|| RenderError::new("Param not found for helper \"dir-if\""))?;
+            .ok_or_else(|| RenderError::new("Param not found for helper \"package\""))?;
 
-        let value = param.value().is_truthy();
+        let param_value = match param.value() {
+            Json::String(value) => Ok(value.as_str()),
+            _ => Err(RenderError::new(
+                "Param value didn't resolve to String for helper \"package\"",
+            )),
+        }?;
 
-        if value {
-            out.write(DIR_IF_YES)?;
-        } else {
-            out.write(DIR_IF_NO)?;
-        }
+        let value_split: Vec<&str> = param_value.split("/").collect();
+        let final_value = value_split.join(".");
+
+        out.write(&final_value)?;
 
         Ok(())
     }
 }
 
-pub static DIR_IF_HELPER: DirIfHelper = DirIfHelper {};
-
-pub static DIR_IF_YES: &'static str = "/DIR_IF_YES/";
-pub static DIR_IF_NO: &'static str = "/DIR_IF_NO/";
-
-trait JsonTruthy {
-    fn is_truthy(&self) -> bool;
-}
-
-impl JsonTruthy for Json {
-    fn is_truthy(&self) -> bool {
-        match *self {
-            Json::Bool(ref i) => *i,
-            Json::Number(ref n) => {
-                // there is no infinity in json/serde_json
-                n.as_f64().map(|f| f.is_normal()).unwrap_or(false)
-            }
-            Json::Null => false,
-            Json::String(ref i) => !i.is_empty(),
-            Json::Array(ref i) => !i.is_empty(),
-            Json::Object(ref i) => !i.is_empty(),
-        }
-    }
-}
+pub static PACKAGE_HELPER: PackageHelper = PackageHelper {};
