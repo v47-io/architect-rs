@@ -124,7 +124,7 @@ Result Tree:
 
 #### package
 
-This helper is used to create a path from a value from dot-separated values, e.g. a Java package.
+This helper is used to create a path from dot-separated values, e.g. a Java package.
 
 Use this to create a nested directory structure for your files.
 
