@@ -160,7 +160,7 @@ interface ConditionalFiles {
     condition: String;
     
     /**
-     * A glob expression to match the desired files\
+     * A glob expression to match the desired files
      */
     matcher: String;
 }
@@ -256,6 +256,11 @@ FLAGS:
     -h, --help
             Prints help information
 
+    -l, --lenient
+            Disables some checks that would prevent generation otherwise.
+
+            These errors will be ignored:
+              - Condition evaluation errors (for conditional files)
     -V, --version
             Prints version information
 
@@ -266,6 +271,7 @@ FLAGS:
 OPTIONS:
     -b, --branch <branch>
             The remote branch to fetch instead of the default branch
+
 
 ARGS:
     <REPOSITORY>
