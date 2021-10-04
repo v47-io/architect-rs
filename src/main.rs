@@ -45,6 +45,7 @@ use crate::context::build_context;
 use crate::dirs::{create_target_dir, is_valid_target_dir};
 use crate::git::{copy_git_directory, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
+use crate::utils::ToolConfig;
 
 mod config;
 mod context;
@@ -121,14 +122,34 @@ This defaults to the Git repository name as a child of the current working direc
                 .index(2),
         )
         .arg(
+            Arg::with_name("lenient")
+                .long("lenient")
+                .short("l")
+                .help("Disables some checks that would prevent generation otherwise")
+                .long_help(
+                    r#"Disables some checks that would prevent generation otherwise.
+
+These errors will be ignored:
+  - Condition evaluation errors (for conditional files)"#,
+                ),
+        )
+        .arg(
             Arg::with_name("verbose")
                 .long("verbose")
                 .help("Enables verbose output"),
         )
         .get_matches_from(args);
 
-    let verbose = matches.is_present("verbose");
-    if verbose {
+    let tool_config = ToolConfig {
+        lenient: matches.is_present("lenient"),
+        verbose: matches.is_present("verbose"),
+    };
+
+    if tool_config.lenient {
+        println!("Lenient mode enabled")
+    }
+
+    if tool_config.verbose {
         println!("Verbose output enabled")
     }
 
@@ -143,7 +164,7 @@ This defaults to the Git repository name as a child of the current working direc
 
     let template_spec = parse_template_spec(template_spec_raw);
 
-    if verbose {
+    if tool_config.verbose {
         println!("Using template specification \"{}\"", template_spec);
     }
 
@@ -160,12 +181,12 @@ This defaults to the Git repository name as a child of the current working direc
         ));
     }
 
-    if verbose {
+    if tool_config.verbose {
         println!("Scaffolding into directory   \"{}\"", target_dir.display());
     }
 
     let working_dir = tempdir()?;
-    if verbose {
+    if tool_config.verbose {
         println!(
             "Using temporary directory    \"{}\"",
             working_dir.path().canonicalize()?.display()
@@ -178,32 +199,40 @@ This defaults to the Git repository name as a child of the current working direc
         FetchOptions {
             branch: matches.value_of("branch"),
             dirty: matches.is_present("dirty"),
-            verbose,
+            tool_config: &tool_config,
         },
     )?;
 
-    let config_json = load_config_file(working_dir.path(), verbose)?;
+    let config_json = load_config_file(working_dir.path(), &tool_config)?;
     let config = if let Some(config_json) = &config_json {
         Some(read_config(config_json)?)
     } else {
         None
     };
 
-    let context = config.map_or(Ok(Context::null()), |it| build_context(&it))?;
+    let context = match &config {
+        Some(c) => build_context(c),
+        None => Ok(Context::null()),
+    }?;
 
-    if verbose && *context.data() != Value::Null {
+    if tool_config.verbose && *context.data() != Value::Null {
         println!(
             "Using context\n{}",
             serde_json::to_string_pretty(context.data())?
         );
     }
 
-    let render_result =
-        render::render(working_dir.path(), target_dir.as_path(), &context, verbose)?;
+    let render_result = render::render(
+        working_dir.path(),
+        target_dir.as_path(),
+        &(config.map_or_else(|| vec![], |c| c.conditional_files)),
+        &context,
+        &tool_config,
+    )?;
 
-    copy_git_directory(working_dir.path(), &target_dir, verbose)?;
+    copy_git_directory(working_dir.path(), &target_dir, &tool_config)?;
 
-    if verbose {
+    if tool_config.verbose {
         println!("Rendered {} files:", render_result.rendered_files.len());
         render_result
             .rendered_files

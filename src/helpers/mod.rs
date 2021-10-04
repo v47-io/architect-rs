@@ -30,8 +30,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-pub use helper_dir_if::{DIR_IF_HELPER, DIR_IF_NO, DIR_IF_YES};
 pub use helper_package::PACKAGE_HELPER;
 
-mod helper_dir_if;
 mod helper_package;

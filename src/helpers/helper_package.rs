@@ -54,7 +54,7 @@ impl HelperDef for PackageHelper {
         let param_value = match param.value() {
             Json::String(value) => Ok(value.as_str()),
             _ => Err(RenderError::new(
-                "Param value didn't resolve to String for helper \"package\"",
+                "Param value not a String for helper \"package\"",
             )),
         }?;
 

@@ -36,14 +36,15 @@ use std::io;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 
+use globset::Glob;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::is_identifier;
+use crate::utils::{is_identifier, ToolConfig};
 
-pub fn load_config_file(base_path: &Path, verbose: bool) -> io::Result<Option<String>> {
+pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Result<Option<String>> {
     let config_file_path = base_path.join(".architect.json");
 
-    if verbose {
+    if tool_config.verbose {
         println!(
             "Loading config file from path {}",
             config_file_path.display()
@@ -142,10 +143,48 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         })
         .collect();
 
+    let cond_files_specs = json
+        .conditional_files
+        .unwrap_or(vec![])
+        .iter()
+        .filter_map(|raw_cond_templates| {
+            if raw_cond_templates.matcher.trim().is_empty() {
+                eprintln!(
+                    "Matcher for condition {} is blank",
+                    raw_cond_templates.condition
+                );
+                return None;
+            }
+
+            if raw_cond_templates.condition.trim().is_empty() {
+                eprintln!(
+                    "Condition for matcher {} is blank",
+                    raw_cond_templates.matcher
+                );
+                return None;
+            }
+
+            match Glob::new(raw_cond_templates.matcher) {
+                Ok(glob) => Some(ConditionalFilesSpec {
+                    condition: raw_cond_templates.condition.trim(),
+                    matcher: glob,
+                }),
+                Err(e) => {
+                    eprintln!(
+                        "Failed to parse glob expression {} ({})",
+                        raw_cond_templates.matcher, e
+                    );
+                    None
+                }
+            }
+        })
+        .collect();
+
     Ok(Config {
         name: json.name.trim(),
         version: json.version.trim(),
         questions,
+        conditional_files: cond_files_specs,
     })
 }
 
@@ -201,6 +240,11 @@ struct ConfigJson<'cfg> {
     name: &'cfg str,
     version: &'cfg str,
     questions: Option<Vec<RawQuestion<'cfg>>>,
+    #[serde(rename(
+        deserialize = "conditionalTemplates",
+        serialize = "conditionalTemplates"
+    ))]
+    conditional_files: Option<Vec<RawConditionalFiles<'cfg>>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -221,6 +265,12 @@ enum RawQuestionType {
     Text,
 }
 
+#[derive(Deserialize, Serialize)]
+struct RawConditionalFiles<'cfg> {
+    condition: &'cfg str,
+    matcher: &'cfg str,
+}
+
 enum ValueMapItem {
     Map(HashMap<String, ValueMapItem>),
     Value(String),
@@ -232,6 +282,8 @@ pub struct Config<'cfg> {
     pub version: &'cfg str,
     #[serde(skip)]
     pub questions: Vec<Question<'cfg>>,
+    #[serde(skip)]
+    pub conditional_files: Vec<ConditionalFilesSpec<'cfg>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -270,6 +322,12 @@ pub enum QuestionSpec<'cfg> {
     Text,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct ConditionalFilesSpec<'cfg> {
+    pub condition: &'cfg str,
+    pub matcher: Glob,
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -288,12 +346,29 @@ mod tests {
     fn test_load_config_file() {
         let working_dir = tempdir().unwrap();
 
-        assert_eq!(load_config_file(working_dir.path(), true).unwrap(), None);
+        assert_eq!(
+            load_config_file(
+                working_dir.path(),
+                &ToolConfig {
+                    lenient: false,
+                    verbose: true
+                }
+            )
+            .unwrap(),
+            None
+        );
 
         fs::write(working_dir.path().join(".architect.json"), CONFIG_CONTENT).unwrap();
 
         assert_eq!(
-            load_config_file(working_dir.path(), true).unwrap(),
+            load_config_file(
+                working_dir.path(),
+                &ToolConfig {
+                    lenient: false,
+                    verbose: true
+                }
+            )
+            .unwrap(),
             Some(CONFIG_CONTENT.to_string())
         );
     }
@@ -333,6 +408,7 @@ mod tests {
                     pretty: None,
                 },
             ]),
+            conditional_files: None,
         })
         .unwrap();
 
@@ -375,7 +451,8 @@ mod tests {
                         },
                         pretty: None
                     }
-                ]
+                ],
+                conditional_files: vec![]
             }
         );
 
@@ -384,7 +461,8 @@ mod tests {
             Config {
                 name: "Some Template",
                 version: "",
-                questions: vec![]
+                questions: vec![],
+                conditional_files: vec![]
             }
         )
     }
@@ -439,6 +517,7 @@ mod tests {
                     pretty: None,
                 },
             ]),
+            conditional_files: None,
         })
         .unwrap();
 
@@ -447,7 +526,8 @@ mod tests {
             Config {
                 name: "Some Template",
                 version: "0.1.0",
-                questions: vec![]
+                questions: vec![],
+                conditional_files: vec![]
             }
         );
 
@@ -477,6 +557,7 @@ mod tests {
                     multi: None,
                 },
             ]),
+            conditional_files: None,
         })
         .unwrap();
 
@@ -491,7 +572,8 @@ mod tests {
                     },
                     pretty: Some("Who is the author of this project?"),
                     spec: QuestionSpec::Text
-                },]
+                },],
+                conditional_files: vec![]
             }
         );
 
@@ -521,6 +603,7 @@ mod tests {
                     multi: None,
                 },
             ]),
+            conditional_files: None,
         })
         .unwrap();
 
@@ -538,7 +621,8 @@ mod tests {
                         multi: false
                     },
                     pretty: None
-                }]
+                }],
+                conditional_files: vec![]
             }
         )
     }

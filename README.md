@@ -66,61 +66,7 @@ Result: io/v47
 Architect provides the basic helpers included in the handlebars library, and also includes all helpers provided by
 the [handlebars_misc_helpers](https://docs.rs/crate/handlebars_misc_helpers/0.12.1) library.
 
-In addition to those helpers Architect offers a few more helper: `dir-if`, and `package`
-
-#### dir-if
-
-This helper can be used to determine whether a certain directory/file tree should be included or not. 
-
-The two possible outcomes are that either all children of the directory are included at the current location or the
-entire content is ignored. This only works if the template containing `dir-if` is the only content of the directory 
-name.
-
-`dir-if` is not available in the actual Handlebars template files.
-
-__Example (excluding children):__
-
-```
-Directory Tree:
-  - some dir
-  - another dir
-  - {{dir-if include_tests}}
-     - test1.txt
-     - test2.txt
-  - anotherfile.txt
-
-Context: {
-  "include_tests": false
-}
-
-Result Tree:
-  - some dir
-  - another dir
-  - anotherfile.txt
-```
-
-__Example (including children):__
-
-```
-Directory tree:
-  - some dir
-  - another dir
-  - {{dir-if include_tests}}
-     - test1.txt
-     - test2.txt
-  - anotherfile.txt
-
-Context: {
-  "include_tests": true
-}
-
-Result Tree:
-  - some dir
-  - another dir
-  - test1.txt
-  - test2.txt
-  - anotherfile.txt
-```
+In addition to those helpers Architect offers another helper: `package`
 
 #### package
 
@@ -164,6 +110,8 @@ interface RootObject {
     version: string;
 
     questions: Question[];
+    
+    conditionalFiles: ConditionalFiles[];
 }
 
 interface Question {
@@ -203,6 +151,18 @@ interface SelectionQuestion extends Question {
      * Determines whether you can choose multiple items from the list of available items
      */
     multi: Boolean | undefined;
+}
+
+interface ConditionalFiles {
+    /**
+     * A condition that must evaluate to a truthy value for the matched files to be included
+     */
+    condition: String;
+    
+    /**
+     * A glob expression to match the desired files\
+     */
+    matcher: String;
 }
 ```
 
@@ -265,6 +225,17 @@ The Handlebars context contains the following predefined values that cannot be o
 - __Text__:
 
   Useful when you want to insert arbitrary text in a Handlebars template
+
+### Conditional Files
+
+You can define pairs of conditions and globbing expressions to specify files that are only applied if said condition
+evaluates to a truthy value.
+
+The condition of such a pair can be any expression that is compatible with Handlebars and has full access to the values
+initialized from the questions.
+
+The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
+write.
 
 ## Usage
 

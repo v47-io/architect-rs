@@ -40,17 +40,18 @@ use dircpy::copy_dir;
 use git2::Repository;
 
 use crate::spec::TemplateSpec;
+use crate::utils::ToolConfig;
 
-pub struct FetchOptions<'f> {
+pub struct FetchOptions<'f, 't> {
     pub branch: Option<&'f str>,
     pub dirty: bool,
-    pub verbose: bool,
+    pub tool_config: &'t ToolConfig,
 }
 
 pub fn fetch(template_spec: &TemplateSpec, target: &Path, options: FetchOptions) -> io::Result<()> {
     let (copy_dirty, local_path) = match template_spec {
         TemplateSpec::Local(local_path) => (
-            options.dirty || !is_git_repo(local_path, options.verbose),
+            options.dirty || !is_git_repo(local_path, options.tool_config.verbose),
             Some(local_path),
         ),
         _ => (false, None),
@@ -61,13 +62,13 @@ pub fn fetch(template_spec: &TemplateSpec, target: &Path, options: FetchOptions)
     if copy_dirty {
         let local_path = local_path.unwrap();
 
-        if options.verbose {
+        if options.tool_config.verbose {
             println!("Copying dirty template from \"{}\"", local_path.display());
         }
 
         copy_dir(local_path, target)?
     } else {
-        if options.verbose {
+        if options.tool_config.verbose {
             println!("Cloning template using Git from \"{}\"", template_spec);
         }
 
@@ -120,9 +121,13 @@ fn is_git_repo(path: &Path, verbose: bool) -> bool {
     result
 }
 
-pub fn copy_git_directory(parent_dir: &Path, target_dir: &Path, verbose: bool) -> io::Result<()> {
+pub fn copy_git_directory(
+    parent_dir: &Path,
+    target_dir: &Path,
+    tool_config: &ToolConfig,
+) -> io::Result<()> {
     if is_git_repo(parent_dir, false) {
-        if verbose {
+        if tool_config.verbose {
             println!("Copying .git directory from working directory to target directory")
         }
 

@@ -39,28 +39,36 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
-use handlebars::{Context, Handlebars};
+use handlebars::{Context, Handlebars, RenderError};
 use handlebars_misc_helpers::register;
 use indicatif::{MultiProgress, ProgressBar};
 use walkdir::WalkDir;
 
-use crate::helpers::{DIR_IF_HELPER, DIR_IF_NO, DIR_IF_YES, PACKAGE_HELPER};
-use crate::utils::NEW_LINE_REGEX;
+use crate::config::ConditionalFilesSpec;
+use crate::helpers::PACKAGE_HELPER;
+use crate::utils::{ToolConfig, NEW_LINE_REGEX};
 
 pub fn render(
     root_dir: &Path,
     target_dir: &Path,
+    conditional_files_specs: &Vec<ConditionalFilesSpec>,
     context: &Context,
-    verbose: bool,
+    tool_config: &ToolConfig,
 ) -> io::Result<RenderResult> {
     let mut handlebars = Handlebars::new();
     register(&mut handlebars);
-    handlebars.register_helper("dir-if", Box::new(DIR_IF_HELPER));
     handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
 
-    let render_specs = build_render_specs(root_dir, target_dir, &handlebars, context, verbose)?;
+    let render_specs = build_render_specs(
+        root_dir,
+        target_dir,
+        conditional_files_specs,
+        &handlebars,
+        context,
+        tool_config,
+    )?;
 
-    // We don't need dir-if in the actual templates
+    // Creating new Handlebars instance without helpers that shouldn't be used in templates
     handlebars = Handlebars::new();
     register(&mut handlebars);
 
@@ -76,20 +84,21 @@ pub fn render(
     let conflicts: Vec<RenderConflict> = crossbeam::scope(|scope| {
         let handlebars = &handlebars;
 
-        (0..parallelism).for_each(|_| {
+        (0..parallelism).for_each(|worker_num| {
             let rspec_receiver = Arc::clone(&rspec_receiver);
             let rendered_files = Arc::clone(&rendered_files);
 
             let progress = all_progress.add(ProgressBar::new_spinner());
 
             scope.spawn(move |_| loop {
-                progress.set_message("Waiting...");
+                progress.set_message(format!("[{}] Waiting...", worker_num));
 
                 match rspec_receiver.lock().unwrap().recv() {
                     Ok(render_spec) => {
                         if render_spec.is_template {
                             progress.set_message(format!(
-                                "Rendering > {}",
+                                "[{}] Rendering > {}",
+                                worker_num,
                                 render_spec.target.display()
                             ));
 
@@ -111,7 +120,8 @@ pub fn render(
                             }
                         } else {
                             progress.set_message(format!(
-                                "Copying   > {}",
+                                "[{}] Copying   > {}",
+                                worker_num,
                                 render_spec.target.display()
                             ));
 
@@ -129,7 +139,7 @@ pub fn render(
                         };
                     }
                     Err(_) => {
-                        progress.finish_with_message("No more work");
+                        progress.finish_with_message(format!("[{}] No more work", worker_num));
                         break;
                     }
                 }
@@ -212,9 +222,10 @@ fn render_template_to_file(
 fn build_render_specs(
     root_dir: &Path,
     target_dir: &Path,
+    conditional_files_specs: &Vec<ConditionalFilesSpec>,
     hbs: &Handlebars,
     ctx: &Context,
-    verbose: bool,
+    tool_config: &ToolConfig,
 ) -> io::Result<HashMap<PathBuf, Vec<RenderSpec>>> {
     let mut render_specs: HashMap<PathBuf, Vec<RenderSpec>> = HashMap::new();
     let mut dir_context_stack = vec![DirContext {
@@ -231,25 +242,57 @@ fn build_render_specs(
         let entry = entry_result?;
         let metadata = entry.metadata()?;
 
-        while !dir_context_stack.is_empty()
-            && !entry
-                .path()
-                .starts_with(&dir_context_stack.last().unwrap().source_path)
+        while dir_context_stack
+            .last()
+            .map_or(false, |it| !entry.path().starts_with(&it.source_path))
         {
             dir_context_stack.pop();
         }
 
         if let None = dir_context_stack.last().unwrap().target_path {
-            if verbose {
+            if tool_config.verbose {
                 println!("Skipping path:     {}", entry.path().display())
             }
 
             continue;
         }
 
-        if verbose {
+        if tool_config.verbose {
             println!("Processing path:   {}", entry.path().display());
             println!("Directory context: {:?}", dir_context_stack.last())
+        }
+
+        let globbing_path = entry.path().strip_prefix(root_dir).unwrap();
+
+        if let Some(cond_spec) = find_condition_spec(globbing_path, conditional_files_specs) {
+            let skip = match eval_condition(cond_spec, hbs, ctx) {
+                Ok(is_match) => !is_match,
+                Err(e) => {
+                    eprintln!(
+                        "Failed to evaluate condition \"{}\" for {} ({})",
+                        cond_spec.condition,
+                        entry.path().display(),
+                        e
+                    );
+
+                    !tool_config.lenient
+                }
+            };
+
+            if skip {
+                if tool_config.verbose {
+                    println!("Skipping path:     {}", entry.path().display())
+                }
+
+                if metadata.is_dir() {
+                    dir_context_stack.push(DirContext {
+                        source_path: entry.path().to_path_buf(),
+                        target_path: None,
+                    });
+
+                    continue;
+                }
+            }
         }
 
         if metadata.is_dir() {
@@ -333,6 +376,35 @@ fn build_render_specs(
     Ok(render_specs)
 }
 
+fn find_condition_spec<'a>(
+    path: &Path,
+    conditional_files_specs: &'a Vec<ConditionalFilesSpec<'a>>,
+) -> Option<&'a ConditionalFilesSpec<'a>> {
+    conditional_files_specs
+        .iter()
+        .find(|&cond_files_spec| cond_files_spec.matcher.compile_matcher().is_match(path))
+}
+
+fn eval_condition(
+    conditional_files_spec: &ConditionalFilesSpec,
+    handlebars: &Handlebars,
+    context: &Context,
+) -> Result<bool, RenderError> {
+    match handlebars.render_template_with_context(conditional_files_spec.condition, context) {
+        Ok(rendered) => Ok(is_truthy(&rendered)),
+        Err(e) => Err(e),
+    }
+}
+
+fn is_truthy(value: &str) -> bool {
+    value.trim() != ""
+        && value != "0"
+        && value != "{}"
+        && value != "[]"
+        && value != "false"
+        && value != "null"
+}
+
 fn it_contains_template(value: &str) -> bool {
     if let Some(start_i) = value.find("{{") {
         if let Some(end_i) = value.rfind("}}") {
@@ -368,15 +440,9 @@ fn create_entry_target_dir_name(
     let (result, was_rendered) = render_line_template(source_name, handlebars, context);
 
     if was_rendered {
-        if result == DIR_IF_YES {
-            Some(String::from("."))
-        } else if result == DIR_IF_NO {
-            None
-        } else {
-            Some(result)
-        }
-    } else {
         Some(result)
+    } else {
+        None
     }
 }
 
@@ -385,14 +451,8 @@ fn create_entry_target_file_name(
     handlebars: &Handlebars,
     context: &Context,
 ) -> String {
-    let (result, was_rendered) = render_line_template(&source_name, handlebars, context);
-
-    if was_rendered && (result.contains(DIR_IF_YES) || result.contains(DIR_IF_NO)) {
-        eprintln!("File name template contains 'dir-if': {}", source_name);
-        source_name.to_string()
-    } else {
-        result
-    }
+    let (result, _) = render_line_template(&source_name, handlebars, context);
+    result
 }
 
 fn strip_handlebars_xt(name: String, is_template: bool) -> String {
