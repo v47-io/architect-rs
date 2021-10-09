@@ -34,7 +34,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 pub struct ToolConfig {
-    pub lenient: bool,
+    pub ignore_checks: bool,
     pub verbose: bool,
 }
 

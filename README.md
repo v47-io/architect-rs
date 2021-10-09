@@ -256,8 +256,8 @@ FLAGS:
     -h, --help
             Prints help information
 
-    -l, --lenient
-            Disables some checks that would prevent generation otherwise.
+        --ignore-checks
+            Ignores some failed checks that would prevent generation otherwise.
 
             These errors will be ignored:
               - Condition evaluation errors (for conditional files)

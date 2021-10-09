@@ -275,7 +275,7 @@ fn build_render_specs(
                         e
                     );
 
-                    !tool_config.lenient
+                    !tool_config.ignore_checks
                 }
             };
 

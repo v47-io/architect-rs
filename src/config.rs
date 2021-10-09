@@ -350,7 +350,7 @@ mod tests {
             load_config_file(
                 working_dir.path(),
                 &ToolConfig {
-                    lenient: false,
+                    ignore_checks: false,
                     verbose: true
                 }
             )
@@ -364,7 +364,7 @@ mod tests {
             load_config_file(
                 working_dir.path(),
                 &ToolConfig {
-                    lenient: false,
+                    ignore_checks: false,
                     verbose: true
                 }
             )

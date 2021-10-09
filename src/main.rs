@@ -122,12 +122,11 @@ This defaults to the Git repository name as a child of the current working direc
                 .index(2),
         )
         .arg(
-            Arg::with_name("lenient")
-                .long("lenient")
-                .short("l")
-                .help("Disables some checks that would prevent generation otherwise")
+            Arg::with_name("ignore-checks")
+                .long("ignore-checks")
+                .help("Ignores some failed checks that would prevent generation otherwise")
                 .long_help(
-                    r#"Disables some checks that would prevent generation otherwise.
+                    r#"Ignores some failed checks that would prevent generation otherwise.
 
 These errors will be ignored:
   - Condition evaluation errors (for conditional files)"#,
@@ -141,12 +140,12 @@ These errors will be ignored:
         .get_matches_from(args);
 
     let tool_config = ToolConfig {
-        lenient: matches.is_present("lenient"),
+        ignore_checks: matches.is_present("ignore-checks"),
         verbose: matches.is_present("verbose"),
     };
 
-    if tool_config.lenient {
-        println!("Lenient mode enabled")
+    if tool_config.ignore_checks {
+        println!("Ignoring some checks")
     }
 
     if tool_config.verbose {
