@@ -33,7 +33,6 @@
 use std::collections::HashMap;
 use std::fs::{metadata, read_to_string};
 use std::io;
-use std::io::{Error, ErrorKind};
 use std::path::Path;
 
 use globset::Glob;
