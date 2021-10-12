@@ -61,13 +61,6 @@ pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Resul
 pub fn read_config(input: &str) -> io::Result<Config> {
     let json: ConfigJson = serde_json::from_str(input)?;
 
-    if json.name.trim().is_empty() {
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            "The template name cannot be empty",
-        ));
-    }
-
     let mut context_tree = HashMap::new();
 
     let questions = json
@@ -181,8 +174,8 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         .collect();
 
     Ok(Config {
-        name: json.name.trim(),
-        version: json.version.trim(),
+        name: json.name.map(|it| it.trim()),
+        version: json.version.map(|it| it.trim()),
         questions,
         conditional_files: cond_files_specs,
     })
@@ -237,8 +230,8 @@ fn check_context_tree<'cfg>(
 
 #[derive(Deserialize, Serialize)]
 struct ConfigJson<'cfg> {
-    name: &'cfg str,
-    version: &'cfg str,
+    name: Option<&'cfg str>,
+    version: Option<&'cfg str>,
     questions: Option<Vec<RawQuestion<'cfg>>>,
     #[serde(rename(
         deserialize = "conditionalTemplates",
@@ -278,8 +271,8 @@ enum ValueMapItem {
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Config<'cfg> {
-    pub name: &'cfg str,
-    pub version: &'cfg str,
+    pub name: Option<&'cfg str>,
+    pub version: Option<&'cfg str>,
     #[serde(skip)]
     pub questions: Vec<Question<'cfg>>,
     #[serde(skip)]
@@ -376,8 +369,8 @@ mod tests {
     #[test]
     fn test_read_config() {
         let config_json = serde_json::to_string_pretty(&ConfigJson {
-            name: "Some Template",
-            version: "0.1.0",
+            name: Some("Some Template"),
+            version: Some("0.1.0"),
             questions: Some(vec![
                 RawQuestion {
                     name: "author",
@@ -417,8 +410,8 @@ mod tests {
         assert_eq!(
             config,
             Config {
-                name: "Some Template",
-                version: "0.1.0",
+                name: Some("Some Template"),
+                version: Some("0.1.0"),
                 questions: vec![
                     Question {
                         path: QuestionPath {
@@ -457,10 +450,10 @@ mod tests {
         );
 
         assert_eq!(
-            read_config(r#"{ "name": "Some Template", "version": "" }"#).unwrap(),
+            read_config(r#"{ "name": "Some Template", "version": null }"#).unwrap(),
             Config {
-                name: "Some Template",
-                version: "",
+                name: Some("Some Template"),
+                version: None,
                 questions: vec![],
                 conditional_files: vec![]
             }
@@ -469,17 +462,9 @@ mod tests {
 
     #[test]
     fn test_read_config_failures() {
-        let empty_name_error = read_config(r#"{ "name": "  ", "version": "" }"#);
-
-        assert!(empty_name_error.is_err());
-        assert_eq!(
-            empty_name_error.unwrap_err().to_string(),
-            "The template name cannot be empty"
-        );
-
         let malformed_names_json = serde_json::to_string_pretty(&ConfigJson {
-            name: "Some Template",
-            version: "0.1.0",
+            name: Some("Some Template"),
+            version: Some("0.1.0"),
             questions: Some(vec![
                 RawQuestion {
                     name: "&author",
@@ -524,16 +509,16 @@ mod tests {
         assert_eq!(
             read_config(&malformed_names_json).unwrap(),
             Config {
-                name: "Some Template",
-                version: "0.1.0",
+                name: Some("Some Template"),
+                version: Some("0.1.0"),
                 questions: vec![],
                 conditional_files: vec![]
             }
         );
 
         let malformed_context_tree = serde_json::to_string_pretty(&ConfigJson {
-            name: "Some Template",
-            version: "0.1.0",
+            name: Some("Some Template"),
+            version: Some("0.1.0"),
             questions: Some(vec![
                 RawQuestion {
                     name: "author",
@@ -564,8 +549,8 @@ mod tests {
         assert_eq!(
             read_config(&malformed_context_tree).unwrap(),
             Config {
-                name: "Some Template",
-                version: "0.1.0",
+                name: Some("Some Template"),
+                version: Some("0.1.0"),
                 questions: vec![Question {
                     path: QuestionPath {
                         names: vec!["author"]
@@ -578,8 +563,8 @@ mod tests {
         );
 
         let malformed_selection_items = serde_json::to_string_pretty(&ConfigJson {
-            name: "Some Template",
-            version: "0.1.0",
+            name: None,
+            version: None,
             questions: Some(vec![
                 RawQuestion {
                     name: "features1",
@@ -610,8 +595,8 @@ mod tests {
         assert_eq!(
             read_config(&malformed_selection_items).unwrap(),
             Config {
-                name: "Some Template",
-                version: "0.1.0",
+                name: None,
+                version: None,
                 questions: vec![Question {
                     path: QuestionPath {
                         names: vec!["features2"]

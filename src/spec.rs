@@ -143,7 +143,7 @@ mod tests {
     #[cfg(windows)]
     fn test_is_valid_template_spec_win() {
         assert!(is_valid_template_spec("C:\\Windows\\System32"));
-        assert!(!is_valid_template_spec("/Windows/System32"));
+        assert!(!is_valid_template_spec("Windows/System32"));
     }
 
     #[test]
