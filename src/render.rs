@@ -501,7 +501,6 @@ fn get_numbered_path(base_path: PathBuf, number: usize) -> PathBuf {
     if number == 0 {
         base_path
     } else {
-        let parent = base_path.parent().unwrap();
         let file_name = base_path.file_name().unwrap().to_string_lossy().to_string();
         let numbered_name = if let Some(dot_i) = file_name.rfind(".") {
             format!(
@@ -514,7 +513,10 @@ fn get_numbered_path(base_path: PathBuf, number: usize) -> PathBuf {
             format!("{} ({})", file_name, number)
         };
 
-        parent.join(numbered_name)
+        base_path.parent().map_or_else(
+            || PathBuf::from(&numbered_name),
+            |parent| parent.join(&numbered_name),
+        )
     }
 }
 
@@ -539,4 +541,41 @@ pub struct RenderResult {
 pub struct RenderConflict {
     pub intended_target: PathBuf,
     pub sources: Vec<PathBuf>,
+}
+
+#[cfg(test)]
+mod tests {
+    use lazy_static::lazy_static;
+
+    use super::*;
+
+    lazy_static! {
+        static ref HANDLEBARS: Handlebars<'static> = Handlebars::new();
+    }
+
+    #[test]
+    fn test_get_numbered_path() {
+        let path_with_parent = PathBuf::from("some/path.xml");
+        let path_without_extension = PathBuf::from("just-a-random-file");
+
+        assert_eq!(
+            PathBuf::from("some/path (2).xml"),
+            get_numbered_path(path_with_parent.clone(), 2)
+        );
+
+        assert_eq!(
+            PathBuf::from("just-a-random-file (11)"),
+            get_numbered_path(path_without_extension.clone(), 11)
+        );
+
+        assert_eq!(
+            PathBuf::from("some/path.xml"),
+            get_numbered_path(path_with_parent.clone(), 0)
+        );
+
+        assert_eq!(
+            PathBuf::from("just-a-random-file"),
+            get_numbered_path(path_without_extension.clone(), 0)
+        );
+    }
 }

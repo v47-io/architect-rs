@@ -43,7 +43,7 @@ impl Display for TemplateSpec<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
             TemplateSpec::Local(path) => write!(f, "{}", path.display()),
-            TemplateSpec::Remote(spec) => write!(f, "{}", spec),
+            &TemplateSpec::Remote(spec) => write!(f, "{}", spec),
         }
     }
 }
