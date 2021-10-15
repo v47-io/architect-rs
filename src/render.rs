@@ -553,6 +553,12 @@ mod tests {
         static ref HANDLEBARS: Handlebars<'static> = Handlebars::new();
     }
 
+    // todo: test_render_to_file
+    // todo: test_eval_condition
+    // todo: test_create_entry_target_dir_name
+    // todo: test_render_line_template
+    // todo: test_check_if_child_of_target_dir
+
     #[test]
     fn test_get_numbered_path() {
         let path_with_parent = PathBuf::from("some/path.xml");

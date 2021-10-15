@@ -328,6 +328,8 @@ mod tests {
 
     use super::*;
 
+    // todo: add conditional file specs to tests
+
     const CONFIG_CONTENT: &str = r#"{
     "name": "Some Template",
     "version": "1.0.0"

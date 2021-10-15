@@ -35,7 +35,6 @@ use std::io::{Error, ErrorKind};
 use std::process::exit;
 use std::{env, io};
 
-use clap::{crate_authors, crate_version, App, Arg};
 use handlebars::Context;
 use serde_json::Value;
 use tempfile::tempdir;
@@ -47,6 +46,7 @@ use crate::git::{copy_git_directory, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
 use crate::utils::ToolConfig;
 
+mod args;
 mod config;
 mod context;
 mod dirs;
@@ -71,73 +71,7 @@ where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
-    let matches = App::new("Architect")
-        .version(crate_version!())
-        .author(crate_authors!(",\n"))
-        .about("Scaffolds your projects using platform agnostic handlebars templates")
-        .arg(
-            Arg::with_name("REPOSITORY")
-                .help("The Git repository to use as the project template")
-                .long_help(
-                    r#"The git repository to use as the project template.
-
-This can be specified in any way that you can refer to a git repository,
-i.e. an HTTP(S) URL, ssh connection string, or a local path.
-
-Example: git@github.com:some-user/his-template-repo.git"#,
-                )
-                .required(true)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("branch")
-                .long("branch")
-                .short("b")
-                .takes_value(true)
-                .help("The remote branch to fetch instead of the default branch"),
-        )
-        .arg(
-            Arg::with_name("dirty")
-                .long("dirty")
-                .help("Uses the template repository in it's current (dirty) state")
-                .long_help(
-                    r#"Uses the template repository in it's current (dirty) state.
-
-This only has an effect if a local path is specified as the repository. In that
-case Architect won't perform a clean clone but will just copy the directory,
-regardless of the local state.
-
-This is most useful to test a template locally, for remote repositories this
-option doesn't make sense."#,
-                ),
-        )
-        .arg(
-            Arg::with_name("TARGET")
-                .help("The target directory for the final output")
-                .long_help(
-                    r#"The target directory for the final output.
-
-This defaults to the Git repository name as a child of the current working directory."#,
-                )
-                .index(2),
-        )
-        .arg(
-            Arg::with_name("ignore-checks")
-                .long("ignore-checks")
-                .help("Ignores some failed checks that would prevent generation otherwise")
-                .long_help(
-                    r#"Ignores some failed checks that would prevent generation otherwise.
-
-These errors will be ignored:
-  - Condition evaluation errors (for conditional files)"#,
-                ),
-        )
-        .arg(
-            Arg::with_name("verbose")
-                .long("verbose")
-                .help("Enables verbose output"),
-        )
-        .get_matches_from(args);
+    let matches = crate::args::get_matches(args);
 
     let tool_config = ToolConfig {
         ignore_checks: matches.is_present("ignore-checks"),
