@@ -40,12 +40,12 @@ use serde_json::{to_value, Map, Value};
 use crate::config::{Config, Question, QuestionSpec};
 use crate::utils::is_identifier;
 
-struct UnsafeContext {
+pub(crate) struct UnsafeContext {
     _data: Value,
 }
 
 impl UnsafeContext {
-    fn new(data: Map<String, Value>) -> Self {
+    pub(crate) fn new(data: Map<String, Value>) -> Self {
         UnsafeContext {
             _data: Value::Object(data),
         }
