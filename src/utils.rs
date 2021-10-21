@@ -33,7 +33,90 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
+pub mod constants {
+    pub const NO_HISTORY: &'static str = "no-history";
+    pub const NO_INIT: &'static str = "no-init";
+    pub const IGNORE_CHECKS: &'static str = "ignore-checks";
+    pub const VERBOSE: &'static str = "verbose";
+}
+
+pub mod reader {
+    use std::env::var;
+    use std::fs::File;
+    use std::io;
+    use std::io::BufRead;
+    use std::path::Path;
+    use std::rc::Rc;
+    use std::str::FromStr;
+
+    use lazy_static::lazy_static;
+
+    lazy_static! {
+        static ref LINE_BUFFER_CAPACITY: usize =
+            if let Ok(Ok(cap)) = var("LINE_BUFFER_CAPACITY").map(|raw| usize::from_str(&raw)) {
+                cap
+            } else {
+                // this is already huge, most source code has lines that are only in the 80-100 characters range
+                256
+            };
+    }
+
+    pub struct BufReader {
+        reader: io::BufReader<File>,
+        buf: Rc<String>,
+    }
+
+    fn new_buf() -> Rc<String> {
+        Rc::new(String::with_capacity(*LINE_BUFFER_CAPACITY))
+    }
+
+    impl BufReader {
+        pub fn open<T: AsRef<Path>>(path: T) -> io::Result<Self> {
+            let file = File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let buf = new_buf();
+
+            Ok(Self { reader, buf })
+        }
+    }
+
+    impl Iterator for BufReader {
+        type Item = io::Result<Rc<String>>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let buf = match Rc::get_mut(&mut self.buf) {
+                Some(buf) => {
+                    buf.clear();
+                    buf
+                }
+                None => {
+                    self.buf = new_buf();
+                    Rc::make_mut(&mut self.buf)
+                }
+            };
+
+            self.reader
+                .read_line(buf)
+                .map(|u| {
+                    if u == 0 {
+                        None
+                    } else {
+                        Some(Rc::clone(&self.buf))
+                    }
+                })
+                .transpose()
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        // todo: test_buf_reader
+    }
+}
+
 pub struct ToolConfig {
+    pub no_history: bool,
+    pub no_init: bool,
     pub ignore_checks: bool,
     pub verbose: bool,
 }

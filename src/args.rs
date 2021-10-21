@@ -34,6 +34,8 @@ use std::ffi::OsString;
 
 use clap::{crate_authors, crate_version, App, Arg, ArgMatches};
 
+use crate::utils::constants;
+
 pub fn get_matches<'app, I, T>(args: I) -> ArgMatches<'app>
 where
     I: IntoIterator<Item = T>,
@@ -67,6 +69,7 @@ Example: git@github.com:some-user/his-template-repo.git"#,
         .arg(
             Arg::with_name("dirty")
                 .long("dirty")
+                .short("D")
                 .help("Uses the template repository in it's current (dirty) state")
                 .long_help(
                     r#"Uses the template repository in it's current (dirty) state.
@@ -75,8 +78,8 @@ This only has an effect if a local path is specified as the repository. In that
 case Architect won't perform a clean clone but will just copy the directory,
 regardless of the local state.
 
-This is most useful to test a template locally, for remote repositories this
-option doesn't make sense."#,
+This is most useful to test a template locally, with remote repositories this
+option doesn't have any effect"#,
                 ),
         )
         .arg(
@@ -85,13 +88,37 @@ option doesn't make sense."#,
                 .long_help(
                     r#"The target directory for the final output.
 
-This defaults to the Git repository name as a child of the current working directory."#,
+This defaults to the Git repository name as a child of the current working directory"#,
                 )
                 .index(2),
         )
         .arg(
-            Arg::with_name("ignore-checks")
-                .long("ignore-checks")
+            Arg::with_name(constants::NO_HISTORY)
+                .long(constants::NO_HISTORY)
+                .short("H")
+                .help("Don't copy over Git history from template to target")
+                .long_help(
+                    r#"Don't copy over Git history from template to target.
+
+Instead the target directory will be initialized as a new Git repository"#,
+                ),
+        )
+        .arg(
+            Arg::with_name(constants::NO_INIT)
+                .long(constants::NO_INIT)
+                .short("I")
+                .requires("no-history")
+                .help("Don't initialize the target directory as a Git repository")
+                .long_help(
+                    r#"Don't initialize the target directory as a Git repository.
+
+This requires the --no-history flag to be specified as well"#,
+                ),
+        )
+        .arg(
+            Arg::with_name(constants::IGNORE_CHECKS)
+                .long(constants::IGNORE_CHECKS)
+                .short("C")
                 .help("Ignores some failed checks that would prevent generation otherwise")
                 .long_help(
                     r#"Ignores some failed checks that would prevent generation otherwise.
@@ -101,8 +128,8 @@ These errors will be ignored:
                 ),
         )
         .arg(
-            Arg::with_name("verbose")
-                .long("verbose")
+            Arg::with_name(constants::VERBOSE)
+                .long(constants::VERBOSE)
                 .help("Enables verbose output"),
         )
         .get_matches_from(args)

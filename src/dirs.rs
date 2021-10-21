@@ -106,5 +106,8 @@ pub fn is_valid_target_dir(path: &Path) -> io::Result<bool> {
     }
 }
 
-// todo: test_create_target_dir
-// todo: test_is_valid_target_dir
+#[cfg(test)]
+mod tests {
+    // todo: test_create_target_dir
+    // todo: test_is_valid_target_dir
+}

@@ -33,9 +33,8 @@
 /**
  * The configuration used by Architect when creating an instance of this project template.
  * 
- * Everything is optional, but Architect makes more sense to use when actually configured
- * 
- * @author Alex Katlein <dev@vemilyus.com>
+ * Everything (including the file itself) is optional, but Architect makes more sense to
+ * use when actually configured
  */
 export interface Config {
     /**
@@ -59,20 +58,69 @@ export interface Config {
     /**
      * Specifies conditions for certain files to be created.
      * 
-     * These conditions have full access to the context that is created by the questions
+     * These conditions have full access to the context that is created by the questions.
+     *
+     * Note that conditions specified here don't apply to hidden files that weren't explicitly
+     * included using `includeHidden` or files excluded using `exclude`
      */
     conditionalFiles?: ConditionalFiles[];
+    /**
+     * Specifies Glob expressions to include hidden files in the target.
+     *
+     * Note that including the `.git` directory here will have no effect
+     */
+    includeHidden?: string[];
+    /**
+     * Specifies Glob expressions to exclude files in the target.
+     *
+     * Note that exclusions have a higher precedence than inclusions and conditional files
+     */
+    exclude?: string[];
 }
 
 export type Question = SimpleQuestion | SelectionQuestion;
 
+export interface SimpleQuestion extends BaseQuestion {
+    type: QuestionType.Identifier | QuestionType.Option | QuestionType.Text;
+}
+
+export interface SelectionQuestion extends BaseQuestion {
+    type: QuestionType.Selection;
+
+    /**
+     * The items available for selection.
+     *
+     * These will be set to `true` in the context if selected.
+     *
+     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
+     */
+    items: string[];
+    /**
+     * Specifies whether multiple items can be selected
+     */
+    multi?: boolean;
+}
+
+export interface ConditionalFiles {
+    /**
+     * The condition that decides whether the matched files are created.
+     *
+     * This is an expression that is handled by handlebars
+     */
+    condition: string;
+    /**
+     * A Glob string specifying the files affected by the condition
+     */
+    matcher: string;
+}
+
 interface BaseQuestion {
     /**
      * The name in the context for the value specified when answering this question.
-     * 
-     * Can be multiple names concatenated using `.` to create hierarchial structures in 
+     *
+     * Can be multiple names concatenated using `.` to create hierarchial structures in
      * the context.
-     * 
+     *
      * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
      */
     name: string;
@@ -92,38 +140,4 @@ export enum QuestionType {
     Option = 'Option',
     Selection = 'Selection',
     Text = 'Text'
-}
-
-export interface SimpleQuestion extends BaseQuestion {
-    type: QuestionType.Identifier | QuestionType.Option | QuestionType.Text;
-}
-
-export interface SelectionQuestion extends BaseQuestion {
-    type: QuestionType.Selection;
-
-    /**
-     * The items available for selection.
-     * 
-     * These will be set to `true` in the context if selected.
-     * 
-     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
-     */
-    items: string[];
-    /**
-     * Specifies whether multiple items can be selected
-     */
-    multi?: boolean;
-}
-
-export interface ConditionalFiles {
-    /**
-     * The condition that decides whether the matched files are created.
-     * 
-     * This is an expression that is handled by handlebars
-     */
-    condition: string;
-    /**
-     * A Glob string specifying the files affected by the condition
-     */
-    matcher: string;
 }

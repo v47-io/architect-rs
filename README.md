@@ -96,75 +96,9 @@ Result: io/v47
 Any template repository can contain an `.architect.json` file that defines the questions to ask before rendering the
 templates.
 
-### Format (described using TypeScript syntax):
+### Format (described using TypeScript):
 
-```typescript
-interface RootObject {
-    /**
-     * The name of the template
-     */
-    name: string;
-    /**
-     * The version of the template
-     */
-    version: string;
-
-    questions: Question[];
-    
-    conditionalFiles: ConditionalFiles[];
-}
-
-interface Question {
-    /**
-     * The name that you use in the Handlebars templates to access the value(s) entered in response to the question
-     */
-    name: String;
-    /**
-     * What kind of value(s) are expected
-     */
-    type: QuestionType;
-    /**
-     * An optional pretty message printed when asking for a value
-     */
-    pretty: String | undefined;
-}
-
-enum QuestionType {
-    Identifier,
-    Option,
-    Selection,
-    Text
-}
-
-interface SimpleQuestion extends Question {
-    type: QuestionType.Identifier | QuestionType.Option | QuestionType.Text;
-}
-
-interface SelectionQuestion extends Question {
-    type: QuestionType.Selection;
-
-    /**
-     * A list of items that are available to be selected
-     */
-    items: String[];
-    /**
-     * Determines whether you can choose multiple items from the list of available items
-     */
-    multi: Boolean | undefined;
-}
-
-interface ConditionalFiles {
-    /**
-     * A condition that must evaluate to a truthy value for the matched files to be included
-     */
-    condition: String;
-    
-    /**
-     * A glob expression to match the desired files
-     */
-    matcher: String;
-}
-```
+Please refer to the [architect.rs](src/schema/architect.ts) file.
 
 ### Value Nesting
 
@@ -244,23 +178,31 @@ USAGE:
     architect [FLAGS] [OPTIONS] <REPOSITORY> [TARGET]
 
 FLAGS:
-        --dirty
+    -D, --dirty
             Uses the template repository in it's current (dirty) state.
 
             This only has an effect if a local path is specified as the repository. In that
             case Architect won't perform a clean clone but will just copy the directory,
             regardless of the local state.
 
-            This is most useful to test a template locally, for remote repositories this
-            option doesn't make sense.
+            This is most useful to test a template locally, with remote repositories this
+            option doesn't have any effect
     -h, --help
             Prints help information
 
-        --ignore-checks
+    -C, --ignore-checks
             Ignores some failed checks that would prevent generation otherwise.
 
             These errors will be ignored:
               - Condition evaluation errors (for conditional files)
+    -H, --no-history
+            Don't copy over Git history from template to target.
+
+            Instead the target directory will be initialized as a new Git repository
+    -I, --no-init
+            Don't initialize the target directory as a Git repository.
+
+            This requires the --no-history flag to be specified as well
     -V, --version
             Prints version information
 
@@ -284,7 +226,7 @@ ARGS:
     <TARGET>
             The target directory for the final output.
 
-            This defaults to the Git repository name as a child of the current working directory.
+            This defaults to the Git repository name as a child of the current working directory
 ```
 
 ## Development

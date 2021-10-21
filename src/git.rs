@@ -76,7 +76,7 @@ pub fn fetch(template_spec: &TemplateSpec, target: &Path, options: FetchOptions)
         command.arg("clone");
         command.arg(match template_spec {
             TemplateSpec::Local(path) => path.as_os_str(),
-            TemplateSpec::Remote(spec) => OsStr::new(spec),
+            &TemplateSpec::Remote(spec) => OsStr::new(spec),
         });
         command.arg(target.as_os_str());
 
@@ -131,8 +131,67 @@ pub fn copy_git_directory(
             println!("Copying .git directory from working directory to target directory")
         }
 
-        copy_dir(parent_dir.join(".git"), target_dir.join(".git"))
+        copy_dir(parent_dir.join(".git"), target_dir.join(".git"))?;
+        remove_remotes(target_dir);
     } else {
-        Ok(())
+        if tool_config.verbose {
+            println!("Template not a Git repository. Not copying .git directory to target")
+        }
     }
+
+    Ok(())
+}
+
+fn remove_remotes(dir: &Path) {
+    match Repository::open(dir) {
+        Ok(repo) => {
+            repo.remotes()
+                .map(|remotes| {
+                    remotes.iter().filter_map(|it| it).for_each(|remote| {
+                        match repo.remote_delete(remote) {
+                            Ok(_) => (),
+                            Err(err) => {
+                                eprintln!("Failed to remove remote {} ({})", remote, err);
+                            }
+                        }
+                    })
+                })
+                .unwrap_or_else(|err| {
+                    eprintln!("Failed to retrieve remotes ({})", err);
+                });
+        }
+        Err(err) => {
+            eprintln!(
+                "Failed to open Git repository at {} ({})",
+                dir.display(),
+                err
+            )
+        }
+    };
+}
+
+pub fn init_git_repository(target_dir: &Path, tool_config: &ToolConfig) -> io::Result<()> {
+    if tool_config.verbose {
+        println!("Initializing Git repository in target directory");
+    }
+
+    match Repository::init(target_dir) {
+        Ok(_) => (),
+        Err(err) => {
+            eprintln!(
+                "Failed to initialize Git repository in {} ({})",
+                target_dir.display(),
+                err
+            );
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    // todo: test_fetch
+    // todo: test_copy_git_directory
+    // todo: test_init_git_repository
 }

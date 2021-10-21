@@ -35,7 +35,7 @@ use std::fs::{metadata, read_to_string};
 use std::io;
 use std::path::Path;
 
-use globset::Glob;
+use globset::{Glob, GlobMatcher};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::{is_identifier, ToolConfig};
@@ -159,7 +159,7 @@ pub fn read_config(input: &str) -> io::Result<Config> {
             match Glob::new(raw_cond_templates.matcher) {
                 Ok(glob) => Some(ConditionalFilesSpec {
                     condition: raw_cond_templates.condition.trim(),
-                    matcher: glob,
+                    matcher: glob.compile_matcher(),
                 }),
                 Err(e) => {
                     eprintln!(
@@ -172,12 +172,30 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         })
         .collect();
 
+    let include_hidden = map_glob_matchers(json.include_hidden.as_ref());
+    let exclude = map_glob_matchers(json.exclude.as_ref());
+
     Ok(Config {
         name: json.name.map(|it| it.trim()),
         version: json.version.map(|it| it.trim()),
         questions,
         conditional_files: cond_files_specs,
+        include_hidden,
+        exclude,
     })
+}
+
+fn map_glob_matchers(raw: Option<&Vec<&str>>) -> Vec<GlobMatcher> {
+    raw.unwrap_or(&vec![])
+        .iter()
+        .filter_map(|&raw_glob| match Glob::new(raw_glob) {
+            Ok(glob) => Some(glob.compile_matcher()),
+            Err(e) => {
+                eprintln!("Failed to parse glob expression {} ({})", raw_glob, e);
+                None
+            }
+        })
+        .collect()
 }
 
 fn check_context_tree<'cfg>(
@@ -237,6 +255,9 @@ struct ConfigJson<'cfg> {
         serialize = "conditionalTemplates"
     ))]
     conditional_files: Option<Vec<RawConditionalFiles<'cfg>>>,
+    #[serde(rename(deserialize = "includeHidden", serialize = "includeHidden"))]
+    include_hidden: Option<Vec<&'cfg str>>,
+    exclude: Option<Vec<&'cfg str>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -268,7 +289,7 @@ enum ValueMapItem {
     Value(String),
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Config<'cfg> {
     pub name: Option<&'cfg str>,
     pub version: Option<&'cfg str>,
@@ -276,6 +297,23 @@ pub struct Config<'cfg> {
     pub questions: Vec<Question<'cfg>>,
     #[serde(skip)]
     pub conditional_files: Vec<ConditionalFilesSpec<'cfg>>,
+    #[serde(skip)]
+    pub include_hidden: Vec<GlobMatcher>,
+    #[serde(skip)]
+    pub exclude: Vec<GlobMatcher>,
+}
+
+impl<'cfg> Config<'cfg> {
+    pub(crate) fn empty() -> Self {
+        Config {
+            name: None,
+            version: None,
+            questions: vec![],
+            conditional_files: vec![],
+            include_hidden: vec![],
+            exclude: vec![],
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -314,10 +352,10 @@ pub enum QuestionSpec<'cfg> {
     Text,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct ConditionalFilesSpec<'cfg> {
     pub condition: &'cfg str,
-    pub matcher: Glob,
+    pub matcher: GlobMatcher,
 }
 
 #[cfg(test)]
@@ -329,6 +367,8 @@ mod tests {
     use super::*;
 
     // todo: add conditional file specs to tests
+    // todo: add include hidden globs to tests
+    // todo: add excluded globs to tests
 
     const CONFIG_CONTENT: &str = r#"{
     "name": "Some Template",
@@ -344,6 +384,8 @@ mod tests {
             load_config_file(
                 working_dir.path(),
                 &ToolConfig {
+                    no_history: false,
+                    no_init: false,
                     ignore_checks: false,
                     verbose: true
                 }
@@ -358,6 +400,8 @@ mod tests {
             load_config_file(
                 working_dir.path(),
                 &ToolConfig {
+                    no_history: false,
+                    no_init: false,
                     ignore_checks: false,
                     verbose: true
                 }
@@ -403,6 +447,8 @@ mod tests {
                 },
             ]),
             conditional_files: None,
+            include_hidden: None,
+            exclude: None,
         })
         .unwrap();
 
@@ -446,7 +492,9 @@ mod tests {
                         pretty: None
                     }
                 ],
-                conditional_files: vec![]
+                conditional_files: vec![],
+                include_hidden: vec![],
+                exclude: vec![]
             }
         );
 
@@ -456,7 +504,9 @@ mod tests {
                 name: Some("Some Template"),
                 version: None,
                 questions: vec![],
-                conditional_files: vec![]
+                conditional_files: vec![],
+                include_hidden: vec![],
+                exclude: vec![]
             }
         )
     }
@@ -504,6 +554,8 @@ mod tests {
                 },
             ]),
             conditional_files: None,
+            include_hidden: None,
+            exclude: None,
         })
         .unwrap();
 
@@ -513,7 +565,9 @@ mod tests {
                 name: Some("Some Template"),
                 version: Some("0.1.0"),
                 questions: vec![],
-                conditional_files: vec![]
+                conditional_files: vec![],
+                include_hidden: vec![],
+                exclude: vec![]
             }
         );
 
@@ -544,6 +598,8 @@ mod tests {
                 },
             ]),
             conditional_files: None,
+            include_hidden: None,
+            exclude: None,
         })
         .unwrap();
 
@@ -559,7 +615,9 @@ mod tests {
                     pretty: Some("Who is the author of this project?"),
                     spec: QuestionSpec::Text
                 },],
-                conditional_files: vec![]
+                conditional_files: vec![],
+                include_hidden: vec![],
+                exclude: vec![]
             }
         );
 
@@ -590,6 +648,8 @@ mod tests {
                 },
             ]),
             conditional_files: None,
+            include_hidden: None,
+            exclude: None,
         })
         .unwrap();
 
@@ -608,8 +668,53 @@ mod tests {
                     },
                     pretty: None
                 }],
-                conditional_files: vec![]
+                conditional_files: vec![],
+                include_hidden: vec![],
+                exclude: vec![]
             }
         )
+    }
+
+    impl<'cfg> PartialEq for Config<'cfg> {
+        fn eq(&self, other: &Self) -> bool {
+            self.name == other.name
+                && self.version == other.version
+                && self.questions == other.questions
+                && self.conditional_files == other.conditional_files
+                && matchers_eq(&self.include_hidden, &other.include_hidden)
+                && matchers_eq(&self.exclude, &other.exclude)
+        }
+    }
+
+    fn matchers_eq(matchers_a: &Vec<GlobMatcher>, matchers_b: &Vec<GlobMatcher>) -> bool {
+        let mut matchers_a_iter = matchers_a.into_iter();
+        let mut matchers_b_iter = matchers_b.into_iter();
+
+        loop {
+            let a = match matchers_a_iter.next() {
+                Some(a) => a,
+                None => return matchers_b_iter.next().is_none(),
+            };
+
+            let b = match matchers_b_iter.next() {
+                Some(b) => b,
+                None => return false,
+            };
+
+            if !glob_matcher_eq(a, b) {
+                return false;
+            }
+        }
+    }
+
+    #[inline]
+    fn glob_matcher_eq(matcher_a: &GlobMatcher, matcher_b: &GlobMatcher) -> bool {
+        matcher_a.glob() == matcher_b.glob()
+    }
+
+    impl<'cfg> PartialEq for ConditionalFilesSpec<'cfg> {
+        fn eq(&self, other: &Self) -> bool {
+            self.condition == other.condition && self.matcher.glob() == other.matcher.glob()
+        }
     }
 }

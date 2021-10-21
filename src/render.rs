@@ -32,27 +32,48 @@
 
 use std::cmp::{max, min};
 use std::collections::HashMap;
+use std::env::var;
 use std::fs::{copy, create_dir_all, read_to_string, File};
 use std::io;
 use std::io::{Error, ErrorKind, Write};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
 use handlebars::{Context, Handlebars, RenderError};
 use handlebars_misc_helpers::register;
 use indicatif::{MultiProgress, ProgressBar};
+use lazy_static::lazy_static;
 use path_absolutize::Absolutize;
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
-use crate::config::ConditionalFilesSpec;
+use crate::config::{ConditionalFilesSpec, Config};
 use crate::helpers::PACKAGE_HELPER;
+use crate::utils::reader::BufReader;
 use crate::utils::{ToolConfig, NEW_LINE_REGEX};
+
+lazy_static! {
+    static ref RENDER_PARALLELISM: usize =
+        if let Ok(Ok(value)) = var("RENDER_PARALLELISM").map(|raw| usize::from_str(&raw)) {
+            value
+        } else {
+            min(1, max(4, num_cpus::get() / 2))
+        };
+
+    static ref TEMPLATE_INSPECT_MAX_LINES: usize =
+        if let Ok(Ok(value)) = var("TEMPLATE_INSPECT_MAX_LINES").map(|raw| usize::from_str(&raw)) {
+            value
+        } else {
+            // this feels like a sensible default, like who puts a Handlebars expression at the end of a 1000 line template?
+            25
+        };
+}
 
 pub fn render(
     root_dir: &Path,
     target_dir: &Path,
-    conditional_files_specs: &Vec<ConditionalFilesSpec>,
+    config: &Config,
     context: &Context,
     tool_config: &ToolConfig,
 ) -> io::Result<RenderResult> {
@@ -60,32 +81,35 @@ pub fn render(
     register(&mut handlebars);
     handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
 
+    let all_progress = MultiProgress::new();
+
+    let render_specs_progress = all_progress.add(ProgressBar::new_spinner());
+    render_specs_progress.set_message("Building render specifications...");
+
     let render_specs = build_render_specs(
         root_dir,
         target_dir,
-        conditional_files_specs,
+        config,
         &handlebars,
         context,
         tool_config,
     )?;
 
+    all_progress.remove(&render_specs_progress);
+
     // Creating new Handlebars instance without helpers that shouldn't be used in templates
     handlebars = Handlebars::new();
     register(&mut handlebars);
-
-    let parallelism = min(1, max(4, num_cpus::get() / 2));
 
     let (rspec_sender, rspec_receiver) = channel::<RenderSpec>();
     let rspec_receiver = Arc::new(Mutex::new(rspec_receiver));
 
     let rendered_files = Arc::new(Mutex::new(Vec::<RenderSpec>::new()));
 
-    let all_progress = MultiProgress::new();
-
     let conflicts: Vec<RenderConflict> = crossbeam::scope(|scope| {
         let handlebars = &handlebars;
 
-        (0..parallelism).for_each(|worker_num| {
+        (0..*RENDER_PARALLELISM).for_each(|worker_num| {
             let rspec_receiver = Arc::clone(&rspec_receiver);
             let rendered_files = Arc::clone(&rendered_files);
 
@@ -223,7 +247,7 @@ fn render_template_to_file(
 fn build_render_specs(
     root_dir: &Path,
     target_dir: &Path,
-    conditional_files_specs: &Vec<ConditionalFilesSpec>,
+    config: &Config,
     hbs: &Handlebars,
     ctx: &Context,
     tool_config: &ToolConfig,
@@ -238,7 +262,7 @@ fn build_render_specs(
 
     for entry_result in walk
         .into_iter()
-        .filter_entry(|entry| entry.path() != root_dir.join(".git"))
+        .filter_entry(|entry| filter_dir_entry(root_dir, config, hbs, ctx, tool_config, entry))
     {
         let entry = entry_result?;
         let metadata = entry.metadata()?;
@@ -261,39 +285,6 @@ fn build_render_specs(
         if tool_config.verbose {
             println!("Processing path:   {}", entry.path().display());
             println!("Directory context: {:?}", dir_context_stack.last())
-        }
-
-        let globbing_path = entry.path().strip_prefix(root_dir).unwrap();
-
-        if let Some(cond_spec) = find_condition_spec(globbing_path, conditional_files_specs) {
-            let skip = match eval_condition(cond_spec, hbs, ctx) {
-                Ok(is_match) => !is_match,
-                Err(e) => {
-                    eprintln!(
-                        "Failed to evaluate condition \"{}\" for {} ({})",
-                        cond_spec.condition,
-                        entry.path().display(),
-                        e
-                    );
-
-                    !tool_config.ignore_checks
-                }
-            };
-
-            if skip {
-                if tool_config.verbose {
-                    println!("Skipping path:     {}", entry.path().display())
-                }
-
-                if metadata.is_dir() {
-                    dir_context_stack.push(DirContext {
-                        source_path: entry.path().to_path_buf(),
-                        target_path: None,
-                    });
-
-                    continue;
-                }
-            }
         }
 
         if metadata.is_dir() {
@@ -340,16 +331,15 @@ fn build_render_specs(
             let current_dir_ctx = dir_context_stack.last().unwrap();
 
             let source_file_name = entry.file_name().to_string_lossy().to_string();
-            let is_template = source_file_name.to_lowercase().ends_with(".hbs");
 
-            let target_file_name = strip_handlebars_xt(
-                if it_contains_template(&source_file_name) {
+            let is_template = is_hbs_template(entry.path())?;
+
+            let target_file_name =
+                strip_handlebars_xt(if it_contains_template(&source_file_name) {
                     create_entry_target_file_name(&source_file_name, hbs, ctx)
                 } else {
                     source_file_name
-                },
-                is_template,
-            );
+                });
 
             let singular_target_path = create_proper_target_path(
                 target_dir,
@@ -377,13 +367,92 @@ fn build_render_specs(
     Ok(render_specs)
 }
 
+fn filter_dir_entry(
+    root_dir: &Path,
+    config: &Config,
+    hbs: &Handlebars,
+    ctx: &Context,
+    tool_config: &ToolConfig,
+    entry: &DirEntry,
+) -> bool {
+    is_not_git_dir_in_root(root_dir, entry)
+        && is_not_hidden_or_included(root_dir, config, hbs, ctx, tool_config, entry)
+        && is_not_excluded(root_dir, config, tool_config, entry)
+}
+
+#[inline]
+fn is_not_git_dir_in_root(root_dir: &Path, entry: &DirEntry) -> bool {
+    entry.path() != root_dir.join(".git")
+}
+
+fn is_not_hidden_or_included(
+    root_dir: &Path,
+    config: &Config,
+    hbs: &Handlebars,
+    ctx: &Context,
+    tool_config: &ToolConfig,
+    entry: &DirEntry,
+) -> bool {
+    !entry.file_name().to_string_lossy().starts_with(".")
+        || if let Some(cond_spec) = find_condition_spec(
+            entry.path().strip_prefix(root_dir).unwrap(),
+            &config.conditional_files,
+        ) {
+            let skip = match eval_condition(cond_spec, hbs, ctx) {
+                Ok(is_match) => !is_match,
+                Err(e) => {
+                    eprintln!(
+                        "Failed to evaluate condition \"{}\" for {} ({})",
+                        cond_spec.condition,
+                        entry.path().display(),
+                        e
+                    );
+
+                    !tool_config.ignore_checks
+                }
+            };
+
+            if skip && tool_config.verbose {
+                println!("Skipping path:     {}", entry.path().display())
+            }
+
+            // inverting because filter needs false to exclude
+            !skip
+        } else {
+            false
+        }
+}
+
+fn is_not_excluded(
+    root_dir: &Path,
+    config: &Config,
+    tool_config: &ToolConfig,
+    entry: &DirEntry,
+) -> bool {
+    let globbing_path = entry.path().strip_prefix(root_dir).unwrap();
+
+    if let Some(_) = config
+        .exclude
+        .iter()
+        .find(|&glob| glob.is_match(globbing_path))
+    {
+        if tool_config.verbose {
+            println!("Skipping path:     {}", entry.path().display())
+        }
+
+        false
+    } else {
+        true
+    }
+}
+
 fn find_condition_spec<'a>(
     path: &Path,
     conditional_files_specs: &'a Vec<ConditionalFilesSpec<'a>>,
 ) -> Option<&'a ConditionalFilesSpec<'a>> {
     conditional_files_specs
         .iter()
-        .find(|&cond_files_spec| cond_files_spec.matcher.compile_matcher().is_match(path))
+        .find(|&cond_files_spec| cond_files_spec.matcher.is_match(path))
 }
 
 fn eval_condition(
@@ -456,13 +525,37 @@ fn create_entry_target_file_name(
     result
 }
 
-fn strip_handlebars_xt(name: String, is_template: bool) -> String {
-    if is_template {
-        let last_dot_i = name.rfind(".").unwrap();
-        String::from(&name[..last_dot_i])
-    } else {
-        name
+fn is_hbs_template(path: &Path) -> io::Result<bool> {
+    Ok(BufReader::open(path)?
+        .into_iter()
+        .take(*TEMPLATE_INSPECT_MAX_LINES)
+        .find(|line| match line {
+            Ok(line) => {
+                if let Some(start) = line.find("{{") {
+                    if let Some(end) = line.rfind("}}") {
+                        return end > start;
+                    }
+                }
+
+                false
+            }
+            Err(err) => {
+                eprintln!("Failed to read line into the buffer ({})", err);
+
+                false
+            }
+        })
+        .is_some())
+}
+
+fn strip_handlebars_xt(name: String) -> String {
+    if let Some(i) = name.to_lowercase().rfind(".hbs") {
+        if i == name.len() - 4 {
+            return String::from(&name[..i]);
+        }
     }
+
+    name
 }
 
 fn render_line_template(template: &str, handlebars: &Handlebars, ctx: &Context) -> (String, bool) {
@@ -575,7 +668,8 @@ mod tests {
     }
 
     // todo: test_render
-    // todo: test_render_to_file
+    // todo: test_filter_dir_entry
+    // todo: test_is_hbs_template
 
     #[test]
     fn test_render_to_file() {
@@ -623,7 +717,7 @@ mod tests {
             eval_condition(
                 &ConditionalFilesSpec {
                     condition: "{{ simple }}",
-                    matcher: Glob::new("").unwrap()
+                    matcher: Glob::new("").unwrap().compile_matcher()
                 },
                 &HANDLEBARS,
                 &context
@@ -636,7 +730,7 @@ mod tests {
             eval_condition(
                 &ConditionalFilesSpec {
                     condition: "{{ falsy }}",
-                    matcher: Glob::new("").unwrap()
+                    matcher: Glob::new("").unwrap().compile_matcher()
                 },
                 &HANDLEBARS,
                 &context
@@ -649,7 +743,7 @@ mod tests {
             eval_condition(
                 &ConditionalFilesSpec {
                     condition: "{{ asdasd",
-                    matcher: Glob::new("").unwrap()
+                    matcher: Glob::new("").unwrap().compile_matcher()
                 },
                 &HANDLEBARS,
                 &context

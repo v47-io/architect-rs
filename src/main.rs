@@ -39,12 +39,12 @@ use handlebars::Context;
 use serde_json::Value;
 use tempfile::tempdir;
 
-use crate::config::{load_config_file, read_config};
+use crate::config::{load_config_file, read_config, Config};
 use crate::context::build_context;
 use crate::dirs::{create_target_dir, is_valid_target_dir};
-use crate::git::{copy_git_directory, FetchOptions};
+use crate::git::{copy_git_directory, init_git_repository, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
-use crate::utils::ToolConfig;
+use crate::utils::{constants, ToolConfig};
 
 mod args;
 mod config;
@@ -74,8 +74,10 @@ where
     let matches = crate::args::get_matches(args);
 
     let tool_config = ToolConfig {
-        ignore_checks: matches.is_present("ignore-checks"),
-        verbose: matches.is_present("verbose"),
+        no_history: matches.is_present(constants::NO_HISTORY),
+        no_init: matches.is_present(constants::NO_INIT),
+        ignore_checks: matches.is_present(constants::IGNORE_CHECKS),
+        verbose: matches.is_present(constants::VERBOSE),
     };
 
     if tool_config.ignore_checks {
@@ -158,12 +160,16 @@ where
     let render_result = render::render(
         working_dir.path(),
         target_dir.as_path(),
-        &(config.map_or_else(|| vec![], |c| c.conditional_files)),
+        config.as_ref().unwrap_or(&Config::empty()),
         &context,
         &tool_config,
     )?;
 
-    copy_git_directory(working_dir.path(), &target_dir, &tool_config)?;
+    if !tool_config.no_history {
+        copy_git_directory(working_dir.path(), &target_dir, &tool_config)?;
+    } else if !tool_config.no_init {
+        init_git_repository(&target_dir, &tool_config)?;
+    }
 
     if tool_config.verbose {
         println!("Rendered {} files:", render_result.rendered_files.len());
