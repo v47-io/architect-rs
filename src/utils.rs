@@ -110,7 +110,28 @@ pub mod reader {
 
     #[cfg(test)]
     mod tests {
-        // todo: test_buf_reader
+        use std::fs::read_to_string;
+
+        use crate::utils::tests::RESOURCES_DIR;
+
+        use super::*;
+
+        #[test]
+        fn test_buf_reader() -> io::Result<()> {
+            let file_path = RESOURCES_DIR.join("simple-template.input/simple-template.html.hbs");
+
+            let mut content = String::new();
+
+            BufReader::open(&file_path)?.for_each(|line| {
+                content.push_str(&line.unwrap());
+            });
+
+            let check_content = read_to_string(file_path)?;
+
+            assert_eq!(check_content, content);
+
+            Ok(())
+        }
     }
 }
 
@@ -131,8 +152,17 @@ pub fn is_identifier(value: &str) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
+    use std::path::PathBuf;
+
+    use lazy_static::lazy_static;
+
     use super::*;
+
+    lazy_static! {
+        pub static ref RESOURCES_DIR: PathBuf =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-resources");
+    }
 
     #[test]
     fn test_is_identifier() {

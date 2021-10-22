@@ -657,12 +657,11 @@ mod tests {
     use tempfile::{tempdir, TempDir};
 
     use crate::context::UnsafeContext;
+    use crate::utils::tests::RESOURCES_DIR;
 
     use super::*;
 
     lazy_static! {
-        static ref RESOURCES_DIR: PathBuf =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-resources");
         static ref HANDLEBARS: Handlebars<'static> = Handlebars::new();
         static ref TEMP_DIR: TempDir = tempdir().unwrap();
     }
