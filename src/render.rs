@@ -320,6 +320,9 @@ fn build_render_specs(
     tool_config: &ToolConfig,
 ) -> io::Result<HashMap<PathBuf, Vec<RenderSpec>>> {
     let mut render_specs: HashMap<PathBuf, Vec<RenderSpec>> = HashMap::new();
+
+    // We already add the root directory to the stack here so we don't have to deal with it
+    // in the loop body, which would make it even more complex than it already is
     let mut dir_context_stack = vec![DirContext {
         source_path: root_dir.to_path_buf(),
         target_path: Some(target_dir.to_path_buf()),
@@ -327,9 +330,14 @@ fn build_render_specs(
 
     let walk = WalkDir::new(root_dir);
 
-    for entry_result in walk.into_iter().filter_entry(|entry| {
-        include_dir_entry(entry.path(), root_dir, config, hbs, ctx, tool_config)
-    }) {
+    for entry_result in walk
+        .into_iter()
+        .filter_entry(|entry| {
+            include_dir_entry(entry.path(), root_dir, config, hbs, ctx, tool_config)
+        })
+        // We skip the root directory here, otherwise we would have to handle it separately in the loop body
+        .skip(1)
+    {
         let entry = entry_result?;
         let metadata = entry.metadata()?;
 
@@ -780,7 +788,7 @@ mod tests {
     #[test]
     fn test_build_render_specs() -> io::Result<()> {
         let target_temp_dir = tempdir()?;
-        let target_path = target_temp_dir.path();
+        let target_path = target_temp_dir.path().join("my-project");
 
         let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
 
@@ -813,7 +821,7 @@ mod tests {
 
         let render_specs = build_render_specs(
             &source_path,
-            target_path,
+            &target_path,
             &config,
             &HANDLEBARS,
             &context,
@@ -823,6 +831,35 @@ mod tests {
         // todo: actually verify result
         //       test other code paths
         println!("{:?}", render_specs);
+
+        let sep = std::path::MAIN_SEPARATOR;
+
+        let check_target_paths = vec![
+            format!(".hidden-dir{}but-still-included.txt", sep),
+            format!("io{}v47{}test{}file-in-explicit-path.txt", sep, sep, sep),
+            format!("io{}v47{}test{}file-in-generated-path.txt", sep, sep, sep),
+            format!("templates{}override-template.txt", sep),
+            format!("templates{}some-template.txt.hbs", sep),
+        ]
+        .iter()
+        .map(|it| target_path.join(it))
+        .collect::<Vec<PathBuf>>();
+
+        let mut expected_target_paths = check_target_paths.iter().collect::<Vec<&PathBuf>>();
+        expected_target_paths.sort();
+
+        let mut actual_target_paths = render_specs.keys().collect::<Vec<&PathBuf>>();
+        actual_target_paths.sort();
+
+        assert_eq!(expected_target_paths, actual_target_paths);
+
+        let conflict_render_specs = render_specs.get(&check_target_paths[2]).unwrap();
+
+        assert_eq!(2, conflict_render_specs.len());
+
+        let other_render_specs = render_specs.get(&check_target_paths[1]).unwrap();
+
+        assert_eq!(1, other_render_specs.len());
 
         Ok(())
     }
