@@ -182,6 +182,8 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         conditional_files: cond_files_specs,
         include_hidden,
         exclude,
+        render_hbs: json.render_hbs.unwrap_or(false),
+        hbs_xt: read_hbs_xt(json.hbs_extension),
     })
 }
 
@@ -245,6 +247,21 @@ fn check_context_tree<'cfg>(
     }
 }
 
+fn read_hbs_xt(input: Option<&str>) -> String {
+    match input {
+        Some(xt) => {
+            if xt.is_empty() {
+                ".hbs".into()
+            } else if !xt.starts_with(".") {
+                format!(".{}", xt.to_lowercase())
+            } else {
+                xt.to_lowercase()
+            }
+        }
+        None => ".hbs".into(),
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 struct ConfigJson<'cfg> {
     name: Option<&'cfg str>,
@@ -258,6 +275,10 @@ struct ConfigJson<'cfg> {
     #[serde(rename(deserialize = "includeHidden", serialize = "includeHidden"))]
     include_hidden: Option<Vec<&'cfg str>>,
     exclude: Option<Vec<&'cfg str>>,
+    #[serde(rename(deserialize = "renderHbs", serialize = "renderHbs"))]
+    render_hbs: Option<bool>,
+    #[serde(rename(deserialize = "hbsExtension", serialize = "hbsExtension"))]
+    hbs_extension: Option<&'cfg str>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -301,6 +322,8 @@ pub struct Config<'cfg> {
     pub include_hidden: Vec<GlobMatcher>,
     #[serde(skip)]
     pub exclude: Vec<GlobMatcher>,
+    pub render_hbs: bool,
+    pub hbs_xt: String,
 }
 
 impl<'cfg> Config<'cfg> {
@@ -312,6 +335,8 @@ impl<'cfg> Config<'cfg> {
             conditional_files: vec![],
             include_hidden: vec![],
             exclude: vec![],
+            render_hbs: false,
+            hbs_xt: ".hbs".into(),
         }
     }
 }
@@ -449,6 +474,8 @@ mod tests {
             conditional_files: None,
             include_hidden: None,
             exclude: None,
+            render_hbs: None,
+            hbs_extension: None,
         })
         .unwrap();
 
@@ -494,7 +521,9 @@ mod tests {
                 ],
                 conditional_files: vec![],
                 include_hidden: vec![],
-                exclude: vec![]
+                exclude: vec![],
+                render_hbs: false,
+                hbs_xt: ".hbs".into()
             }
         );
 
@@ -506,7 +535,9 @@ mod tests {
                 questions: vec![],
                 conditional_files: vec![],
                 include_hidden: vec![],
-                exclude: vec![]
+                exclude: vec![],
+                render_hbs: false,
+                hbs_xt: ".hbs".into()
             }
         )
     }
@@ -556,6 +587,8 @@ mod tests {
             conditional_files: None,
             include_hidden: None,
             exclude: None,
+            render_hbs: None,
+            hbs_extension: None,
         })
         .unwrap();
 
@@ -567,7 +600,9 @@ mod tests {
                 questions: vec![],
                 conditional_files: vec![],
                 include_hidden: vec![],
-                exclude: vec![]
+                exclude: vec![],
+                render_hbs: false,
+                hbs_xt: ".hbs".into()
             }
         );
 
@@ -600,6 +635,8 @@ mod tests {
             conditional_files: None,
             include_hidden: None,
             exclude: None,
+            render_hbs: None,
+            hbs_extension: None,
         })
         .unwrap();
 
@@ -617,7 +654,9 @@ mod tests {
                 },],
                 conditional_files: vec![],
                 include_hidden: vec![],
-                exclude: vec![]
+                exclude: vec![],
+                render_hbs: false,
+                hbs_xt: ".hbs".into()
             }
         );
 
@@ -650,6 +689,8 @@ mod tests {
             conditional_files: None,
             include_hidden: None,
             exclude: None,
+            render_hbs: None,
+            hbs_extension: None,
         })
         .unwrap();
 
@@ -670,7 +711,9 @@ mod tests {
                 }],
                 conditional_files: vec![],
                 include_hidden: vec![],
-                exclude: vec![]
+                exclude: vec![],
+                render_hbs: false,
+                hbs_xt: ".hbs".into()
             }
         )
     }

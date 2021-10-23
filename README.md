@@ -24,11 +24,14 @@ be supported.
 
 ## Handlebars Templating
 
-Architect uses Handlebars for all the templates in a repository. Any file with the extension `.hbs` will be picked up
-and rendered using Handlebars.
+Architect uses Handlebars to render all templates in a repository. Basically any file is a potential 
+template and will be processed.
+
+Files that are explicitly marked as Handlebars templates by their extension are not rendered, only copied.
+This behavior (and the extension) can be configured in the `.architect.json` file.
 
 Additionally, every file name is a potential Handlebars template. That means you can specify the curled braces in 
-file names to dynamically specify them using your user-specific values.
+file names to dynamically create them using your user-specific values.
 
 __Example:__
 
@@ -173,7 +176,7 @@ write.
 
 ## Usage
 
-```
+```text
 USAGE:
     architect [FLAGS] [OPTIONS] <REPOSITORY> [TARGET]
 

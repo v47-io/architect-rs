@@ -335,14 +335,19 @@ fn build_render_specs(
 
             let source_file_name = entry.file_name().to_string_lossy().to_string();
 
-            let is_template = is_hbs_template(entry.path())?;
+            let is_explicit_template = source_file_name.to_lowercase().ends_with(&config.hbs_xt);
+            let is_template =
+                (is_explicit_template && config.render_hbs) || is_hbs_template(entry.path())?;
 
-            let target_file_name =
-                strip_handlebars_xt(if it_contains_template(&source_file_name) {
-                    create_entry_target_file_name(&source_file_name, hbs, ctx)
-                } else {
-                    source_file_name
-                });
+            let mut target_file_name = if it_contains_template(&source_file_name) {
+                create_entry_target_file_name(&source_file_name, hbs, ctx)
+            } else {
+                source_file_name
+            };
+
+            if is_template || !is_explicit_template {
+                target_file_name = strip_handlebars_xt(target_file_name, &config.hbs_xt);
+            }
 
             let singular_target_path = create_proper_target_path(
                 target_dir,
@@ -585,9 +590,9 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
         .is_some())
 }
 
-fn strip_handlebars_xt(name: String) -> String {
-    if name.to_lowercase().ends_with(".hbs") {
-        String::from(&name[..name.len() - 4])
+fn strip_handlebars_xt(name: String, xt: &str) -> String {
+    if name.to_lowercase().ends_with(xt) {
+        String::from(&name[..name.len() - xt.len()])
     } else {
         name
     }
@@ -702,6 +707,7 @@ mod tests {
     }
 
     // todo: test_render
+    //       don't forget explicit template handling + render_hbs
 
     #[test]
     fn test_include_dir_entry() -> io::Result<()> {
@@ -724,6 +730,8 @@ mod tests {
             ],
             include_hidden: vec![Glob::new(".github").unwrap().compile_matcher()],
             exclude: vec![Glob::new("excluded_file").unwrap().compile_matcher()],
+            render_hbs: false,
+            hbs_xt: ".hbs".into(),
         };
 
         let mut context_map = Map::new();

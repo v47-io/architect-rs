@@ -76,6 +76,22 @@ export interface Config {
      * Note that exclusions have a higher precedence than inclusions and conditional files
      */
     exclude?: string[];
+    /**
+     * Indicates whether to treat explicitly identified Handlebars templates (using their
+     * file extension) as regular templates and render them.
+     *
+     * By default, Handlebars templates that are explicitly identified are not rendered,
+     * rather they are copied as is.
+     *
+     * Note: File names of such files are still treated as templates
+     */
+    renderHbs?: boolean;
+    /**
+     * The extension that is used to explicitly identify Handlebars templates.
+     *
+     * This is specified as a string preceded by a singular dot. The default value is `.hbs`
+     */
+    hbsExtension?: string;
 }
 
 export type Question = SimpleQuestion | SelectionQuestion;
