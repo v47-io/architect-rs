@@ -42,11 +42,10 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
 use handlebars::{Context, Handlebars, RenderError};
-use handlebars_misc_helpers::register;
 use indicatif::{MultiProgress, ProgressBar};
 use lazy_static::lazy_static;
 use path_absolutize::Absolutize;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
 use crate::config::{ConditionalFilesSpec, Config};
 use crate::helpers::PACKAGE_HELPER;
@@ -77,8 +76,7 @@ pub fn render(
     context: &Context,
     tool_config: &ToolConfig,
 ) -> io::Result<RenderResult> {
-    let mut handlebars = Handlebars::new();
-    register(&mut handlebars);
+    let mut handlebars = create_hbs();
     handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
 
     let all_progress = MultiProgress::new();
@@ -98,8 +96,7 @@ pub fn render(
     all_progress.remove(&render_specs_progress);
 
     // Creating new Handlebars instance without helpers that shouldn't be used in templates
-    handlebars = Handlebars::new();
-    register(&mut handlebars);
+    handlebars = create_hbs();
 
     let (rspec_sender, rspec_receiver) = channel::<RenderSpec>();
     let rspec_receiver = Arc::new(Mutex::new(rspec_receiver));
@@ -227,6 +224,13 @@ pub fn render(
     })
 }
 
+fn create_hbs<'a>() -> Handlebars<'a> {
+    let mut instance = Handlebars::new();
+    handlebars_misc_helpers::register(&mut instance);
+
+    instance
+}
+
 fn render_template_to_file(
     source: &Path,
     target: &Path,
@@ -260,10 +264,9 @@ fn build_render_specs(
 
     let walk = WalkDir::new(root_dir);
 
-    for entry_result in walk
-        .into_iter()
-        .filter_entry(|entry| filter_dir_entry(root_dir, config, hbs, ctx, tool_config, entry))
-    {
+    for entry_result in walk.into_iter().filter_entry(|entry| {
+        include_dir_entry(entry.path(), root_dir, config, hbs, ctx, tool_config)
+    }) {
         let entry = entry_result?;
         let metadata = entry.metadata()?;
 
@@ -276,15 +279,15 @@ fn build_render_specs(
 
         if let None = dir_context_stack.last().unwrap().target_path {
             if tool_config.verbose {
-                println!("Skipping path:     {}", entry.path().display())
+                println!("Skipping path:        {}", entry.path().display())
             }
 
             continue;
         }
 
         if tool_config.verbose {
-            println!("Processing path:   {}", entry.path().display());
-            println!("Directory context: {:?}", dir_context_stack.last())
+            println!("Processing path:      {}", entry.path().display());
+            println!("Directory context:    {:?}", dir_context_stack.last())
         }
 
         if metadata.is_dir() {
@@ -367,69 +370,114 @@ fn build_render_specs(
     Ok(render_specs)
 }
 
-fn filter_dir_entry(
+fn include_dir_entry(
+    path: &Path,
     root_dir: &Path,
     config: &Config,
     hbs: &Handlebars,
     ctx: &Context,
     tool_config: &ToolConfig,
-    entry: &DirEntry,
 ) -> bool {
-    is_not_git_dir_in_root(root_dir, entry)
-        && is_not_hidden_or_included(root_dir, config, hbs, ctx, tool_config, entry)
-        && is_not_excluded(root_dir, config, tool_config, entry)
+    is_not_git_dir_in_root(path, root_dir)
+        && is_not_hidden_or_is_included(path, root_dir, config, tool_config)
+        && is_not_excluded(path, root_dir, config, tool_config)
+        && is_conditionally_included(path, root_dir, config, hbs, ctx, tool_config)
 }
 
 #[inline]
-fn is_not_git_dir_in_root(root_dir: &Path, entry: &DirEntry) -> bool {
-    entry.path() != root_dir.join(".git")
+fn is_not_git_dir_in_root(path: &Path, root_dir: &Path) -> bool {
+    path != root_dir.join(".git")
 }
 
-fn is_not_hidden_or_included(
+fn is_not_hidden_or_is_included(
+    path: &Path,
+    root_dir: &Path,
+    config: &Config,
+    tool_config: &ToolConfig,
+) -> bool {
+    path.file_name()
+        .map(|it| !it.to_string_lossy().starts_with("."))
+        .unwrap_or(false)
+        || path
+            .strip_prefix(root_dir)
+            .map(|globbing_path| {
+                let result = config
+                    .include_hidden
+                    .iter()
+                    .find(|&matcher| matcher.is_match(globbing_path))
+                    .is_some();
+
+                if !result && tool_config.verbose {
+                    println!("Skipping hidden path: {}", path.display())
+                }
+
+                result
+            })
+            .unwrap_or_else(|err| {
+                eprintln!(
+                    "Failed to strip root dir prefix from path {} ({})",
+                    path.display(),
+                    err
+                );
+
+                false
+            })
+}
+
+fn is_conditionally_included(
+    path: &Path,
     root_dir: &Path,
     config: &Config,
     hbs: &Handlebars,
     ctx: &Context,
     tool_config: &ToolConfig,
-    entry: &DirEntry,
 ) -> bool {
-    !entry.file_name().to_string_lossy().starts_with(".")
-        || if let Some(cond_spec) = find_condition_spec(
-            entry.path().strip_prefix(root_dir).unwrap(),
-            &config.conditional_files,
-        ) {
-            let skip = match eval_condition(cond_spec, hbs, ctx) {
-                Ok(is_match) => !is_match,
-                Err(e) => {
-                    eprintln!(
-                        "Failed to evaluate condition \"{}\" for {} ({})",
-                        cond_spec.condition,
-                        entry.path().display(),
-                        e
-                    );
+    path.strip_prefix(root_dir)
+        .map(|globbing_path| {
+            if let Some(cond_spec) = find_condition_spec(globbing_path, &config.conditional_files) {
+                let skip = match eval_condition(cond_spec, hbs, ctx) {
+                    Ok(is_match) => !is_match,
+                    Err(e) => {
+                        eprintln!(
+                            "Failed to evaluate condition \"{}\" for {} ({})",
+                            cond_spec.condition,
+                            path.display(),
+                            e
+                        );
 
-                    !tool_config.ignore_checks
+                        !tool_config.ignore_checks
+                    }
+                };
+
+                if skip && tool_config.verbose {
+                    println!("Skipping path:        {}", path.display())
                 }
-            };
 
-            if skip && tool_config.verbose {
-                println!("Skipping path:     {}", entry.path().display())
+                // inverting because filter needs false to exclude
+                !skip
+            } else {
+                // Didn't find a condition spec so file is not excluded
+                true
             }
+        })
+        .unwrap_or_else(|err| {
+            eprintln!(
+                "Failed to strip root dir prefix from path {} ({})",
+                path.display(),
+                err
+            );
 
-            // inverting because filter needs false to exclude
-            !skip
-        } else {
             false
-        }
+        })
 }
 
 fn is_not_excluded(
+    path: &Path,
     root_dir: &Path,
     config: &Config,
     tool_config: &ToolConfig,
-    entry: &DirEntry,
 ) -> bool {
-    let globbing_path = entry.path().strip_prefix(root_dir).unwrap();
+    let globbing_path = path.strip_prefix(root_dir).unwrap();
 
     if let Some(_) = config
         .exclude
@@ -437,7 +485,7 @@ fn is_not_excluded(
         .find(|&glob| glob.is_match(globbing_path))
     {
         if tool_config.verbose {
-            println!("Skipping path:     {}", entry.path().display())
+            println!("Skipping path:        {}", path.display())
         }
 
         false
@@ -460,7 +508,10 @@ fn eval_condition(
     handlebars: &Handlebars,
     context: &Context,
 ) -> Result<bool, RenderError> {
-    match handlebars.render_template_with_context(conditional_files_spec.condition, context) {
+    match handlebars.render_template_with_context(
+        &format!("{{{{ {} }}}}", conditional_files_spec.condition),
+        context,
+    ) {
         Ok(rendered) => Ok(is_truthy(&rendered)),
         Err(e) => Err(e),
     }
@@ -491,15 +542,11 @@ fn get_render_specs_vec<'spec>(
     render_specs: &'spec mut HashMap<PathBuf, Vec<RenderSpec>>,
     target_path: &PathBuf,
 ) -> &'spec mut Vec<RenderSpec> {
-    if render_specs.contains_key(target_path) {
-        render_specs.get_mut(target_path).unwrap()
-    } else {
-        {
-            render_specs.insert(target_path.clone(), vec![]);
-        }
-
-        render_specs.get_mut(target_path).unwrap()
+    if !render_specs.contains_key(target_path) {
+        render_specs.insert(target_path.clone(), vec![]);
     }
+
+    render_specs.get_mut(target_path).unwrap()
 }
 
 fn create_entry_target_dir_name(
@@ -521,8 +568,7 @@ fn create_entry_target_file_name(
     handlebars: &Handlebars,
     context: &Context,
 ) -> String {
-    let (result, _) = render_line_template(&source_name, handlebars, context);
-    result
+    render_line_template(source_name, handlebars, context).0
 }
 
 fn is_hbs_template(path: &Path) -> io::Result<bool> {
@@ -531,8 +577,10 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
         .take(*TEMPLATE_INSPECT_MAX_LINES)
         .find(|line| match line {
             Ok(line) => {
-                if let Some(start) = line.find("{{") {
-                    if let Some(end) = line.rfind("}}") {
+                let trimmed_line = line.trim();
+
+                if let Some(start) = trimmed_line.find("{{") {
+                    if let Some(end) = trimmed_line.rfind("}}") {
                         return end > start;
                     }
                 }
@@ -541,7 +589,6 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
             }
             Err(err) => {
                 eprintln!("Failed to read line into the buffer ({})", err);
-
                 false
             }
         })
@@ -549,13 +596,11 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
 }
 
 fn strip_handlebars_xt(name: String) -> String {
-    if let Some(i) = name.to_lowercase().rfind(".hbs") {
-        if i == name.len() - 4 {
-            return String::from(&name[..i]);
-        }
+    if name.to_lowercase().ends_with(".hbs") {
+        String::from(&name[..name.len() - 4])
+    } else {
+        name
     }
-
-    name
 }
 
 fn render_line_template(template: &str, handlebars: &Handlebars, ctx: &Context) -> (String, bool) {
@@ -667,8 +712,103 @@ mod tests {
     }
 
     // todo: test_render
-    // todo: test_filter_dir_entry
-    // todo: test_is_hbs_template
+
+    #[test]
+    fn test_include_dir_entry() -> io::Result<()> {
+        let temp_root_dir = tempdir()?;
+        let root_dir = temp_root_dir.path();
+
+        let config = Config {
+            name: None,
+            version: None,
+            questions: vec![],
+            conditional_files: vec![
+                ConditionalFilesSpec {
+                    condition: "someValue",
+                    matcher: Glob::new("matched_file").unwrap().compile_matcher(),
+                },
+                ConditionalFilesSpec {
+                    condition: "!someValue",
+                    matcher: Glob::new("unmatched_file").unwrap().compile_matcher(),
+                },
+            ],
+            include_hidden: vec![Glob::new(".github").unwrap().compile_matcher()],
+            exclude: vec![Glob::new("excluded_file").unwrap().compile_matcher()],
+        };
+
+        let mut context_map = Map::new();
+        context_map.insert("someValue".into(), Value::Bool(true));
+
+        let context = UnsafeContext::new(context_map).into();
+
+        let tool_config = ToolConfig {
+            verbose: true,
+            ignore_checks: false,
+            no_history: false,
+            no_init: false,
+        };
+
+        assert!(!include_dir_entry(
+            &root_dir.join(".git"),
+            root_dir,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config
+        ));
+
+        assert!(!include_dir_entry(
+            &root_dir.join(".gradle"),
+            root_dir,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config
+        ));
+
+        assert!(include_dir_entry(
+            &root_dir.join(".github"),
+            root_dir,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config
+        ));
+
+        assert!(include_dir_entry(
+            &root_dir.join("matched_file"),
+            root_dir,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config
+        ));
+
+        assert!(!include_dir_entry(
+            &root_dir.join("unmatched_file"),
+            root_dir,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_hbs_template() -> io::Result<()> {
+        let template_file = RESOURCES_DIR.join("simple-template.input/simple-template.html.hbs");
+
+        assert!(is_hbs_template(&template_file)?);
+
+        let non_template_file =
+            RESOURCES_DIR.join("simple-template.expected/en/simple-template.html");
+
+        assert!(!is_hbs_template(&non_template_file)?);
+
+        Ok(())
+    }
 
     #[test]
     fn test_render_to_file() {
@@ -715,7 +855,7 @@ mod tests {
             true,
             eval_condition(
                 &ConditionalFilesSpec {
-                    condition: "{{ simple }}",
+                    condition: "simple",
                     matcher: Glob::new("").unwrap().compile_matcher()
                 },
                 &HANDLEBARS,
@@ -728,20 +868,7 @@ mod tests {
             false,
             eval_condition(
                 &ConditionalFilesSpec {
-                    condition: "{{ falsy }}",
-                    matcher: Glob::new("").unwrap().compile_matcher()
-                },
-                &HANDLEBARS,
-                &context
-            )
-            .unwrap_or(false)
-        );
-
-        assert_eq!(
-            false,
-            eval_condition(
-                &ConditionalFilesSpec {
-                    condition: "{{ asdasd",
+                    condition: "falsy",
                     matcher: Glob::new("").unwrap().compile_matcher()
                 },
                 &HANDLEBARS,

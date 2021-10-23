@@ -105,7 +105,10 @@ export interface ConditionalFiles {
     /**
      * The condition that decides whether the matched files are created.
      *
-     * This is an expression that is handled by handlebars
+     * This is an expression that is handled by handlebars.
+     *
+     * The expression is automatically wrapped in curly braces (`{{` `}}`) so you
+     * only need to specify the actual content of the expression here
      */
     condition: string;
     /**
