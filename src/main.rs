@@ -105,8 +105,8 @@ where
 
     let target_dir = create_target_dir(
         &env::current_dir()?,
-        matches.value_of("TARGET"),
         &template_spec,
+        matches.value_of("TARGET"),
     )?;
 
     if !is_valid_target_dir(&target_dir)? {
@@ -159,7 +159,7 @@ where
 
     let render_result = render::render(
         working_dir.path(),
-        target_dir.as_path(),
+        &target_dir,
         config.as_ref().unwrap_or(&Config::empty()),
         &context,
         &tool_config,

@@ -36,32 +36,38 @@ use std::io::Error;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
+use path_absolutize::Absolutize;
+
 use crate::spec::TemplateSpec;
 
 pub fn create_target_dir(
     base_dir: &Path,
-    target_match: Option<&str>,
     template_spec: &TemplateSpec,
+    target_override: Option<&str>,
 ) -> io::Result<PathBuf> {
-    if let Some(target_dir_raw) = target_match {
+    if let Some(target_dir_raw) = target_override {
         let tmp_path = Path::new(target_dir_raw.trim());
         if tmp_path.is_absolute() {
-            Ok(tmp_path.to_path_buf().canonicalize()?)
+            create_dir_all(tmp_path)?;
+            Ok(tmp_path.to_path_buf())
         } else {
-            let tmp_result = base_dir.join(target_dir_raw);
-            create_dir_all(&tmp_result)?;
+            let result = base_dir.join(target_dir_raw).absolutize()?.to_path_buf();
+            create_dir_all(&result)?;
 
-            Ok(tmp_result.canonicalize()?)
+            Ok(result)
         }
     } else {
         match template_spec {
-            TemplateSpec::Local(template_path) => {
-                let result = base_dir.join(template_path.file_name().unwrap());
-                create_dir_all(&result)?;
+            TemplateSpec::Local(template_path) => match template_path.file_name() {
+                Some(file_name) => {
+                    let result = base_dir.join(file_name).absolutize()?.to_path_buf();
+                    create_dir_all(&result)?;
 
-                Ok(result.canonicalize()?)
-            }
-            TemplateSpec::Remote(remote_spec) => {
+                    Ok(result)
+                }
+                None => create_err(template_spec),
+            },
+            &TemplateSpec::Remote(remote_spec) => {
                 if let Some(slash_index) = remote_spec.rfind('/') {
                     let dir_name = if let Some(dot_git_index) = remote_spec.rfind(".git") {
                         remote_spec[slash_index + 1..dot_git_index].to_string()
@@ -69,18 +75,12 @@ pub fn create_target_dir(
                         remote_spec[slash_index + 1..].to_string()
                     };
 
-                    let result = base_dir.join(dir_name);
+                    let result = base_dir.join(dir_name).absolutize()?.to_path_buf();
                     create_dir_all(&result)?;
 
-                    Ok(result.canonicalize()?)
+                    Ok(result)
                 } else {
-                    Err(Error::new(
-                        ErrorKind::InvalidInput,
-                        format!(
-                            "Failed to extract target directory name from template specification \"{}\"\n",
-                            template_spec
-                        ),
-                    ))
+                    create_err(template_spec)
                 }
             }
         }
@@ -106,8 +106,121 @@ pub fn is_valid_target_dir(path: &Path) -> io::Result<bool> {
     }
 }
 
+fn create_err(template_spec: &TemplateSpec) -> Result<PathBuf, Error> {
+    Err(Error::new(
+        ErrorKind::InvalidInput,
+        format!(
+            "Failed to extract target directory name from template specification \"{}\"\n",
+            template_spec
+        ),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
-    // todo: test_create_target_dir
-    // todo: test_is_valid_target_dir
+    use std::fs;
+    use std::path::PathBuf;
+    use std::str::FromStr;
+
+    use path_absolutize::Absolutize;
+    use tempfile::tempdir;
+
+    use super::*;
+
+    #[test]
+    fn test_create_target_dir() -> io::Result<()> {
+        let base_dir = tempdir()?;
+
+        let abs_target_override =
+            PathBuf::from(format!("{}/some-directory", base_dir.path().display()))
+                .absolutize()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+
+        assert_eq!(
+            PathBuf::from_str(&abs_target_override).unwrap(),
+            create_target_dir(
+                base_dir.path(),
+                &TemplateSpec::Remote(""),
+                Some(&abs_target_override)
+            )?
+        );
+
+        assert!(PathBuf::from(abs_target_override).exists());
+
+        let rel_target_override = "another-directory";
+
+        assert_eq!(
+            base_dir
+                .path()
+                .join(rel_target_override)
+                .absolutize()
+                .unwrap()
+                .to_path_buf(),
+            create_target_dir(
+                base_dir.path(),
+                &TemplateSpec::Remote(""),
+                Some(&rel_target_override)
+            )?
+        );
+
+        let valid_local_spec = TemplateSpec::Local(PathBuf::from("/some/dir/project-name"));
+
+        let local_check_path = base_dir
+            .path()
+            .join("project-name")
+            .absolutize()
+            .unwrap()
+            .to_path_buf();
+
+        assert_eq!(
+            local_check_path,
+            create_target_dir(base_dir.path(), &valid_local_spec, None)?
+        );
+
+        assert!(local_check_path.exists());
+
+        let valid_remote_spec =
+            TemplateSpec::Remote("git@github.com:v47-io/another-project-name.git");
+
+        let remote_check_path = base_dir
+            .path()
+            .join("another-project-name")
+            .absolutize()
+            .unwrap()
+            .to_path_buf();
+
+        assert_eq!(
+            remote_check_path,
+            create_target_dir(base_dir.path(), &valid_remote_spec, None)?
+        );
+
+        assert!(remote_check_path.exists());
+
+        let invalid_local_spec = TemplateSpec::Local(PathBuf::from("/"));
+
+        assert!(create_target_dir(base_dir.path(), &invalid_local_spec, None).is_err());
+
+        let invalid_remote_spec = TemplateSpec::Remote("git@github.com:project-name.git");
+
+        assert!(create_target_dir(base_dir.path(), &invalid_remote_spec, None).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_valid_target_dir() -> io::Result<()> {
+        let dir = tempdir()?;
+
+        assert!(is_valid_target_dir(dir.path())?);
+
+        let file_path = dir.path().join("random_file");
+        fs::write(file_path, "test")?;
+
+        assert!(!is_valid_target_dir(dir.path())?);
+        assert!(!is_valid_target_dir(&dir.path().join("../.tmp000000"))?);
+
+        Ok(())
+    }
 }
