@@ -576,17 +576,7 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
         .into_iter()
         .take(*TEMPLATE_INSPECT_MAX_LINES)
         .find(|line| match line {
-            Ok(line) => {
-                let trimmed_line = line.trim();
-
-                if let Some(start) = trimmed_line.find("{{") {
-                    if let Some(end) = trimmed_line.rfind("}}") {
-                        return end > start;
-                    }
-                }
-
-                false
-            }
+            Ok(line) => it_contains_template(line.trim()),
             Err(err) => {
                 eprintln!("Failed to read line into the buffer ({})", err);
                 false
@@ -786,6 +776,15 @@ mod tests {
 
         assert!(!include_dir_entry(
             &root_dir.join("unmatched_file"),
+            root_dir,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config
+        ));
+
+        assert!(!include_dir_entry(
+            &root_dir.join("excluded_file"),
             root_dir,
             &config,
             &HANDLEBARS,
