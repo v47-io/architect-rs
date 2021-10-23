@@ -390,7 +390,7 @@ fn build_render_specs(
             });
 
             dir_context_stack.push(DirContext {
-                source_path: entry.path().to_path_buf(),
+                source_path: entry.path().canonicalize()?,
                 target_path,
             })
         } else {
@@ -428,7 +428,7 @@ fn build_render_specs(
             let render_specs_vec = get_render_specs_vec(&mut render_specs, &singular_target_path);
 
             render_specs_vec.push(RenderSpec {
-                source: entry.into_path(),
+                source: entry.into_path().canonicalize()?,
                 target: get_numbered_path(singular_target_path, render_specs_vec.len()),
                 is_template,
             })
@@ -765,12 +765,67 @@ mod tests {
     use super::*;
 
     lazy_static! {
-        static ref HANDLEBARS: Handlebars<'static> = Handlebars::new();
+        static ref HANDLEBARS: Handlebars<'static> = (|| {
+            let mut handlebars = create_hbs();
+            handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
+
+            handlebars
+        })();
         static ref TEMP_DIR: TempDir = tempdir().unwrap();
     }
 
     // todo: test_render
     //       don't forget explicit template handling + render_hbs
+
+    #[test]
+    fn test_build_render_specs() -> io::Result<()> {
+        let target_temp_dir = tempdir()?;
+        let target_path = target_temp_dir.path();
+
+        let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
+
+        let mut context_map = Map::new();
+        let mut author_map = Map::new();
+        author_map.insert("name".into(), Value::String("Some dude!".into()));
+
+        context_map.insert("author".into(), Value::Object(author_map));
+        context_map.insert("somePackage".into(), Value::String("io.v47.test".into()));
+
+        let context = UnsafeContext::new(context_map).into();
+
+        let config = Config {
+            name: Some("Auto Template"),
+            version: Some("0.x"),
+            questions: vec![],
+            include_hidden: vec![Glob::new(".hidden-dir").unwrap().compile_matcher()],
+            exclude: vec![Glob::new("*excluded*").unwrap().compile_matcher()],
+            conditional_files: vec![],
+            render_hbs: true,
+            hbs_xt: ".handlebars".into(),
+        };
+
+        let tool_config = ToolConfig {
+            no_history: false,
+            no_init: false,
+            ignore_checks: false,
+            verbose: true,
+        };
+
+        let render_specs = build_render_specs(
+            &source_path,
+            target_path,
+            &config,
+            &HANDLEBARS,
+            &context,
+            &tool_config,
+        )?;
+
+        // todo: actually verify result
+        //       test other code paths
+        println!("{:?}", render_specs);
+
+        Ok(())
+    }
 
     #[test]
     fn test_include_dir_entry() -> io::Result<()> {

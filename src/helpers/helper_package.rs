@@ -38,6 +38,8 @@ use serde_json::Value as Json;
 #[derive(Clone, Copy)]
 pub struct PackageHelper;
 
+pub const PACKAGE_HELPER: PackageHelper = PackageHelper {};
+
 impl HelperDef for PackageHelper {
     fn call<'reg: 'rc, 'rc>(
         &self,
@@ -58,13 +60,26 @@ impl HelperDef for PackageHelper {
             )),
         }?;
 
-        let value_split: Vec<&str> = param_value.split(".").collect();
-        let final_value = value_split.join(&String::from(std::path::MAIN_SEPARATOR));
-
-        out.write(&final_value)?;
+        out.write(&package_helper_impl(param_value))?;
 
         Ok(())
     }
 }
 
-pub static PACKAGE_HELPER: PackageHelper = PackageHelper {};
+fn package_helper_impl(input: &str) -> String {
+    let value_split: Vec<&str> = input.split(".").collect();
+    value_split.join(&String::from(std::path::MAIN_SEPARATOR))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_package_helper_impl() {
+        assert_eq!(
+            vec!["io", "v47", "test"].join(&String::from(std::path::MAIN_SEPARATOR)),
+            package_helper_impl("io.v47.test")
+        );
+    }
+}
