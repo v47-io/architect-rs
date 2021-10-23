@@ -58,8 +58,8 @@ impl HelperDef for PackageHelper {
             )),
         }?;
 
-        let value_split: Vec<&str> = param_value.split("/").collect();
-        let final_value = value_split.join(".");
+        let value_split: Vec<&str> = param_value.split(".").collect();
+        let final_value = value_split.join(&String::from(std::path::MAIN_SEPARATOR));
 
         out.write(&final_value)?;
 
