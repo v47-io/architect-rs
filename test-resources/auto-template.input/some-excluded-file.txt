@@ -1,0 +1,3 @@
+Hello {{ author.name }}
+
+I'm an excluded file, I shouldn't exist in the target

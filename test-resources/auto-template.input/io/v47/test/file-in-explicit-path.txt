@@ -1,0 +1,3 @@
+Hello {{ author.name }}.
+
+This was in the explicit path
