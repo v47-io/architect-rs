@@ -45,9 +45,11 @@ use handlebars::{Context, Handlebars, RenderError};
 use indicatif::{MultiProgress, ProgressBar};
 use lazy_static::lazy_static;
 use path_absolutize::Absolutize;
+use serde_json::{Map, Value};
 use walkdir::WalkDir;
 
 use crate::config::{ConditionalFilesSpec, Config};
+use crate::context::UnsafeContext;
 use crate::helpers::PACKAGE_HELPER;
 use crate::utils::reader::BufReader;
 use crate::utils::{ToolConfig, NEW_LINE_REGEX};
@@ -124,11 +126,13 @@ pub fn render(
                                 render_spec.target.display()
                             ));
 
+                            let file_context = build_file_context(context, &render_spec, root_dir);
+
                             match render_template_to_file(
                                 &render_spec.source,
                                 &render_spec.target,
                                 handlebars,
-                                context,
+                                &file_context,
                             ) {
                                 Ok(_) => rendered_files.lock().unwrap().push(render_spec),
                                 Err(err) => {
@@ -229,6 +233,65 @@ fn create_hbs<'a>() -> Handlebars<'a> {
     handlebars_misc_helpers::register(&mut instance);
 
     instance
+}
+
+fn build_file_context(base_ctx: &Context, render_spec: &RenderSpec, root_dir: &Path) -> Context {
+    let mut context_map = match base_ctx.data() {
+        Value::Object(map) => map.clone(),
+        wrong_value @ _ => panic!(
+            "Context data should be Value::Object, not {:?}",
+            wrong_value
+        ),
+    };
+
+    let mut file_map = Map::new();
+    file_map.insert(
+        "rootDir".into(),
+        Value::String(root_dir.to_string_lossy().into()),
+    );
+    file_map.insert(
+        "sourceName".into(),
+        Value::String(
+            render_spec
+                .source
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .into(),
+        ),
+    );
+    file_map.insert(
+        "sourcePath".into(),
+        Value::String(render_spec.source.to_string_lossy().into()),
+    );
+    file_map.insert(
+        "targetName".into(),
+        Value::String(
+            render_spec
+                .target
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .into(),
+        ),
+    );
+    file_map.insert(
+        "targetPath".into(),
+        Value::String(render_spec.target.to_string_lossy().into()),
+    );
+
+    if !context_map.contains_key("__template__") {
+        context_map.insert("__template__".into(), Value::Object(Map::new()));
+    }
+
+    let template_map = match context_map.get_mut("__template__") {
+        Some(Value::Object(map)) => map,
+        _ => panic!(),
+    };
+
+    template_map.insert("file".into(), Value::Object(file_map));
+
+    UnsafeContext::new(context_map).into()
 }
 
 fn render_template_to_file(
