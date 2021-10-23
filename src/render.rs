@@ -718,7 +718,7 @@ mod tests {
                     matcher: Glob::new("matched_file").unwrap().compile_matcher(),
                 },
                 ConditionalFilesSpec {
-                    condition: "!someValue",
+                    condition: "not someValue",
                     matcher: Glob::new("unmatched_file").unwrap().compile_matcher(),
                 },
             ],
