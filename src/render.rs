@@ -333,7 +333,15 @@ fn build_render_specs(
     for entry_result in walk
         .into_iter()
         .filter_entry(|entry| {
-            include_dir_entry(entry.path(), root_dir, config, hbs, ctx, tool_config)
+            include_dir_entry(
+                entry.path(),
+                entry.metadata().map_or(false, |meta| meta.is_dir()),
+                root_dir,
+                config,
+                hbs,
+                ctx,
+                tool_config,
+            )
         })
         // We skip the root directory here, otherwise we would have to handle it separately in the loop body
         .skip(1)
@@ -448,6 +456,7 @@ fn build_render_specs(
 
 fn include_dir_entry(
     path: &Path,
+    path_is_dir: bool,
     root_dir: &Path,
     config: &Config,
     hbs: &Handlebars,
@@ -455,7 +464,7 @@ fn include_dir_entry(
     tool_config: &ToolConfig,
 ) -> bool {
     is_not_git_dir_in_root(path, root_dir)
-        && is_not_hidden_or_is_included(path, root_dir, config, tool_config)
+        && is_not_hidden_or_is_included(path, path_is_dir, root_dir, config, tool_config)
         && is_not_excluded(path, root_dir, config, tool_config)
         && is_conditionally_included(path, root_dir, config, hbs, ctx, tool_config)
 }
@@ -467,27 +476,31 @@ fn is_not_git_dir_in_root(path: &Path, root_dir: &Path) -> bool {
 
 fn is_not_hidden_or_is_included(
     path: &Path,
+    path_is_dir: bool,
     root_dir: &Path,
     config: &Config,
     tool_config: &ToolConfig,
 ) -> bool {
-    path.file_name()
-        .map(|it| !it.to_string_lossy().starts_with("."))
-        .unwrap_or(false)
+    path_is_dir
         || path
             .strip_prefix(root_dir)
             .map(|globbing_path| {
-                let result = config
-                    .include_hidden
+                globbing_path
                     .iter()
-                    .find(|&matcher| matcher.is_match(globbing_path))
-                    .is_some();
+                    .all(|name| !name.to_string_lossy().starts_with("."))
+                    || (|| {
+                        let result = config
+                            .include_hidden
+                            .iter()
+                            .find(|&matcher| matcher.is_match(globbing_path))
+                            .is_some();
 
-                if !result && tool_config.verbose {
-                    println!("Skipping hidden path: {}", path.display())
-                }
+                        if !result && tool_config.verbose {
+                            println!("Skipping hidden path: {}", path.display())
+                        }
 
-                result
+                        result
+                    })()
             })
             .unwrap_or_else(|err| {
                 eprintln!(
@@ -805,7 +818,7 @@ mod tests {
             name: Some("Auto Template"),
             version: Some("0.x"),
             questions: vec![],
-            include_hidden: vec![Glob::new(".hidden-dir").unwrap().compile_matcher()],
+            include_hidden: vec![Glob::new("**/*still-included*").unwrap().compile_matcher()],
             exclude: vec![Glob::new("*excluded*").unwrap().compile_matcher()],
             conditional_files: vec![],
             render_hbs: true,
@@ -854,11 +867,16 @@ mod tests {
         assert_eq!(expected_target_paths, actual_target_paths);
 
         let conflict_render_specs = render_specs.get(&check_target_paths[2]).unwrap();
-
         assert_eq!(2, conflict_render_specs.len());
+        assert_eq!(
+            1,
+            conflict_render_specs
+                .iter()
+                .filter(|&it| it.is_template)
+                .count()
+        );
 
         let other_render_specs = render_specs.get(&check_target_paths[1]).unwrap();
-
         assert_eq!(1, other_render_specs.len());
 
         Ok(())
@@ -903,6 +921,7 @@ mod tests {
 
         assert!(!include_dir_entry(
             &root_dir.join(".git"),
+            true,
             root_dir,
             &config,
             &HANDLEBARS,
@@ -911,7 +930,8 @@ mod tests {
         ));
 
         assert!(!include_dir_entry(
-            &root_dir.join(".gradle"),
+            &root_dir.join(".gradle/build-cache"),
+            false,
             root_dir,
             &config,
             &HANDLEBARS,
@@ -921,6 +941,7 @@ mod tests {
 
         assert!(include_dir_entry(
             &root_dir.join(".github"),
+            true,
             root_dir,
             &config,
             &HANDLEBARS,
@@ -930,6 +951,7 @@ mod tests {
 
         assert!(include_dir_entry(
             &root_dir.join("matched_file"),
+            false,
             root_dir,
             &config,
             &HANDLEBARS,
@@ -939,6 +961,7 @@ mod tests {
 
         assert!(!include_dir_entry(
             &root_dir.join("unmatched_file"),
+            false,
             root_dir,
             &config,
             &HANDLEBARS,
@@ -948,6 +971,7 @@ mod tests {
 
         assert!(!include_dir_entry(
             &root_dir.join("excluded_file"),
+            false,
             root_dir,
             &config,
             &HANDLEBARS,
