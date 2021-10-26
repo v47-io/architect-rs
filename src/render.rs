@@ -566,21 +566,31 @@ fn is_not_excluded(
     config: &Config,
     tool_config: &ToolConfig,
 ) -> bool {
-    let globbing_path = path.strip_prefix(root_dir).unwrap();
+    path.strip_prefix(root_dir)
+        .map(|globbing_path| {
+            if let Some(_) = config
+                .exclude
+                .iter()
+                .find(|&glob| glob.is_match(globbing_path))
+            {
+                if tool_config.verbose {
+                    println!("Skipping path:        {}", path.display())
+                }
 
-    if let Some(_) = config
-        .exclude
-        .iter()
-        .find(|&glob| glob.is_match(globbing_path))
-    {
-        if tool_config.verbose {
-            println!("Skipping path:        {}", path.display())
-        }
+                false
+            } else {
+                true
+            }
+        })
+        .unwrap_or_else(|err| {
+            eprintln!(
+                "Failed to strip root dir prefix from path {} ({})",
+                path.display(),
+                err
+            );
 
-        false
-    } else {
-        true
-    }
+            false
+        })
 }
 
 fn find_condition_spec<'a>(
