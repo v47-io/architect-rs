@@ -856,6 +856,14 @@ mod tests {
         );
         assert_eq!(2, render_conflict.sources.len());
 
+        let override_template_path = target_path
+            .join("templates/override-template.txt.handlebars")
+            .absolutize()?
+            .to_path_buf();
+
+        assert!(override_template_path.exists());
+        assert!(is_hbs_template(&override_template_path)?);
+
         Ok(())
     }
 
