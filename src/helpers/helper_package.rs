@@ -67,7 +67,7 @@ impl HelperDef for PackageHelper {
 }
 
 fn package_helper_impl(input: &str) -> String {
-    let value_split: Vec<&str> = input.split(".").collect();
+    let value_split: Vec<&str> = input.split('.').collect();
     value_split.join(&String::from(std::path::MAIN_SEPARATOR))
 }
 

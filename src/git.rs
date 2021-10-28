@@ -80,15 +80,12 @@ pub fn fetch(template_spec: &TemplateSpec, target: &Path, options: FetchOptions)
         });
         command.arg(target.as_os_str());
 
-        match options.branch {
-            Some(branch) => {
-                command.args(&["--branch", branch]);
-            }
-            _ => (),
+        if let Some(branch) = options.branch {
+            command.args(&["--branch", branch]);
         }
 
         let mut child = command.spawn()?;
-        while let None = child.try_wait()? {}
+        while child.try_wait()?.is_none() {}
     }
 
     Ok(())
@@ -102,10 +99,7 @@ fn is_git_repo(path: &Path, verbose: bool) -> bool {
         );
     }
 
-    let result = match Repository::open(path) {
-        Ok(_) => true,
-        Err(_) => false,
-    };
+    let result = Repository::open(path).is_ok();
 
     if verbose {
         println!(
@@ -133,10 +127,8 @@ pub fn copy_git_directory(
 
         copy_dir(parent_dir.join(".git"), target_dir.join(".git"))?;
         remove_remotes(target_dir);
-    } else {
-        if tool_config.verbose {
-            println!("Template not a Git repository. Not copying .git directory to target")
-        }
+    } else if tool_config.verbose {
+        println!("Template not a Git repository. Not copying .git directory to target")
     }
 
     Ok(())
@@ -147,14 +139,15 @@ fn remove_remotes(dir: &Path) {
         Ok(repo) => {
             repo.remotes()
                 .map(|remotes| {
-                    remotes.iter().filter_map(|it| it).for_each(|remote| {
-                        match repo.remote_delete(remote) {
+                    remotes
+                        .iter()
+                        .flatten()
+                        .for_each(|remote| match repo.remote_delete(remote) {
                             Ok(_) => (),
                             Err(err) => {
                                 eprintln!("Failed to remove remote {} ({})", remote, err);
                             }
-                        }
-                    })
+                        })
                 })
                 .unwrap_or_else(|err| {
                     eprintln!("Failed to retrieve remotes ({})", err);

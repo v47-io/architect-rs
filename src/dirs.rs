@@ -90,14 +90,7 @@ pub fn create_target_dir(
 pub fn is_valid_target_dir(path: &Path) -> io::Result<bool> {
     if metadata(path).is_ok() {
         if path.is_dir() {
-            let mut is_empty = true;
-
-            for _ in path.read_dir()? {
-                is_empty = false;
-                break;
-            }
-
-            Ok(is_empty)
+            Ok(path.read_dir()?.next().is_none())
         } else {
             Ok(false)
         }
@@ -161,7 +154,7 @@ mod tests {
             create_target_dir(
                 base_dir.path(),
                 &TemplateSpec::Remote(""),
-                Some(&rel_target_override)
+                Some(rel_target_override)
             )?
         );
 

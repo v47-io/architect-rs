@@ -52,9 +52,9 @@ impl UnsafeContext {
     }
 }
 
-impl Into<Context> for UnsafeContext {
-    fn into(self) -> Context {
-        unsafe { transmute(self) }
+impl From<UnsafeContext> for Context {
+    fn from(uc: UnsafeContext) -> Self {
+        unsafe { transmute(uc) }
     }
 }
 
@@ -86,7 +86,7 @@ fn ask_for_text(question: &Question, must_be_identifier: bool) -> io::Result<Val
     let prompt = question
         .pretty
         .map(|it| it.to_string())
-        .unwrap_or(question.path.names().join("."));
+        .unwrap_or_else(|| question.path.names().join("."));
 
     loop {
         let result_text = Input::<String>::new()
@@ -95,7 +95,7 @@ fn ask_for_text(question: &Question, must_be_identifier: bool) -> io::Result<Val
 
         let result_trimmed = result_text.trim();
 
-        if must_be_identifier && !result_trimmed.split(".").all(|it| is_identifier(it)) {
+        if must_be_identifier && !result_trimmed.split('.').all(|it| is_identifier(it)) {
             eprintln!("Not a valid identifier: {}", result_trimmed);
             continue;
         } else if result_trimmed.is_empty() {
@@ -111,14 +111,14 @@ fn ask_for_option(question: &Question) -> io::Result<Value> {
     Confirm::new()
         .with_prompt(question.pretty.unwrap_or(&question.path.names().join(".")))
         .interact()
-        .map(|value| Value::Bool(value))
+        .map(Value::Bool)
 }
 
 fn ask_for_selection(question: &Question, items: &[&str], multi_select: bool) -> io::Result<Value> {
     let prompt = question
         .pretty
         .map(|it| it.to_string())
-        .unwrap_or(question.path.names().join("."));
+        .unwrap_or_else(|| question.path.names().join("."));
 
     let selection = if multi_select {
         MultiSelect::new().with_prompt(prompt).interact()?

@@ -179,7 +179,7 @@ where
             .for_each(|render_spec| println!("  - {}", render_spec.target.display()));
     }
 
-    if render_result.conflicts.len() > 0 {
+    if !render_result.conflicts.is_empty() {
         eprintln!("There were conflicts:");
         render_result.conflicts.iter().for_each(|conflict| {
             eprintln!("  - {}:", conflict.intended_target.display());

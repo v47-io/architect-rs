@@ -59,7 +59,7 @@ lazy_static! {
         if let Ok(Ok(value)) = var("RENDER_PARALLELISM").map(|raw| usize::from_str(&raw)) {
             value
         } else {
-            min(1, max(4, num_cpus::get() / 2))
+            max(1, min(4, num_cpus::get() / 2))
         };
 
     static ref TEMPLATE_INSPECT_MAX_LINES: usize =
@@ -238,7 +238,7 @@ fn create_hbs<'a>() -> Handlebars<'a> {
 fn build_file_context(base_ctx: &Context, render_spec: &RenderSpec, root_dir: &Path) -> Context {
     let mut context_map = match base_ctx.data() {
         Value::Object(map) => map.clone(),
-        wrong_value @ _ => panic!(
+        wrong_value => panic!(
             "Context data should be Value::Object, not {:?}",
             wrong_value
         ),
@@ -356,7 +356,7 @@ fn build_render_specs(
             dir_context_stack.pop();
         }
 
-        if let None = dir_context_stack.last().unwrap().target_path {
+        if dir_context_stack.last().unwrap().target_path.is_none() {
             if tool_config.verbose {
                 println!("Skipping path:        {}", entry.path().display())
             }
@@ -485,22 +485,23 @@ fn is_not_hidden_or_is_included(
         || path
             .strip_prefix(root_dir)
             .map(|globbing_path| {
+                let check_glob = || {
+                    let result = config
+                        .include_hidden
+                        .iter()
+                        .any(|matcher| matcher.is_match(globbing_path));
+
+                    if !result && tool_config.verbose {
+                        println!("Skipping hidden path: {}", path.display())
+                    }
+
+                    result
+                };
+
                 globbing_path
                     .iter()
-                    .all(|name| !name.to_string_lossy().starts_with("."))
-                    || (|| {
-                        let result = config
-                            .include_hidden
-                            .iter()
-                            .find(|&matcher| matcher.is_match(globbing_path))
-                            .is_some();
-
-                        if !result && tool_config.verbose {
-                            println!("Skipping hidden path: {}", path.display())
-                        }
-
-                        result
-                    })()
+                    .all(|name| !name.to_string_lossy().starts_with('.'))
+                    || check_glob()
             })
             .unwrap_or_else(|err| {
                 eprintln!(
@@ -568,10 +569,10 @@ fn is_not_excluded(
 ) -> bool {
     path.strip_prefix(root_dir)
         .map(|globbing_path| {
-            if let Some(_) = config
+            if config
                 .exclude
                 .iter()
-                .find(|&glob| glob.is_match(globbing_path))
+                .any(|glob| glob.is_match(globbing_path))
             {
                 if tool_config.verbose {
                     println!("Skipping path:        {}", path.display())
@@ -595,7 +596,7 @@ fn is_not_excluded(
 
 fn find_condition_spec<'a>(
     path: &Path,
-    conditional_files_specs: &'a Vec<ConditionalFilesSpec<'a>>,
+    conditional_files_specs: &'a [ConditionalFilesSpec<'a>],
 ) -> Option<&'a ConditionalFilesSpec<'a>> {
     conditional_files_specs
         .iter()
@@ -639,10 +640,10 @@ fn it_contains_template(value: &str) -> bool {
 
 fn get_render_specs_vec<'spec>(
     render_specs: &'spec mut HashMap<PathBuf, Vec<RenderSpec>>,
-    target_path: &PathBuf,
+    target_path: &Path,
 ) -> &'spec mut Vec<RenderSpec> {
     if !render_specs.contains_key(target_path) {
-        render_specs.insert(target_path.clone(), vec![]);
+        render_specs.insert(target_path.to_path_buf(), vec![]);
     }
 
     render_specs.get_mut(target_path).unwrap()
@@ -674,14 +675,13 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
     Ok(BufReader::open(path)?
         .into_iter()
         .take(*TEMPLATE_INSPECT_MAX_LINES)
-        .find(|line| match line {
+        .any(|line| match line {
             Ok(line) => it_contains_template(line.trim()),
             Err(err) => {
                 eprintln!("Failed to read line into the buffer ({})", err);
                 false
             }
-        })
-        .is_some())
+        }))
 }
 
 fn strip_handlebars_xt(name: String, xt: &str) -> String {
@@ -740,7 +740,7 @@ fn get_numbered_path(base_path: PathBuf, number: usize) -> PathBuf {
         base_path
     } else {
         let file_name = base_path.file_name().unwrap().to_string_lossy().to_string();
-        let numbered_name = if let Some(dot_i) = file_name.rfind(".") {
+        let numbered_name = if let Some(dot_i) = file_name.rfind('.') {
             format!(
                 "{} ({}).{}",
                 file_name[..dot_i].to_string(),
@@ -784,6 +784,7 @@ pub struct RenderConflict {
 }
 
 #[cfg(test)]
+#[allow(clippy::redundant_closure_call)]
 mod tests {
     use std::fs::read_to_string;
 
@@ -1162,31 +1163,25 @@ mod tests {
 
         let context = UnsafeContext::new(context_map).into();
 
-        assert_eq!(
-            true,
-            eval_condition(
-                &ConditionalFilesSpec {
-                    condition: "simple",
-                    matcher: Glob::new("").unwrap().compile_matcher()
-                },
-                &HANDLEBARS,
-                &context
-            )
-            .unwrap_or(false)
-        );
+        assert!(eval_condition(
+            &ConditionalFilesSpec {
+                condition: "simple",
+                matcher: Glob::new("").unwrap().compile_matcher()
+            },
+            &HANDLEBARS,
+            &context
+        )
+        .unwrap_or(false));
 
-        assert_eq!(
-            false,
-            eval_condition(
-                &ConditionalFilesSpec {
-                    condition: "falsy",
-                    matcher: Glob::new("").unwrap().compile_matcher()
-                },
-                &HANDLEBARS,
-                &context
-            )
-            .unwrap_or(false)
-        );
+        assert!(!eval_condition(
+            &ConditionalFilesSpec {
+                condition: "falsy",
+                matcher: Glob::new("").unwrap().compile_matcher()
+            },
+            &HANDLEBARS,
+            &context
+        )
+        .unwrap_or(false));
     }
 
     #[test]
@@ -1252,12 +1247,12 @@ mod tests {
 
         assert_eq!(
             PathBuf::from("some/path.xml"),
-            get_numbered_path(path_with_parent.clone(), 0)
+            get_numbered_path(path_with_parent, 0)
         );
 
         assert_eq!(
             PathBuf::from("just-a-random-file"),
-            get_numbered_path(path_without_extension.clone(), 0)
+            get_numbered_path(path_without_extension, 0)
         );
     }
 }

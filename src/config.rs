@@ -50,7 +50,7 @@ pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Resul
         )
     }
 
-    if let Ok(_) = metadata(&config_file_path) {
+    if metadata(&config_file_path).is_ok() {
         Ok(Some(read_to_string(config_file_path)?))
     } else {
         Ok(None)
@@ -64,7 +64,7 @@ pub fn read_config(input: &str) -> io::Result<Config> {
 
     let questions = json
         .questions
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .iter()
         .filter_map(|raw_question| {
             let path = match QuestionPath::parse(raw_question.name) {
@@ -84,7 +84,7 @@ pub fn read_config(input: &str) -> io::Result<Config> {
                 return None;
             }
 
-            if !check_context_tree(&mut context_tree, &path.names()) {
+            if !check_context_tree(&mut context_tree, path.names()) {
                 eprintln!(
                     "\"{}\" is not a valid question name (cannot add children to value)",
                     raw_question.name
@@ -137,7 +137,7 @@ pub fn read_config(input: &str) -> io::Result<Config> {
 
     let cond_files_specs = json
         .conditional_files
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .iter()
         .filter_map(|raw_cond_templates| {
             if raw_cond_templates.matcher.trim().is_empty() {
@@ -252,7 +252,7 @@ fn read_hbs_xt(input: Option<&str>) -> String {
         Some(xt) => {
             if xt.is_empty() {
                 ".hbs".into()
-            } else if !xt.starts_with(".") {
+            } else if !xt.starts_with('.') {
                 format!(".{}", xt.to_lowercase())
             } else {
                 xt.to_lowercase()
@@ -731,9 +731,9 @@ mod tests {
         }
     }
 
-    fn matchers_eq(matchers_a: &Vec<GlobMatcher>, matchers_b: &Vec<GlobMatcher>) -> bool {
-        let mut matchers_a_iter = matchers_a.into_iter();
-        let mut matchers_b_iter = matchers_b.into_iter();
+    fn matchers_eq(matchers_a: &[GlobMatcher], matchers_b: &[GlobMatcher]) -> bool {
+        let mut matchers_a_iter = matchers_a.iter();
+        let mut matchers_b_iter = matchers_b.iter();
 
         loop {
             let a = match matchers_a_iter.next() {

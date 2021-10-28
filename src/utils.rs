@@ -34,10 +34,10 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 pub mod constants {
-    pub const NO_HISTORY: &'static str = "no-history";
-    pub const NO_INIT: &'static str = "no-init";
-    pub const IGNORE_CHECKS: &'static str = "ignore-checks";
-    pub const VERBOSE: &'static str = "verbose";
+    pub const NO_HISTORY: &str = "no-history";
+    pub const NO_INIT: &str = "no-init";
+    pub const IGNORE_CHECKS: &str = "ignore-checks";
+    pub const VERBOSE: &str = "verbose";
 }
 
 pub mod reader {
