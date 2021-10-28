@@ -34,6 +34,27 @@ jobs:
           command: test
           args: --package architect-rs --bin architect
 
+  test-binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          apt update
+          apt install -y expect
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --package architect-rs --bin architect --all-targets
+      - run: |
+          chmod +x target/debug/architect
+          chmod +x .github/scripts/test-architect.sh
+          .github/scripts/test-architect.sh
+
   lint:
     runs-on: ubuntu-latest
     steps:

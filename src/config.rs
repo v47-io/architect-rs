@@ -322,7 +322,9 @@ pub struct Config<'cfg> {
     pub include_hidden: Vec<GlobMatcher>,
     #[serde(skip)]
     pub exclude: Vec<GlobMatcher>,
+    #[serde(skip)]
     pub render_hbs: bool,
+    #[serde(skip)]
     pub hbs_xt: String,
 }
 
