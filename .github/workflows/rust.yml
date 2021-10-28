@@ -39,8 +39,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          apt update
-          apt install -y expect
+          sudo apt update
+          sudo apt install -y expect
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
