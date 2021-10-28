@@ -95,7 +95,7 @@ pub fn render(
         tool_config,
     )?;
 
-    all_progress.remove(&render_specs_progress);
+    render_specs_progress.finish_with_message("Render specifications built");
 
     // Creating new Handlebars instance without helpers that shouldn't be used in templates
     handlebars = create_hbs();
@@ -286,7 +286,7 @@ fn build_file_context(base_ctx: &Context, render_spec: &RenderSpec, root_dir: &P
 
     let template_map = match context_map.get_mut("__template__") {
         Some(Value::Object(map)) => map,
-        _ => panic!(),
+        _ => unreachable!(),
     };
 
     template_map.insert("file".into(), Value::Object(file_map));
@@ -807,6 +807,62 @@ mod tests {
 
     // todo: test_render
     //       don't forget explicit template handling + render_hbs
+
+    #[test]
+    fn test_build_file_context() -> io::Result<()> {
+        let target_temp_dir = tempdir()?;
+        let target_path = target_temp_dir.path().join("my-project");
+
+        let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
+
+        let context_map = Map::new();
+        let context = UnsafeContext::new(context_map).into();
+
+        let file_context = build_file_context(
+            &context,
+            &RenderSpec {
+                source: source_path.join("abcdef.hbs"),
+                target: target_path.join("abcdef"),
+                is_template: true,
+            },
+            &source_path,
+        );
+
+        let file_context_map = match file_context.data() {
+            Value::Object(map) => map,
+            _ => panic!(),
+        };
+
+        let template_map = match file_context_map.get("__template__") {
+            Some(Value::Object(map)) => map,
+            _ => panic!(),
+        };
+
+        let file_map = match template_map.get("file") {
+            Some(Value::Object(map)) => map,
+            _ => panic!(),
+        };
+
+        let mut check_file_map = Map::new();
+        check_file_map.insert(
+            "rootDir".into(),
+            Value::String(source_path.to_string_lossy().into()),
+        );
+        check_file_map.insert("sourceName".into(), Value::String("abcdef.hbs".into()));
+        check_file_map.insert(
+            "sourcePath".into(),
+            Value::String(source_path.join("abcdef.hbs").to_string_lossy().into()),
+        );
+        check_file_map.insert("targetName".into(), Value::String("abcdef".into()));
+        check_file_map.insert(
+            "targetPath".into(),
+            Value::String(target_path.join("abcdef").to_string_lossy().into()),
+        );
+
+        assert_eq!(&check_file_map, file_map);
+
+        Ok(())
+    }
 
     #[test]
     fn test_build_render_specs() -> io::Result<()> {
