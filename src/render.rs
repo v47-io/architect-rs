@@ -415,8 +415,8 @@ fn build_render_specs(
             let source_file_name = entry.file_name().to_string_lossy().to_string();
 
             let is_explicit_template = source_file_name.to_lowercase().ends_with(&config.hbs_xt);
-            let is_template =
-                (is_explicit_template && config.render_hbs) || is_hbs_template(entry.path())?;
+            let is_template = (is_explicit_template && config.render_hbs)
+                || (!is_explicit_template && is_hbs_template(entry.path())?);
 
             let mut target_file_name = if it_contains_template(&source_file_name) {
                 create_entry_target_file_name(&source_file_name, hbs, ctx)
@@ -771,11 +771,13 @@ struct DirContext {
     target_path: Option<PathBuf>,
 }
 
+#[derive(Debug)]
 pub struct RenderResult {
     pub rendered_files: Vec<RenderSpec>,
     pub conflicts: Vec<RenderConflict>,
 }
 
+#[derive(Debug)]
 pub struct RenderConflict {
     pub intended_target: PathBuf,
     pub sources: Vec<PathBuf>,
@@ -805,8 +807,57 @@ mod tests {
         static ref TEMP_DIR: TempDir = tempdir().unwrap();
     }
 
-    // todo: test_render
-    //       don't forget explicit template handling + render_hbs
+    #[test]
+    fn test_render() -> io::Result<()> {
+        let target_temp_dir = tempdir()?;
+        let target_path = target_temp_dir.path().join("my-project");
+
+        let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
+
+        let mut context_map = Map::new();
+        let mut author_map = Map::new();
+        author_map.insert("name".into(), Value::String("Some dude!".into()));
+
+        context_map.insert("author".into(), Value::Object(author_map));
+        context_map.insert("somePackage".into(), Value::String("io.v47.test".into()));
+
+        let context = UnsafeContext::new(context_map).into();
+
+        let config = Config {
+            name: Some("Auto Template"),
+            version: Some("0.x"),
+            questions: vec![],
+            include_hidden: vec![Glob::new("**/*still-included*").unwrap().compile_matcher()],
+            exclude: vec![Glob::new("*excluded*").unwrap().compile_matcher()],
+            conditional_files: vec![],
+            render_hbs: false,
+            hbs_xt: ".handlebars".into(),
+        };
+
+        let tool_config = ToolConfig {
+            no_history: false,
+            no_init: false,
+            ignore_checks: false,
+            verbose: true,
+        };
+
+        let render_result = render(&source_path, &target_path, &config, &context, &tool_config)?;
+
+        assert_eq!(4, render_result.rendered_files.len());
+        assert_eq!(1, render_result.conflicts.len());
+
+        let render_conflict = &render_result.conflicts[0];
+
+        assert_eq!(
+            target_path
+                .join("io/v47/test/file-in-generated-path.txt")
+                .absolutize()?,
+            render_conflict.intended_target
+        );
+        assert_eq!(2, render_conflict.sources.len());
+
+        Ok(())
+    }
 
     #[test]
     fn test_build_file_context() -> io::Result<()> {

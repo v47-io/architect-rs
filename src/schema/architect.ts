@@ -137,14 +137,14 @@ interface BaseQuestion {
     /**
      * The name in the context for the value specified when answering this question.
      *
-     * Can be multiple names concatenated using `.` to create hierarchial structures in
+     * Can be multiple names concatenated using `.` to create hierarchical structures in
      * the context.
      *
      * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
      */
     name: string;
     /**
-     * The type of the question which informs the expected values
+     * The type of the question, which indicates the expected values
      */
     type: QuestionType;
     /**

@@ -1,3 +1,23 @@
 {
-  "$schema": "../schema.json"
+  "$schema": "../schema.json",
+  "name": "Auto Template",
+  "version": "0.x",
+  "questions": [
+    {
+      "name": "author.name",
+      "type": "Text"
+    },
+    {
+      "name": "somePackage",
+      "type": "Identifier"
+    }
+  ],
+  "includeHidden": [
+    "**/*still-included*"
+  ],
+  "exclude": [
+    "*excluded*"
+  ],
+  "renderHbs": true,
+  "hbsExtension": ".handlebars"
 }
