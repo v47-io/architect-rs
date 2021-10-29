@@ -1,6 +1,6 @@
 # Summary
 
-- [Introduction](../../README.md)
+- [Introduction](README.md)
 - [Installation](installation/README.md)
 - [CLI](cli/README.md)
 - [Templates](templates/README.md)
