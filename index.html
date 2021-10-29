@@ -134,7 +134,199 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+                        <h1 id="architect"><a class="header" href="#architect">Architect</a></h1>
+<p><a href="https://github.com/v47-io/architect-rs/actions/workflows/tests.yml"><img src="https://github.com/v47-io/architect-rs/actions/workflows/tests.yml/badge.svg" alt=".github/workflows/rust.yml" /></a>
+<a href="https://codecov.io/gh/v47-io/architect-rs"><img src="https://codecov.io/gh/v47-io/architect-rs/branch/master/graph/badge.svg?token=FDASC57M7H" alt="codecov" /></a></p>
+<blockquote>
+<p>A straightforward and technology-agnostic project scaffolding tool</p>
+</blockquote>
+<p>Architect works using a few simple features:</p>
+<ul>
+<li>Clone template using Git</li>
+<li>Ask any defined questions to determine some user-specific values</li>
+<li>Render Handlebars templates using those values as input</li>
+</ul>
+<p>Architect uses this <a href="https://docs.rs/crate/handlebars/4.1.2">Handlebars implementation</a>.</p>
+<p>For more information you can also refer to <a href="https://handlebarsjs.com/">handlebarsjs.com</a>, however, not all features may
+be supported.</p>
+<h2 id="a-hrefhttpsv47-iogithubioarchitect-rsdocumentationa"><a class="header" href="#a-hrefhttpsv47-iogithubioarchitect-rsdocumentationa"><a href="https://v47-io.github.io/architect-rs/">Documentation</a></a></h2>
+<h2 id="handlebars-templating"><a class="header" href="#handlebars-templating">Handlebars Templating</a></h2>
+<p>Architect uses Handlebars to render all templates in a repository. Basically any file is a potential 
+template and will be processed.</p>
+<p>Files that are explicitly marked as Handlebars templates by their extension are not rendered, only copied.
+This behavior (and the extension) can be configured in the <code>.architect.json</code> file.</p>
+<p>Additionally, every file name is a potential Handlebars template. That means you can specify the curled braces in 
+file names to dynamically create them using your user-specific values.</p>
+<p><strong>Example:</strong></p>
+<pre><code>Template: {{app.name}}.rs
+
+Context: {
+  &quot;app&quot;: {
+    &quot;name&quot;: &quot;my_app&quot;
+  }
+}
+
+Result: my_app.rs
+</code></pre>
+<p>It works the same way with directory names, but there you have the added benefit to potentially create multiple levels
+of subdirectories. Should a path you create this way leave the target directory the template will be ignored.</p>
+<p><strong>Example:</strong></p>
+<pre><code>Template: {{package src.package}}
+
+Context: {
+  &quot;src&quot;: {
+    &quot;package&quot;: &quot;io.v47&quot;
+  }
+}
+
+Result: io/v47
+</code></pre>
+<h3 id="helpers"><a class="header" href="#helpers">Helpers</a></h3>
+<p>Architect provides the basic helpers included in the handlebars library, and also includes all helpers provided by
+the <a href="https://docs.rs/crate/handlebars_misc_helpers/0.12.1">handlebars_misc_helpers</a> library.</p>
+<p>In addition to those helpers Architect offers another helper: <code>package</code></p>
+<h4 id="package"><a class="header" href="#package">package</a></h4>
+<p>This helper is used to create a path from dot-separated values, e.g. a Java package.</p>
+<p>Use this to create a nested directory structure for your files.</p>
+<p><code>package</code> is not available in the actual Handlebars template files, there you should just use <code>replace</code> 
+to swap the dots for any other character you like.</p>
+<p><strong>Example:</strong></p>
+<pre><code>Template: {{package src.package}}
+
+Context: {
+  &quot;src&quot;: {
+    &quot;package&quot;: &quot;io.v47&quot;
+  }
+}
+
+Result: io/v47
+</code></pre>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<p>Any template repository can contain an <code>.architect.json</code> file that defines the questions to ask before rendering the
+templates.</p>
+<h3 id="format-described-using-typescript"><a class="header" href="#format-described-using-typescript">Format (described using TypeScript):</a></h3>
+<p>Please refer to the <a href="src/schema/architect.ts">architect.rs</a> file.</p>
+<h3 id="value-nesting"><a class="header" href="#value-nesting">Value Nesting</a></h3>
+<p>Each question specifies a unique name. You can use dot-separated names to define nested values in the Handlebars
+templates.</p>
+<p><strong>Example:</strong></p>
+<pre><code>question 1 name: &quot;source.directory&quot;
+question 2 name: &quot;source.package&quot;
+</code></pre>
+<p>Handlebars Context:</p>
+<pre><code class="language-json">
+{
+  &quot;source&quot;: {
+    &quot;directory&quot;: &quot;some value&quot;,
+    &quot;package&quot;: &quot;another value&quot;
+  }
+}
+</code></pre>
+<h3 id="predefined-values"><a class="header" href="#predefined-values">Predefined Values</a></h3>
+<p>The Handlebars context contains the following predefined values that cannot be overwritten using questions:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: {
+    &quot;name&quot;: &quot;name of the template&quot;,
+    &quot;version&quot;: &quot;version of the template&quot;
+  }
+}
+</code></pre>
+<h3 id="question-types"><a class="header" href="#question-types">Question Types</a></h3>
+<ul>
+<li>
+<p><strong>Identifier</strong>:</p>
+<p>Format: <code>^[a-zA-Z_$][a-zA-Z0-9_$]*$</code></p>
+<p>Useful where the value is used as an identifier (e.g. variable name, class name, etc...) in a Handlebars template</p>
+</li>
+<li>
+<p><strong>Option</strong>:</p>
+<p>Just a boolean flag. Will be visible as <code>true</code> (truthy) in the Handlebars template</p>
+</li>
+<li>
+<p><strong>Selection</strong>:</p>
+<p>Item Format: <code>^[a-zA-Z_$][a-zA-Z0-9_$]*$</code></p>
+<p>Useful where you want to offer a predefined list of values to choose from. The selected value(s) will be created as
+properties in the Handlebars template and have the value <code>true</code> (truthy).</p>
+</li>
+<li>
+<p><strong>Text</strong>:</p>
+<p>Useful when you want to insert arbitrary text in a Handlebars template</p>
+</li>
+</ul>
+<h3 id="conditional-files"><a class="header" href="#conditional-files">Conditional Files</a></h3>
+<p>You can define pairs of conditions and globbing expressions to specify files that are only applied if said condition
+evaluates to a truthy value.</p>
+<p>The condition of such a pair can be any expression that is compatible with Handlebars and has full access to the values
+initialized from the questions.</p>
+<p>The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
+write.</p>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<pre><code class="language-text">USAGE:
+    architect [FLAGS] [OPTIONS] &lt;REPOSITORY&gt; [TARGET]
+
+FLAGS:
+    -D, --dirty
+            Uses the template repository in it's current (dirty) state.
+
+            This only has an effect if a local path is specified as the repository. In that
+            case Architect won't perform a clean clone but will just copy the directory,
+            regardless of the local state.
+
+            This is most useful to test a template locally, with remote repositories this
+            option doesn't have any effect
+    -h, --help
+            Prints help information
+
+    -C, --ignore-checks
+            Ignores some failed checks that would prevent generation otherwise.
+
+            These errors will be ignored:
+              - Condition evaluation errors (for conditional files)
+    -H, --no-history
+            Don't copy over Git history from template to target.
+
+            Instead the target directory will be initialized as a new Git repository
+    -I, --no-init
+            Don't initialize the target directory as a Git repository.
+
+            This requires the --no-history flag to be specified as well
+    -V, --version
+            Prints version information
+
+        --verbose
+            Enables verbose output
+
+
+OPTIONS:
+    -b, --branch &lt;branch&gt;
+            The remote branch to fetch instead of the default branch
+
+
+ARGS:
+    &lt;REPOSITORY&gt;
+            The git repository to use as the project template.
+
+            This can be specified in any way that you can refer to a git repository,
+            i.e. an HTTP(S) URL, ssh connection string, or a local path.
+
+            Example: git@github.com:some-user/his-template-repo.git
+    &lt;TARGET&gt;
+            The target directory for the final output.
+
+            This defaults to the Git repository name as a child of the current working directory
+</code></pre>
+<h2 id="development"><a class="header" href="#development">Development</a></h2>
+<p>How to build:</p>
+<pre><code class="language-shell">cargo build --bin architect
+</code></pre>
+<p>How to test:</p>
+<pre><code class="language-shell">cargo test --bin architect
+</code></pre>
+<p>The result should be an <code>architect(\.exe)?</code> file in the <code>./target/debug</code> directory, ready for execution.</p>
+<h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
+<p>Architect is provided under the terms of the BSD 3-Clause License.</p>
+<p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it
+under the terms of the aforementioned BSD 3-Clause License.</p>
 
                     </main>
 
