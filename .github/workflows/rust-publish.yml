@@ -47,10 +47,26 @@ jobs:
       - build-release
 
     steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: false
+
       - uses: actions/download-artifact@v2
         id: download
         with:
           path: artifacts
-      - name: Display structure of downloaded files
-        run: ls -R
-        working-directory: ${{ steps.download.outputs.download-path }}
+
+      - name: Uploading Release Assets
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets_path: ${{ steps.download.outputs.download-path }}
