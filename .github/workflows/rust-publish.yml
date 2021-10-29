@@ -47,7 +47,7 @@ jobs:
       - build-release
 
     steps:
-      - run: echo "VERSION=${GITHUB_REF}/refs\/tags\//}" >> $GITHUB_ENV
+      - run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
