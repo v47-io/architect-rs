@@ -3,8 +3,8 @@
 [![.github/workflows/rust.yml][build-badge]][workflow-url]
 [![codecov][codecov-badge]][codecov-url]
 
-[build-badge]: https://github.com/v47-io/architect-rs/actions/workflows/rust-quality.yml/badge.svg
-[workflow-url]: https://github.com/v47-io/architect-rs/actions/workflows/rust-quality.yml
+[build-badge]: https://github.com/v47-io/architect-rs/actions/workflows/tests.yml/badge.svg
+[workflow-url]: https://github.com/v47-io/architect-rs/actions/workflows/tests.yml
 
 [codecov-badge]: https://codecov.io/gh/v47-io/architect-rs/branch/master/graph/badge.svg?token=FDASC57M7H
 [codecov-url]: https://codecov.io/gh/v47-io/architect-rs
