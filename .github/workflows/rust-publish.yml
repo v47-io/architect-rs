@@ -47,6 +47,7 @@ jobs:
       - build-release
 
     steps:
+      - run: echo "VERSION=${GITHUB_REF}/refs\/tags\//}" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -54,7 +55,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: Release ${{ env.VERSION }}
           draft: true
           prerelease: false
 
@@ -66,7 +67,7 @@ jobs:
       - name: Prepare Release Assets
         working-directory: ${{ steps.download.outputs.download-path }}
         run: |
-          VERSION=$(echo "${{ github.ref }}" | sed 's/^v//')
+          VERSION=$(echo $VERSION | sed 's/^v//'}
           mv linux/architect       linux/architect-$VERSION-linux-x86_64
           mv macos/architect       macos/architect-$VERSION-darwin
           mv windows/architect.exe windows/architect-$VERSION-win-x86_64.exe 
