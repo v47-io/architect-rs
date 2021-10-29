@@ -184,7 +184,75 @@ pub fn init_git_repository(target_dir: &Path, tool_config: &ToolConfig) -> io::R
 
 #[cfg(test)]
 mod tests {
-    // todo: test_fetch
-    // todo: test_copy_git_directory
-    // todo: test_init_git_repository
+    use tempfile::tempdir;
+
+    use crate::utils::tests::RESOURCES_DIR;
+
+    use super::*;
+
+    const FETCH_URL: &str = "https://github.com/v47-io/architect-test-template.git";
+    const TOOL_CONFIG: ToolConfig = ToolConfig {
+        verbose: true,
+        no_history: false,
+        no_init: false,
+        ignore_checks: false,
+    };
+
+    #[test]
+    fn test_fetch_local() -> io::Result<()> {
+        let target_temp_dir = tempdir()?;
+        let target_path = target_temp_dir.path();
+
+        let spec = TemplateSpec::Local(RESOURCES_DIR.join("auto-template.input"));
+        let options = FetchOptions {
+            dirty: false,
+            branch: None,
+            tool_config: &TOOL_CONFIG,
+        };
+
+        fetch(&spec, target_path, options)?;
+
+        let architect_file_path = target_path.join(".architect.json");
+        assert!(architect_file_path.exists());
+
+        assert!(!is_git_repo(target_path, true));
+
+        init_git_repository(target_path, &TOOL_CONFIG)?;
+
+        assert!(is_git_repo(target_path, true));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_fetch_remote() -> io::Result<()> {
+        let target_temp_dir = tempdir()?;
+        let target_path = target_temp_dir.path();
+
+        let spec = TemplateSpec::Remote(FETCH_URL);
+        let options = FetchOptions {
+            dirty: false,
+            branch: None,
+            tool_config: &TOOL_CONFIG,
+        };
+
+        fetch(&spec, target_path, options)?;
+
+        let architect_file_path = target_path.join(".architect.json");
+        assert!(architect_file_path.exists());
+
+        assert!(is_git_repo(target_path, true));
+
+        let second_temp_dir = tempdir()?;
+        let second_dir = second_temp_dir.path();
+
+        copy_git_directory(target_path, second_dir, &TOOL_CONFIG)?;
+
+        assert!(is_git_repo(second_dir, true));
+
+        let second_repo = Repository::open(second_dir).unwrap();
+        assert!(second_repo.remotes().unwrap().is_empty());
+
+        Ok(())
+    }
 }
