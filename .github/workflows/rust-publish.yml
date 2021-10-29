@@ -63,6 +63,14 @@ jobs:
         with:
           path: artifacts
 
+      - name: Prepare Release Assets
+        working-directory: ${{ steps.download.outputs.download-path }}
+        run: |
+          VERSION=$(echo "${{ github.ref }}" | sed 's/^v//')
+          mv linux/architect       linux/architect-$VERSION-linux-x86_64
+          mv macos/architect       macos/architect-$VERSION-darwin
+          mv windows/architect.exe windows/architect-$VERSION-win-x86_64.exe 
+
       - name: Uploading Release Assets
         uses: dwenegar/upload-release-assets@v1
         env:
