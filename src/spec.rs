@@ -137,6 +137,13 @@ mod tests {
             parse_template_spec(remote_spec),
             TemplateSpec::Remote(remote_spec)
         );
+
+        let remote_spec = "https://github.com/v47-io/architect-test-template.git";
+
+        assert_eq!(
+            parse_template_spec(remote_spec),
+            TemplateSpec::Remote(remote_spec)
+        );
     }
 
     #[test]
