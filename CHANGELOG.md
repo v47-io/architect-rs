@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.9.0 (2021-10-29)
 
 ### New Features
 
@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Prepared for release ([`3c3fecf`](https://github.comgit//v47-io/architect-rs/commit/3c3fecf99e17ac9665c679743d780f9678005912))
     - 🤦‍ ([`30f46be`](https://github.comgit//v47-io/architect-rs/commit/30f46be42803dc56b790218b0e40daef9eb1eaa2))
     - Fixed closing paren ([`129da75`](https://github.comgit//v47-io/architect-rs/commit/129da75e3cdb39381a15ad82cf1d949c382d9dde))
     - Fixed version and tag handling ([`477c2fc`](https://github.comgit//v47-io/architect-rs/commit/477c2fce4544f2da9dab77aecd6c68935b7a6927))
@@ -91,3 +92,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Implemented the parsing of the template configuration file ([`069e218`](https://github.comgit//v47-io/architect-rs/commit/069e218dc2b0add9bc877bc30e71c5a9f4947ddd))
     - Initial commit ([`0999f19`](https://github.comgit//v47-io/architect-rs/commit/0999f19bcf3f68154e6086295e6de7aae1f735b6))
 </details>
+
