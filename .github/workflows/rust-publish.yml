@@ -17,15 +17,15 @@ jobs:
           - macos
 
         include:
-          - name: linux
+          - name: architect
             os: ubuntu-latest
             artifact_name: target/release/<name>
             asset_name: <name>-linux
-          - name: windows
+          - name: architect
             os: windows-latest
             artifact_name: target/release/<name>.exe
-            asset_name: <name>-windows
-          - name: macos
+            asset_name: <name>-windows.exe
+          - name: architect
             os: macos-latest
             artifact_name: target/release/<name>
             asset_name: <name>-macos
