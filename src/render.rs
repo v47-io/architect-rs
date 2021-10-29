@@ -789,6 +789,7 @@ mod tests {
     use std::fs::read_to_string;
 
     use globset::Glob;
+    use itertools::Itertools;
     use lazy_static::lazy_static;
     use serde_json::{Map, Number, Value};
     use tempfile::{tempdir, TempDir};
@@ -864,6 +865,38 @@ mod tests {
 
         assert!(override_template_path.exists());
         assert!(is_hbs_template(&override_template_path)?);
+
+        let sep = std::path::MAIN_SEPARATOR;
+
+        let check_target_dir_content = vec![
+            format!(".hidden-dir{}but-still-included.txt", sep),
+            format!("io{}v47{}test{}file-in-explicit-path.txt", sep, sep, sep),
+            format!(
+                "io{}v47{}test{}file-in-generated-path (1).txt",
+                sep, sep, sep
+            ),
+            format!("io{}v47{}test{}file-in-generated-path.txt", sep, sep, sep),
+            format!("templates{}override-template.txt.handlebars", sep),
+            format!("templates{}some-template.txt.hbs", sep),
+        ];
+
+        let target_dir_content = WalkDir::new(&target_path)
+            .into_iter()
+            .skip(1)
+            .filter_ok(|entry| !entry.metadata().unwrap().is_dir())
+            .map(|entry| {
+                entry
+                    .unwrap()
+                    .path()
+                    .strip_prefix(&target_path)
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .sorted()
+            .collect::<Vec<_>>();
+
+        assert_eq!(check_target_dir_content, target_dir_content);
 
         Ok(())
     }
