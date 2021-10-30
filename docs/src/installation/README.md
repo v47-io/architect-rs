@@ -15,6 +15,12 @@ Currently, the supported platforms are:
 
 After downloading the executable file simply place it or a link to it in your `PATH` and you're ready to go.
 
+Don't forget to mark the file as executable if you're on Linux or macOS:
+
+```shell
+chmod +x architect
+```
+
 ## Building from source
 
 If you're in the mood for some action, or you want to try the latest features before they appear in a release
