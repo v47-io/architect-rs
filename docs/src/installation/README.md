@@ -9,7 +9,7 @@ the latest binary for your platform.
 
 Currently, the supported platforms are:
   
-  - Linux (x86_64, libc, musl coming soon!)
+  - Linux (x86_64, libc)
   - Windows (x86_64)
   - macOS (darwin)
 

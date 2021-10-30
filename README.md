@@ -176,64 +176,6 @@ initialized from the questions.
 The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
 write.
 
-## Usage
-
-```text
-USAGE:
-    architect [FLAGS] [OPTIONS] <REPOSITORY> [TARGET]
-
-FLAGS:
-    -D, --dirty
-            Uses the template repository in it's current (dirty) state.
-
-            This only has an effect if a local path is specified as the repository. In that
-            case Architect won't perform a clean clone but will just copy the directory,
-            regardless of the local state.
-
-            This is most useful to test a template locally, with remote repositories this
-            option doesn't have any effect
-    -h, --help
-            Prints help information
-
-    -C, --ignore-checks
-            Ignores some failed checks that would prevent generation otherwise.
-
-            These errors will be ignored:
-              - Condition evaluation errors (for conditional files)
-    -H, --no-history
-            Don't copy over Git history from template to target.
-
-            Instead the target directory will be initialized as a new Git repository
-    -I, --no-init
-            Don't initialize the target directory as a Git repository.
-
-            This requires the --no-history flag to be specified as well
-    -V, --version
-            Prints version information
-
-        --verbose
-            Enables verbose output
-
-
-OPTIONS:
-    -b, --branch <branch>
-            The remote branch to fetch instead of the default branch
-
-
-ARGS:
-    <REPOSITORY>
-            The git repository to use as the project template.
-
-            This can be specified in any way that you can refer to a git repository,
-            i.e. an HTTP(S) URL, ssh connection string, or a local path.
-
-            Example: git@github.com:some-user/his-template-repo.git
-    <TARGET>
-            The target directory for the final output.
-
-            This defaults to the Git repository name as a child of the current working directory
-```
-
 ## License and Contributions
 
 Architect is provided under the terms of the BSD 3-Clause License.
