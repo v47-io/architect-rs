@@ -135,6 +135,35 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="rendering"><a class="header" href="#rendering">Rendering</a></h1>
+<p>Architect renders files and names using Handlebars and treats all files as potential Handlebars templates.</p>
+<p>To find out whether a file actually is a template Architect looks at its contents to look for the &quot;mustaches&quot;
+(<code>{{</code> and <code>}}</code>). Should Architect find both in that order on the same line it will treat the file as a template.</p>
+<p>File and directory names are also potential templates that are rendered using Handlebars if they contain the mustaches.</p>
+<p>You can also specify to handle certain files as they are and not render them. This is useful when you want to include
+actual Handlebars templates in your source repository that should be included in the target as-is. Those files are
+identified by their file extension (default: <code>.hbs</code>) and will not be rendered, only copied. You can change the extension
+and the behavior in the <a href="../configuration/">configuration</a> file.</p>
+<!--@formatter:off-->
+<pre><code class="language-ts">    /**
+     * Indicates whether to treat explicitly identified Handlebars templates (using their
+     * file extension) as regular templates and render them.
+     *
+     * By default, Handlebars templates that are explicitly identified are not rendered,
+     * rather they are copied as is.
+     *
+     * Note: File names of such files are still treated as templates
+     */
+    renderHbs?: boolean;
+    /**
+     * The extension that is used to explicitly identify Handlebars templates.
+     *
+     * This is specified as a string preceded by a singular dot. The default value is `.hbs`
+     */
+    hbsExtension?: string;
+</code></pre>
+<!--@formatter:on-->
+<p>Should you enable rendering those files as well, they will be rendered like all other templates and Architect will strip
+the extension from the file name.</p>
 
                     </main>
 

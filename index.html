@@ -146,61 +146,10 @@
 <li>Ask any defined questions to determine some user-specific values</li>
 <li>Render Handlebars templates using those values as input</li>
 </ul>
-<p>Architect uses this <a href="https://docs.rs/crate/handlebars/4.1.2">Handlebars implementation</a>.</p>
+<p>Architect uses this <a href="https://docs.rs/crate/handlebars/4.1.3">Handlebars implementation</a>.</p>
 <p>For more information you can also refer to <a href="https://handlebarsjs.com/">handlebarsjs.com</a>, however, not all features may
 be supported.</p>
 <h2 id="a-hrefhttpsv47-iogithubioarchitect-rsdocumentationa"><a class="header" href="#a-hrefhttpsv47-iogithubioarchitect-rsdocumentationa"><a href="https://v47-io.github.io/architect-rs/">Documentation</a></a></h2>
-<h2 id="handlebars-templating"><a class="header" href="#handlebars-templating">Handlebars Templating</a></h2>
-<p>Architect uses Handlebars to render all templates in a repository. Basically any file is a potential 
-template and will be processed.</p>
-<p>Files that are explicitly marked as Handlebars templates by their extension are not rendered, only copied.
-This behavior (and the extension) can be configured in the <code>.architect.json</code> file.</p>
-<p>Additionally, every file name is a potential Handlebars template. That means you can specify the curled braces in 
-file names to dynamically create them using your user-specific values.</p>
-<p><strong>Example:</strong></p>
-<pre><code>Template: {{app.name}}.rs
-
-Context: {
-  &quot;app&quot;: {
-    &quot;name&quot;: &quot;my_app&quot;
-  }
-}
-
-Result: my_app.rs
-</code></pre>
-<p>It works the same way with directory names, but there you have the added benefit to potentially create multiple levels
-of subdirectories. Should a path you create this way leave the target directory the template will be ignored.</p>
-<p><strong>Example:</strong></p>
-<pre><code>Template: {{package src.package}}
-
-Context: {
-  &quot;src&quot;: {
-    &quot;package&quot;: &quot;io.v47&quot;
-  }
-}
-
-Result: io/v47
-</code></pre>
-<h3 id="helpers"><a class="header" href="#helpers">Helpers</a></h3>
-<p>Architect provides the basic helpers included in the handlebars library, and also includes all helpers provided by
-the <a href="https://docs.rs/crate/handlebars_misc_helpers/0.12.1">handlebars_misc_helpers</a> library.</p>
-<p>In addition to those helpers Architect offers another helper: <code>package</code></p>
-<h4 id="package"><a class="header" href="#package">package</a></h4>
-<p>This helper is used to create a path from dot-separated values, e.g. a Java package.</p>
-<p>Use this to create a nested directory structure for your files.</p>
-<p><code>package</code> is not available in the actual Handlebars template files, there you should just use <code>replace</code> 
-to swap the dots for any other character you like.</p>
-<p><strong>Example:</strong></p>
-<pre><code>Template: {{package src.package}}
-
-Context: {
-  &quot;src&quot;: {
-    &quot;package&quot;: &quot;io.v47&quot;
-  }
-}
-
-Result: io/v47
-</code></pre>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it

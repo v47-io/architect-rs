@@ -147,61 +147,10 @@
 <li>Ask any defined questions to determine some user-specific values</li>
 <li>Render Handlebars templates using those values as input</li>
 </ul>
-<p>Architect uses this <a href="https://docs.rs/crate/handlebars/4.1.2">Handlebars implementation</a>.</p>
+<p>Architect uses this <a href="https://docs.rs/crate/handlebars/4.1.3">Handlebars implementation</a>.</p>
 <p>For more information you can also refer to <a href="https://handlebarsjs.com/">handlebarsjs.com</a>, however, not all features may
 be supported.</p>
 <h2 id="a-hrefhttpsv47-iogithubioarchitect-rsdocumentationa"><a class="header" href="#a-hrefhttpsv47-iogithubioarchitect-rsdocumentationa"><a href="https://v47-io.github.io/architect-rs/">Documentation</a></a></h2>
-<h2 id="handlebars-templating"><a class="header" href="#handlebars-templating">Handlebars Templating</a></h2>
-<p>Architect uses Handlebars to render all templates in a repository. Basically any file is a potential 
-template and will be processed.</p>
-<p>Files that are explicitly marked as Handlebars templates by their extension are not rendered, only copied.
-This behavior (and the extension) can be configured in the <code>.architect.json</code> file.</p>
-<p>Additionally, every file name is a potential Handlebars template. That means you can specify the curled braces in 
-file names to dynamically create them using your user-specific values.</p>
-<p><strong>Example:</strong></p>
-<pre><code>Template: {{app.name}}.rs
-
-Context: {
-  &quot;app&quot;: {
-    &quot;name&quot;: &quot;my_app&quot;
-  }
-}
-
-Result: my_app.rs
-</code></pre>
-<p>It works the same way with directory names, but there you have the added benefit to potentially create multiple levels
-of subdirectories. Should a path you create this way leave the target directory the template will be ignored.</p>
-<p><strong>Example:</strong></p>
-<pre><code>Template: {{package src.package}}
-
-Context: {
-  &quot;src&quot;: {
-    &quot;package&quot;: &quot;io.v47&quot;
-  }
-}
-
-Result: io/v47
-</code></pre>
-<h3 id="helpers"><a class="header" href="#helpers">Helpers</a></h3>
-<p>Architect provides the basic helpers included in the handlebars library, and also includes all helpers provided by
-the <a href="https://docs.rs/crate/handlebars_misc_helpers/0.12.1">handlebars_misc_helpers</a> library.</p>
-<p>In addition to those helpers Architect offers another helper: <code>package</code></p>
-<h4 id="package"><a class="header" href="#package">package</a></h4>
-<p>This helper is used to create a path from dot-separated values, e.g. a Java package.</p>
-<p>Use this to create a nested directory structure for your files.</p>
-<p><code>package</code> is not available in the actual Handlebars template files, there you should just use <code>replace</code> 
-to swap the dots for any other character you like.</p>
-<p><strong>Example:</strong></p>
-<pre><code>Template: {{package src.package}}
-
-Context: {
-  &quot;src&quot;: {
-    &quot;package&quot;: &quot;io.v47&quot;
-  }
-}
-
-Result: io/v47
-</code></pre>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it
@@ -630,7 +579,54 @@ export interface ConditionalFiles {
 </code></pre>
 <!--@formatter:on-->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="rendering"><a class="header" href="#rendering">Rendering</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="helpers-1"><a class="header" href="#helpers-1">Helpers</a></h1>
+<p>Architect renders files and names using Handlebars and treats all files as potential Handlebars templates.</p>
+<p>To find out whether a file actually is a template Architect looks at its contents to look for the &quot;mustaches&quot;
+(<code>{{</code> and <code>}}</code>). Should Architect find both in that order on the same line it will treat the file as a template.</p>
+<p>File and directory names are also potential templates that are rendered using Handlebars if they contain the mustaches.</p>
+<p>You can also specify to handle certain files as they are and not render them. This is useful when you want to include
+actual Handlebars templates in your source repository that should be included in the target as-is. Those files are
+identified by their file extension (default: <code>.hbs</code>) and will not be rendered, only copied. You can change the extension
+and the behavior in the <a href="templates/rendering/../configuration/">configuration</a> file.</p>
+<!--@formatter:off-->
+<pre><code class="language-ts">    /**
+     * Indicates whether to treat explicitly identified Handlebars templates (using their
+     * file extension) as regular templates and render them.
+     *
+     * By default, Handlebars templates that are explicitly identified are not rendered,
+     * rather they are copied as is.
+     *
+     * Note: File names of such files are still treated as templates
+     */
+    renderHbs?: boolean;
+    /**
+     * The extension that is used to explicitly identify Handlebars templates.
+     *
+     * This is specified as a string preceded by a singular dot. The default value is `.hbs`
+     */
+    hbsExtension?: string;
+</code></pre>
+<!--@formatter:on-->
+<p>Should you enable rendering those files as well, they will be rendered like all other templates and Architect will strip
+the extension from the file name.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="helpers"><a class="header" href="#helpers">Helpers</a></h1>
+<p>Architect provides a suite of Handlebars helpers to make writing your templates a breeze.</p>
+<p>By default, Architect provides all helpers supported by the <a href="https://crates.io/crates/handlebars">handlebars</a>
+and the <a href="https://crates.io/crates/handlebars_misc_helpers">handlebars_misc_helpers</a> libraries.</p>
+<p>Rhai scripting in templates (as provided by the handlebars library) is not supported!</p>
+<p>Please take a look at the <a href="https://handlebarsjs.com/guide/">handlebarsjs Language Guide</a> for guidance on how to actually
+use helpers.</p>
+<h2 id="package"><a class="header" href="#package">package</a></h2>
+<p>In addition to all those helpers Architect provides a helper off its own: <code>package</code>. This helper is intended to help you
+write better templated directory names.</p>
+<p>You can use this helper to create nested directory structures for your files, its use is to create multiple, nested
+directories from dot-separated values, e.g. a Java package.</p>
+<p>This helper is not available in template files, only file or directory names.</p>
+<p><strong>Example</strong>:</p>
+<ul>
+<li>File path: <code>src/main/java/{{ package javaPackage }}/Main.java</code></li>
+<li>Context: <code>&quot;javaPackage&quot;: &quot;com.github.example&quot;</code></li>
+<li>Result: <code>src/main/java/com/github/example/Main.java</code></li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="expert-mode"><a class="header" href="#expert-mode">Expert Mode</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h1>
 

@@ -135,6 +135,24 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="helpers"><a class="header" href="#helpers">Helpers</a></h1>
+<p>Architect provides a suite of Handlebars helpers to make writing your templates a breeze.</p>
+<p>By default, Architect provides all helpers supported by the <a href="https://crates.io/crates/handlebars">handlebars</a>
+and the <a href="https://crates.io/crates/handlebars_misc_helpers">handlebars_misc_helpers</a> libraries.</p>
+<p>Rhai scripting in templates (as provided by the handlebars library) is not supported!</p>
+<p>Please take a look at the <a href="https://handlebarsjs.com/guide/">handlebarsjs Language Guide</a> for guidance on how to actually
+use helpers.</p>
+<h2 id="package"><a class="header" href="#package">package</a></h2>
+<p>In addition to all those helpers Architect provides a helper off its own: <code>package</code>. This helper is intended to help you
+write better templated directory names.</p>
+<p>You can use this helper to create nested directory structures for your files, its use is to create multiple, nested
+directories from dot-separated values, e.g. a Java package.</p>
+<p>This helper is not available in template files, only file or directory names.</p>
+<p><strong>Example</strong>:</p>
+<ul>
+<li>File path: <code>src/main/java/{{ package javaPackage }}/Main.java</code></li>
+<li>Context: <code>&quot;javaPackage&quot;: &quot;com.github.example&quot;</code></li>
+<li>Result: <code>src/main/java/com/github/example/Main.java</code></li>
+</ul>
 
                     </main>
 
