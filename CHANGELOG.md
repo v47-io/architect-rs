@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.1 (2021-10-30)
+
+### Documentation
+
+ - <csr-id-7ffc9ab6ebeb360fde5266e6e082aa711ce57501/> Added note about executable flag on Linux or macOS
+ - <csr-id-8e5c63e8626ed168eac1e72f91d61a81ffc50609/> Added installation docs and removed that part from README
+ - <csr-id-6f25e35a41cced51d8a4171062771656f250ac1e/> Now really fixed the introduction, including the README :D
+ - <csr-id-76d6439922ce9281f181bf3e1a0fc9f87215a380/> Fixed introduction page link
+ - <csr-id-5bfdb44d8100bb140630d9388cf34458904328a2/> Added stub mdBooks docs and pipeline for publishing on gh-pages
+
+### Bug Fixes
+
+ - <csr-id-48eb2c865afcf5aa618e71b9d66c0f6369fb6fa5/> Unified path handling to preempt Windows UNC paths
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 7 commits contributed to the release.
+ - 7 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' where seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Updated version in Cargo manifest ([`455033c`](https://github.comgit//v47-io/architect-rs/commit/455033c48590cf85f671189fef87baf2517b82ee))
+    - Added note about executable flag on Linux or macOS ([`7ffc9ab`](https://github.comgit//v47-io/architect-rs/commit/7ffc9ab6ebeb360fde5266e6e082aa711ce57501))
+    - Unified path handling to preempt Windows UNC paths ([`48eb2c8`](https://github.comgit//v47-io/architect-rs/commit/48eb2c865afcf5aa618e71b9d66c0f6369fb6fa5))
+    - Added installation docs and removed that part from README ([`8e5c63e`](https://github.comgit//v47-io/architect-rs/commit/8e5c63e8626ed168eac1e72f91d61a81ffc50609))
+    - Now really fixed the introduction, including the README :D ([`6f25e35`](https://github.comgit//v47-io/architect-rs/commit/6f25e35a41cced51d8a4171062771656f250ac1e))
+    - Fixed introduction page link ([`76d6439`](https://github.comgit//v47-io/architect-rs/commit/76d6439922ce9281f181bf3e1a0fc9f87215a380))
+    - Added stub mdBooks docs and pipeline for publishing on gh-pages ([`5bfdb44`](https://github.comgit//v47-io/architect-rs/commit/5bfdb44d8100bb140630d9388cf34458904328a2))
+</details>
+
 ## 0.9.0 (2021-10-29)
 
 ### New Features
@@ -20,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release architect-rs v0.9.0 ([`0ba191b`](https://github.comgit//v47-io/architect-rs/commit/0ba191ba88dbbed59333b9b32f197b5a16738d9b))
     - Prepared for release ([`3c3fecf`](https://github.comgit//v47-io/architect-rs/commit/3c3fecf99e17ac9665c679743d780f9678005912))
     - 🤦‍ ([`30f46be`](https://github.comgit//v47-io/architect-rs/commit/30f46be42803dc56b790218b0e40daef9eb1eaa2))
     - Fixed closing paren ([`129da75`](https://github.comgit//v47-io/architect-rs/commit/129da75e3cdb39381a15ad82cf1d949c382d9dde))
