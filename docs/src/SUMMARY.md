@@ -9,7 +9,7 @@
   - [Configuration](templates/configuration/README.md)
     - [Context](templates/configuration/context.md) 
     - [Questions](templates/configuration/questions.md)
-    - [Filters](templates/configuration/exclusions-inclusions-conditional-files.md)
+    - [Filters](templates/configuration/filters.md)
   - [Rendering](templates/rendering/README.md)
     - [Helpers](templates/rendering/helpers.md)
 - [Expert Mode](expert-mode/README.md)
