@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/configuration/context.html"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="templates/configuration/questions.html"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="templates/configuration/exclusions-inclusions-conditional-files.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/configuration/context.html"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="templates/configuration/questions.html"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="templates/configuration/filters.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -201,65 +201,6 @@ Context: {
 
 Result: io/v47
 </code></pre>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>Any template repository can contain an <code>.architect.json</code> file that defines the questions to ask before rendering the
-templates.</p>
-<h3 id="format-described-using-typescript"><a class="header" href="#format-described-using-typescript">Format (described using TypeScript):</a></h3>
-<p>Please refer to the <a href="src/schema/architect.ts">architect.rs</a> file.</p>
-<h3 id="value-nesting"><a class="header" href="#value-nesting">Value Nesting</a></h3>
-<p>Each question specifies a unique name. You can use dot-separated names to define nested values in the Handlebars
-templates.</p>
-<p><strong>Example:</strong></p>
-<pre><code>question 1 name: &quot;source.directory&quot;
-question 2 name: &quot;source.package&quot;
-</code></pre>
-<p>Handlebars Context:</p>
-<pre><code class="language-json">
-{
-  &quot;source&quot;: {
-    &quot;directory&quot;: &quot;some value&quot;,
-    &quot;package&quot;: &quot;another value&quot;
-  }
-}
-</code></pre>
-<h3 id="predefined-values"><a class="header" href="#predefined-values">Predefined Values</a></h3>
-<p>The Handlebars context contains the following predefined values that cannot be overwritten using questions:</p>
-<pre><code class="language-json">{
-  &quot;__template__&quot;: {
-    &quot;name&quot;: &quot;name of the template&quot;,
-    &quot;version&quot;: &quot;version of the template&quot;
-  }
-}
-</code></pre>
-<h3 id="question-types"><a class="header" href="#question-types">Question Types</a></h3>
-<ul>
-<li>
-<p><strong>Identifier</strong>:</p>
-<p>Format: <code>^[a-zA-Z_$][a-zA-Z0-9_$]*$</code></p>
-<p>Useful where the value is used as an identifier (e.g. variable name, class name, etc...) in a Handlebars template</p>
-</li>
-<li>
-<p><strong>Option</strong>:</p>
-<p>Just a boolean flag. Will be visible as <code>true</code> (truthy) in the Handlebars template</p>
-</li>
-<li>
-<p><strong>Selection</strong>:</p>
-<p>Item Format: <code>^[a-zA-Z_$][a-zA-Z0-9_$]*$</code></p>
-<p>Useful where you want to offer a predefined list of values to choose from. The selected value(s) will be created as
-properties in the Handlebars template and have the value <code>true</code> (truthy).</p>
-</li>
-<li>
-<p><strong>Text</strong>:</p>
-<p>Useful when you want to insert arbitrary text in a Handlebars template</p>
-</li>
-</ul>
-<h3 id="conditional-files"><a class="header" href="#conditional-files">Conditional Files</a></h3>
-<p>You can define pairs of conditions and globbing expressions to specify files that are only applied if said condition
-evaluates to a truthy value.</p>
-<p>The condition of such a pair can be any expression that is compatible with Handlebars and has full access to the values
-initialized from the questions.</p>
-<p>The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
-write.</p>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it

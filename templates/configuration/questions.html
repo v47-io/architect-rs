@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../../index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../../cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="../../templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="../../templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/configuration/context.html"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/questions.html" class="active"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/exclusions-inclusions-conditional-files.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="../../templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../../cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="../../templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="../../templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/configuration/context.html"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/questions.html" class="active"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/filters.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="../../templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,6 +135,71 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="questions"><a class="header" href="#questions">Questions</a></h1>
+<p>In the template configuration you can define questions that Architect should ask before the files can be written to the
+target. The answers to those questions are stored in the context and are therefore available in the context.</p>
+<p>You can ask various types of questions, each with a concrete use-case.</p>
+<p>The question names must be (possibly dot-delimited) identifiers, so that they can be used in Handlebars templates. By
+specifying multiple dot-delimited identifiers you can create nested objects in the context.</p>
+<p>Multiple occurrences of previously specified question names will overwrite prior ones without warning.</p>
+<p><strong>Example</strong>:</p>
+<p>You define questions with the following names:</p>
+<ul>
+<li><code>author.name</code></li>
+<li><code>author.email</code></li>
+<li><code>somethingElse</code></li>
+</ul>
+<p>Result in the context:</p>
+<pre><code class="language-json">{
+  ...,
+  &quot;author&quot;: {
+    &quot;name&quot;: ...,
+    &quot;email&quot;: ...
+  },
+  &quot;somethingElse&quot;: ...
+}
+</code></pre>
+<h2 id="identifier"><a class="header" href="#identifier">Identifier</a></h2>
+<p>Ask for an identifier, i.e. a String that can only consist of a limited subset of characters.</p>
+<p><strong>Format</strong>:</p>
+<pre><code class="language-regexp">^[a-zA-Z_$][a-zA-Z0-9_$]*$
+</code></pre>
+<p>A possible use-case for this question type can be to ask for a class name for an application's main class.</p>
+<h2 id="option"><a class="header" href="#option">Option</a></h2>
+<p>A simple yes or no question. This will store a Boolean in the context.</p>
+<p><strong>Example</strong>:</p>
+<p>You specify <code>yes</code> for the question <code>insertLogStatements</code>.</p>
+<p>Result in the context:</p>
+<pre><code class="language-json">{
+  ...,
+  &quot;insertLogStatements&quot;: true
+}
+</code></pre>
+<p>This question type is useful when you want to present the user with a binary choice, e.g. whether to generate
+a <code>.gitignore</code> in the target directory.</p>
+<h2 id="selection"><a class="header" href="#selection">Selection</a></h2>
+<p>Useful where you want to offer a predefined list of values to choose from. The selected value(s)
+will be created as properties in the context and have the value <code>true</code>.</p>
+<p>You can configure a selection question to accept only one or multiple (<code>multi</code>) values to be selected.</p>
+<p>As those values will be added as properties they must match a certain format:</p>
+<pre><code class="language-regexp">^[a-zA-Z_$][a-zA-Z0-9_$]*$
+</code></pre>
+<p><strong>Example</strong>:</p>
+<p>The question (<code>whichOnes</code>) defines three values: <code>value1</code>, <code>value2</code>, and <code>value3</code>. You select
+<code>value1</code> and <code>value2</code>.</p>
+<p>Result in the context:</p>
+<pre><code class="language-json">{
+  ...,
+  &quot;whichOnes&quot;: {
+    &quot;value1&quot;: true,
+    &quot;value2&quot;: true
+  }
+}
+</code></pre>
+<p>A possible use-case for this type of question is to define several features a user could choose to enable when using a
+template, e.g. whether to use logging statements, or to include a certain dependency.</p>
+<h2 id="text"><a class="header" href="#text">Text</a></h2>
+<p>This question type allows you to ask for arbitrary text to store in the context. No format is enforced for answers.</p>
+<p>Possible use-cases for this question type can be to ask for a person's full name or an email address.</p>
 
                     </main>
 
@@ -143,7 +208,7 @@
                             <a rel="prev" href="../../templates/configuration/context.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                            <a rel="next" href="../../templates/configuration/exclusions-inclusions-conditional-files.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../../templates/configuration/filters.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -155,7 +220,7 @@
                     <a rel="prev" href="../../templates/configuration/context.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                    <a rel="next" href="../../templates/configuration/exclusions-inclusions-conditional-files.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../../templates/configuration/filters.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

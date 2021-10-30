@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../../index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../../cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="../../templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="../../templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/configuration/context.html" class="active"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/questions.html"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/exclusions-inclusions-conditional-files.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="../../templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../../cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="../../templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="../../templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/configuration/context.html" class="active"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/questions.html"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="../../templates/configuration/filters.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="../../templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,6 +135,49 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="context"><a class="header" href="#context">Context</a></h1>
+<p>Architect builds a Handlebars context using some provided information and the values defined 
+when answering configured questions.</p>
+<p>This context is available to all instances where Handlebars templates are processed, so you 
+can access specified values in conditions, or file/directory names.</p>
+<p>Context consists of multiple nested objects and properties which contain values.</p>
+<h2 id="default-context"><a class="header" href="#default-context">Default Context</a></h2>
+<p>By default, Architect provides the following data in the context, provided values are configured:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: {
+    &quot;name&quot;: &quot;The template name from in .architect.json or undefined&quot;,
+    &quot;version&quot;: &quot;The template version from .architect.json or undefined&quot;
+  }
+}
+</code></pre>
+<p>You cannot add to the <code>__template__</code> object using your questions, and Architect will reject any
+attempt to do so. However, you can still define a <code>__template__</code> object in any nested object 
+further down the line.</p>
+<p>Something like this would be possible:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: ...,
+  &quot;yourOwnObject&quot;: {
+    &quot;__template__&quot;: {
+      &quot;yourProperty&quot;: &quot;some data&quot;
+    }
+  }
+}
+</code></pre>
+<h2 id="file-context"><a class="header" href="#file-context">File Context</a></h2>
+<p>In addition to the default context Architect adds some information about the current template file 
+to the context:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: {
+    ...,
+    &quot;file&quot;: {
+      &quot;rootDir&quot;: &quot;the working directory, not the target directory&quot;,
+      &quot;sourceName&quot;: &quot;the original file name of the template file&quot;,
+      &quot;sourcePath&quot;: &quot;the original path of the template file&quot;,
+      &quot;targetName&quot;: &quot;the final file name of the rendered template file&quot;,
+      &quot;targetPath&quot;: &quot;the final path of the rendered template file&quot;
+    }
+  }
+}
+</code></pre>
 
                     </main>
 

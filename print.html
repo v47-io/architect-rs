@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/configuration/context.html"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="templates/configuration/questions.html"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="templates/configuration/exclusions-inclusions-conditional-files.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="installation/index.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="cli/index.html"><strong aria-hidden="true">3.</strong> CLI</a></li><li class="chapter-item expanded "><a href="templates/index.html"><strong aria-hidden="true">4.</strong> Templates</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/fetching.html"><strong aria-hidden="true">4.1.</strong> Fetching</a></li><li class="chapter-item expanded "><a href="templates/structure.html"><strong aria-hidden="true">4.2.</strong> Structure</a></li><li class="chapter-item expanded "><a href="templates/configuration/index.html"><strong aria-hidden="true">4.3.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/configuration/context.html"><strong aria-hidden="true">4.3.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="templates/configuration/questions.html"><strong aria-hidden="true">4.3.2.</strong> Questions</a></li><li class="chapter-item expanded "><a href="templates/configuration/filters.html"><strong aria-hidden="true">4.3.3.</strong> Filters</a></li></ol></li><li class="chapter-item expanded "><a href="templates/rendering/index.html"><strong aria-hidden="true">4.4.</strong> Rendering</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/rendering/helpers.html"><strong aria-hidden="true">4.4.1.</strong> Helpers</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="expert-mode/index.html"><strong aria-hidden="true">5.</strong> Expert Mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="expert-mode/environment-variables.html"><strong aria-hidden="true">5.1.</strong> Environment Variables</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -202,65 +202,6 @@ Context: {
 
 Result: io/v47
 </code></pre>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>Any template repository can contain an <code>.architect.json</code> file that defines the questions to ask before rendering the
-templates.</p>
-<h3 id="format-described-using-typescript"><a class="header" href="#format-described-using-typescript">Format (described using TypeScript):</a></h3>
-<p>Please refer to the <a href="src/schema/architect.ts">architect.rs</a> file.</p>
-<h3 id="value-nesting"><a class="header" href="#value-nesting">Value Nesting</a></h3>
-<p>Each question specifies a unique name. You can use dot-separated names to define nested values in the Handlebars
-templates.</p>
-<p><strong>Example:</strong></p>
-<pre><code>question 1 name: &quot;source.directory&quot;
-question 2 name: &quot;source.package&quot;
-</code></pre>
-<p>Handlebars Context:</p>
-<pre><code class="language-json">
-{
-  &quot;source&quot;: {
-    &quot;directory&quot;: &quot;some value&quot;,
-    &quot;package&quot;: &quot;another value&quot;
-  }
-}
-</code></pre>
-<h3 id="predefined-values"><a class="header" href="#predefined-values">Predefined Values</a></h3>
-<p>The Handlebars context contains the following predefined values that cannot be overwritten using questions:</p>
-<pre><code class="language-json">{
-  &quot;__template__&quot;: {
-    &quot;name&quot;: &quot;name of the template&quot;,
-    &quot;version&quot;: &quot;version of the template&quot;
-  }
-}
-</code></pre>
-<h3 id="question-types"><a class="header" href="#question-types">Question Types</a></h3>
-<ul>
-<li>
-<p><strong>Identifier</strong>:</p>
-<p>Format: <code>^[a-zA-Z_$][a-zA-Z0-9_$]*$</code></p>
-<p>Useful where the value is used as an identifier (e.g. variable name, class name, etc...) in a Handlebars template</p>
-</li>
-<li>
-<p><strong>Option</strong>:</p>
-<p>Just a boolean flag. Will be visible as <code>true</code> (truthy) in the Handlebars template</p>
-</li>
-<li>
-<p><strong>Selection</strong>:</p>
-<p>Item Format: <code>^[a-zA-Z_$][a-zA-Z0-9_$]*$</code></p>
-<p>Useful where you want to offer a predefined list of values to choose from. The selected value(s) will be created as
-properties in the Handlebars template and have the value <code>true</code> (truthy).</p>
-</li>
-<li>
-<p><strong>Text</strong>:</p>
-<p>Useful when you want to insert arbitrary text in a Handlebars template</p>
-</li>
-</ul>
-<h3 id="conditional-files"><a class="header" href="#conditional-files">Conditional Files</a></h3>
-<p>You can define pairs of conditions and globbing expressions to specify files that are only applied if said condition
-evaluates to a truthy value.</p>
-<p>The condition of such a pair can be any expression that is compatible with Handlebars and has full access to the values
-initialized from the questions.</p>
-<p>The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
-write.</p>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it
@@ -385,10 +326,309 @@ this new, dynamically created directory.</p>
 <h2 id="a-hreftemplatesconfigurationreadmehtmlarchitectjsona"><a class="header" href="#a-hreftemplatesconfigurationreadmehtmlarchitectjsona"><a href="templates/configuration/README.html">.architect.json</a></a></h2>
 <p>The template directory can also contain a <code>.architect.json</code> file which can specify various configuration
 values influencing template rendering.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="configuration"><a class="header" href="#configuration">Configuration</a></h1>
+<p>You can configure a template by providing a <code>.architect.json</code> file.</p>
+<p>The format of its content is described here using TypeScript, the root object is modelled as the <code>Config</code> interface.</p>
+<!--@formatter:off-->
+<pre><code class="language-ts">/**
+ * The configuration used by Architect when creating an instance of this project template.
+ * 
+ * Everything (including the file itself) is optional, but Architect makes more sense to
+ * use when actually configured
+ */
+export interface Config {
+    /**
+     * The name of the template.
+     * 
+     * Can be used in handlebars templates using `__template__.name`
+     */
+    name?: string;
+    /**
+     * The version of the template.
+     * 
+     * Can be used in handlebars templates using `__template__.version`
+     */
+    version?: string;
+    /**
+     * Questions to ask the user to specify dynamic context values.
+     * 
+     * These values are then available in handlebars templates
+     */
+    questions?: Question[];
+    /**
+     * Specifies conditions for certain files to be created.
+     * 
+     * These conditions have full access to the context that is created by the questions.
+     *
+     * Note that conditions specified here don't apply to hidden files that weren't explicitly
+     * included using `includeHidden` or files excluded using `exclude`
+     */
+    conditionalFiles?: ConditionalFiles[];
+    /**
+     * Specifies Glob expressions to include hidden files in the target.
+     *
+     * Note that including the `.git` directory here will have no effect
+     */
+    includeHidden?: string[];
+    /**
+     * Specifies Glob expressions to exclude files in the target.
+     *
+     * Note that exclusions have a higher precedence than inclusions and conditional files
+     */
+    exclude?: string[];
+    /**
+     * Indicates whether to treat explicitly identified Handlebars templates (using their
+     * file extension) as regular templates and render them.
+     *
+     * By default, Handlebars templates that are explicitly identified are not rendered,
+     * rather they are copied as is.
+     *
+     * Note: File names of such files are still treated as templates
+     */
+    renderHbs?: boolean;
+    /**
+     * The extension that is used to explicitly identify Handlebars templates.
+     *
+     * This is specified as a string preceded by a singular dot. The default value is `.hbs`
+     */
+    hbsExtension?: string;
+}
+
+export type Question = SimpleQuestion | SelectionQuestion;
+
+export interface SimpleQuestion extends BaseQuestion {
+    type: QuestionType.Identifier | QuestionType.Option | QuestionType.Text;
+}
+
+export interface SelectionQuestion extends BaseQuestion {
+    type: QuestionType.Selection;
+
+    /**
+     * The items available for selection.
+     *
+     * These will be set to `true` in the context if selected.
+     *
+     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
+     */
+    items: string[];
+    /**
+     * Specifies whether multiple items can be selected
+     */
+    multi?: boolean;
+}
+
+export interface ConditionalFiles {
+    /**
+     * The condition that decides whether the matched files are created.
+     *
+     * This is an expression that is handled by handlebars.
+     *
+     * The expression is automatically wrapped in curly braces (`{{` `}}`) so you
+     * only need to specify the actual content of the expression here
+     */
+    condition: string;
+    /**
+     * A Glob string specifying the files affected by the condition
+     */
+    matcher: string;
+}
+
+interface BaseQuestion {
+    /**
+     * The name in the context for the value specified when answering this question.
+     *
+     * Can be multiple names concatenated using `.` to create hierarchical structures in
+     * the context.
+     *
+     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
+     */
+    name: string;
+    /**
+     * The type of the question, which indicates the expected values
+     */
+    type: QuestionType;
+    /**
+     * A properly spelled out question to ask instead of just presenting the name when
+     * processing input
+     */
+    pretty?: string;
+}
+
+export enum QuestionType {
+    Identifier = 'Identifier',
+    Option = 'Option',
+    Selection = 'Selection',
+    Text = 'Text'
+}
+</code></pre>
+<!--@formatter:on-->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="context"><a class="header" href="#context">Context</a></h1>
+<p>Architect builds a Handlebars context using some provided information and the values defined 
+when answering configured questions.</p>
+<p>This context is available to all instances where Handlebars templates are processed, so you 
+can access specified values in conditions, or file/directory names.</p>
+<p>Context consists of multiple nested objects and properties which contain values.</p>
+<h2 id="default-context"><a class="header" href="#default-context">Default Context</a></h2>
+<p>By default, Architect provides the following data in the context, provided values are configured:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: {
+    &quot;name&quot;: &quot;The template name from in .architect.json or undefined&quot;,
+    &quot;version&quot;: &quot;The template version from .architect.json or undefined&quot;
+  }
+}
+</code></pre>
+<p>You cannot add to the <code>__template__</code> object using your questions, and Architect will reject any
+attempt to do so. However, you can still define a <code>__template__</code> object in any nested object 
+further down the line.</p>
+<p>Something like this would be possible:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: ...,
+  &quot;yourOwnObject&quot;: {
+    &quot;__template__&quot;: {
+      &quot;yourProperty&quot;: &quot;some data&quot;
+    }
+  }
+}
+</code></pre>
+<h2 id="file-context"><a class="header" href="#file-context">File Context</a></h2>
+<p>In addition to the default context Architect adds some information about the current template file 
+to the context:</p>
+<pre><code class="language-json">{
+  &quot;__template__&quot;: {
+    ...,
+    &quot;file&quot;: {
+      &quot;rootDir&quot;: &quot;the working directory, not the target directory&quot;,
+      &quot;sourceName&quot;: &quot;the original file name of the template file&quot;,
+      &quot;sourcePath&quot;: &quot;the original path of the template file&quot;,
+      &quot;targetName&quot;: &quot;the final file name of the rendered template file&quot;,
+      &quot;targetPath&quot;: &quot;the final path of the rendered template file&quot;
+    }
+  }
+}
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="questions"><a class="header" href="#questions">Questions</a></h1>
+<p>In the template configuration you can define questions that Architect should ask before the files can be written to the
+target. The answers to those questions are stored in the context and are therefore available in the context.</p>
+<p>You can ask various types of questions, each with a concrete use-case.</p>
+<p>The question names must be (possibly dot-delimited) identifiers, so that they can be used in Handlebars templates. By
+specifying multiple dot-delimited identifiers you can create nested objects in the context.</p>
+<p>Multiple occurrences of previously specified question names will overwrite prior ones without warning.</p>
+<p><strong>Example</strong>:</p>
+<p>You define questions with the following names:</p>
+<ul>
+<li><code>author.name</code></li>
+<li><code>author.email</code></li>
+<li><code>somethingElse</code></li>
+</ul>
+<p>Result in the context:</p>
+<pre><code class="language-json">{
+  ...,
+  &quot;author&quot;: {
+    &quot;name&quot;: ...,
+    &quot;email&quot;: ...
+  },
+  &quot;somethingElse&quot;: ...
+}
+</code></pre>
+<h2 id="identifier"><a class="header" href="#identifier">Identifier</a></h2>
+<p>Ask for an identifier, i.e. a String that can only consist of a limited subset of characters.</p>
+<p><strong>Format</strong>:</p>
+<pre><code class="language-regexp">^[a-zA-Z_$][a-zA-Z0-9_$]*$
+</code></pre>
+<p>A possible use-case for this question type can be to ask for a class name for an application's main class.</p>
+<h2 id="option"><a class="header" href="#option">Option</a></h2>
+<p>A simple yes or no question. This will store a Boolean in the context.</p>
+<p><strong>Example</strong>:</p>
+<p>You specify <code>yes</code> for the question <code>insertLogStatements</code>.</p>
+<p>Result in the context:</p>
+<pre><code class="language-json">{
+  ...,
+  &quot;insertLogStatements&quot;: true
+}
+</code></pre>
+<p>This question type is useful when you want to present the user with a binary choice, e.g. whether to generate
+a <code>.gitignore</code> in the target directory.</p>
+<h2 id="selection"><a class="header" href="#selection">Selection</a></h2>
+<p>Useful where you want to offer a predefined list of values to choose from. The selected value(s)
+will be created as properties in the context and have the value <code>true</code>.</p>
+<p>You can configure a selection question to accept only one or multiple (<code>multi</code>) values to be selected.</p>
+<p>As those values will be added as properties they must match a certain format:</p>
+<pre><code class="language-regexp">^[a-zA-Z_$][a-zA-Z0-9_$]*$
+</code></pre>
+<p><strong>Example</strong>:</p>
+<p>The question (<code>whichOnes</code>) defines three values: <code>value1</code>, <code>value2</code>, and <code>value3</code>. You select
+<code>value1</code> and <code>value2</code>.</p>
+<p>Result in the context:</p>
+<pre><code class="language-json">{
+  ...,
+  &quot;whichOnes&quot;: {
+    &quot;value1&quot;: true,
+    &quot;value2&quot;: true
+  }
+}
+</code></pre>
+<p>A possible use-case for this type of question is to define several features a user could choose to enable when using a
+template, e.g. whether to use logging statements, or to include a certain dependency.</p>
+<h2 id="text"><a class="header" href="#text">Text</a></h2>
+<p>This question type allows you to ask for arbitrary text to store in the context. No format is enforced for answers.</p>
+<p>Possible use-cases for this question type can be to ask for a person's full name or an email address.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="filters"><a class="header" href="#filters">Filters</a></h1>
+<p>The Architect configuration file allows you to define filters in multiple ways to control whether certain files get
+actually added to the target.</p>
+<p>The filters are:</p>
+<ul>
+<li><code>exclude</code> (Exclusion of files, strongest)</li>
+<li><code>includeHidden</code> (Inclusion of certain hidden files)</li>
+<li><code>conditionalFiles</code> (Inclusion of files if a certain condition is true)</li>
+</ul>
+<p>These filters have a precedence assigned to them, exclusions are the strongest. Files that match an exclusion rule are
+never added to the target. Hidden files can only be added through a condition if they have also been matched by an
+explicit <code>includeHidden</code> expression. If you include a hidden file, but a condition that matches it is false, it's not
+added to the target.</p>
+<p>Keep in mind that the top-level <code>.git</code> directory cannot be matched by any of those filters and is always excluded from
+explicit processing. Architect handles that <code>.git</code> directory separately.</p>
+<p>All filters use <em>glob</em> expressions that match the entire relative path to the root directory of the template.</p>
+<p>Please see <a href="https://docs.rs/globset/0.4.8/globset/#syntax">this</a> for more information on the supported syntax for <em>glob</em>
+expressions (Architect enables the <code>literal_separator</code> option and case-insensitive matching).</p>
+<h2 id="exclusions"><a class="header" href="#exclusions">Exclusions</a></h2>
+<p>Define <em>glob</em> expressions to match files you don't want to have in the target.</p>
+<h2 id="include-hidden"><a class="header" href="#include-hidden">Include Hidden</a></h2>
+<p>Architect by default excludes all hidden files or directories. This applies to both file/directory names starting with a
+dot or files explicitly hidden in file system (Windows).</p>
+<p>Define <em>glob</em> expressions to match hidden files you want to include anyway.</p>
+<p>Please keep in mind that you cannot include the top-level <code>.git</code> directory or any of its descendants using this.</p>
+<h2 id="conditional-files"><a class="header" href="#conditional-files">Conditional Files</a></h2>
+<p>Architect will only include matched files if the specified condition returns a &quot;truthy&quot; result. Here, ordering matters,
+as Architect will only evaluate the condition for the first match.</p>
+<p>Here you define <em>glob</em> expressions to match files, and Handlebars expressions to determine whether these files should be
+included. These Handlebars expression don't need to be delimited by <code>{{</code> and <code>}}</code>, and have full access to the context.</p>
+<p>The <em>glob</em> expression will be applied to the file in the source repository, so before any possible Handlebars templates
+in file or directory names are evaluated.</p>
+<p>Please keep in mind that when working with hidden files conditions can only be applied to files included
+using <code>includeHidden</code>.</p>
+<p>Format in the configuration file:</p>
+<!--@formatter:off-->
+<pre><code class="language-ts">// Config
+    conditionalFiles?: ConditionalFiles[];
+
+// ConditionalFiles
+export interface ConditionalFiles {
+    /**
+     * The condition that decides whether the matched files are created.
+     *
+     * This is an expression that is handled by handlebars.
+     *
+     * The expression is automatically wrapped in curly braces (`{{` `}}`) so you
+     * only need to specify the actual content of the expression here
+     */
+    condition: string;
+    /**
+     * A Glob string specifying the files affected by the condition
+     */
+    matcher: string;
+}
+</code></pre>
+<!--@formatter:on-->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="rendering"><a class="header" href="#rendering">Rendering</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="helpers-1"><a class="header" href="#helpers-1">Helpers</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="expert-mode"><a class="header" href="#expert-mode">Expert Mode</a></h1>
