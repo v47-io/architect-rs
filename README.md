@@ -36,9 +36,10 @@ information.
 Architect uses Handlebars and Git to create proper projects from template repositories.
 
 1. Add any file to your template repository and add Handlebars expressions to it.
-2. Download the `architect` executable for your platform from the
+2. Add an `.architect.json` configuration file with your questions
+3. Download the `architect` executable for your platform from the
    latest [Release](https://github.com/v47-io/architect-rs/releases).
-3. Execute `architect <PATH-TO-REPO>` in your desired local directory, answer user-defined questions, et voila, you got
+4. Execute `architect <PATH-TO-REPO>` in your desired local directory, answer user-defined questions, et voila, you got
    a fully functional project created from a template.
 
 ## License and Contributions
