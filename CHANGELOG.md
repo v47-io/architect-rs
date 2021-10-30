@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.10.0 (2021-10-30)
+
+### Documentation
+
+ - <csr-id-1a3a15e212cbda563ec746d6e54514d41f1b551d/> Added documentation about expert topics
+ - <csr-id-cf18c373fb73dedade1c428e54100de16253b314/> Added documentation for rendering and removed those parts from README
+ - <csr-id-186d41dc11bf9d13a4c8c82e73313d2f8a67b860/> Fixed a link to the configuration page
+ - <csr-id-f984255a43afab66400bde1f94dda4a2f03af32b/> Added bunch more docs for the configuration file and the context
+ - <csr-id-ce7946c3f27cf49dd1c345a83c7500c91a38cd97/> Wrote documentation for the templates, fetching, and structure
+ - <csr-id-643bcd04ebf8a1eb3830ba13d1d61d14b7ca1435/> Fixed special characters
+ - <csr-id-dd2a1367a6bcca70e5b14aef507849448dbf8cc9/> Added CLI documentation and removed usage from README
+
+### Bug Fixes
+
+ - <csr-id-effd69fd13c1e2be1513b3b01027d060aeeca104/> Added more badges to README 🎉
+ - <csr-id-d8e0e6e15c5001de16732db967d8f510b6d9c94e/> Even better README
+ - <csr-id-5a866d109431a152e2013daf53acd51cf1064250/> Better README
+ - <csr-id-2c3ac6b3a29d9a9132d8edae7b4e67e3c21ad46f/> Better README
+ - <csr-id-13a63432d1ec5f61a58015ed45e0cc7152ebdcca/> Fixed handling of glob expressions according to docs
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 12 commits contributed to the release.
+ - 12 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' where seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Added more badges to README 🎉 ([`effd69f`](https://github.comgit//v47-io/architect-rs/commit/effd69fd13c1e2be1513b3b01027d060aeeca104))
+    - Even better README ([`d8e0e6e`](https://github.comgit//v47-io/architect-rs/commit/d8e0e6e15c5001de16732db967d8f510b6d9c94e))
+    - Added documentation about expert topics ([`1a3a15e`](https://github.comgit//v47-io/architect-rs/commit/1a3a15e212cbda563ec746d6e54514d41f1b551d))
+    - Better README ([`5a866d1`](https://github.comgit//v47-io/architect-rs/commit/5a866d109431a152e2013daf53acd51cf1064250))
+    - Better README ([`2c3ac6b`](https://github.comgit//v47-io/architect-rs/commit/2c3ac6b3a29d9a9132d8edae7b4e67e3c21ad46f))
+    - Added documentation for rendering and removed those parts from README ([`cf18c37`](https://github.comgit//v47-io/architect-rs/commit/cf18c373fb73dedade1c428e54100de16253b314))
+    - Fixed handling of glob expressions according to docs ([`13a6343`](https://github.comgit//v47-io/architect-rs/commit/13a63432d1ec5f61a58015ed45e0cc7152ebdcca))
+    - Fixed a link to the configuration page ([`186d41d`](https://github.comgit//v47-io/architect-rs/commit/186d41dc11bf9d13a4c8c82e73313d2f8a67b860))
+    - Added bunch more docs for the configuration file and the context ([`f984255`](https://github.comgit//v47-io/architect-rs/commit/f984255a43afab66400bde1f94dda4a2f03af32b))
+    - Wrote documentation for the templates, fetching, and structure ([`ce7946c`](https://github.comgit//v47-io/architect-rs/commit/ce7946c3f27cf49dd1c345a83c7500c91a38cd97))
+    - Fixed special characters ([`643bcd0`](https://github.comgit//v47-io/architect-rs/commit/643bcd04ebf8a1eb3830ba13d1d61d14b7ca1435))
+    - Added CLI documentation and removed usage from README ([`dd2a136`](https://github.comgit//v47-io/architect-rs/commit/dd2a1367a6bcca70e5b14aef507849448dbf8cc9))
+</details>
+
 ## 0.9.1 (2021-10-30)
 
 ### Documentation
@@ -23,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 7 commits contributed to the release.
+ - 8 commits contributed to the release.
  - 7 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' where seen in commit messages
 
@@ -34,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release architect-rs v0.9.1 ([`b8267be`](https://github.comgit//v47-io/architect-rs/commit/b8267bee88846d5da53ac22069dbd06cbc181d6a))
     - Updated version in Cargo manifest ([`455033c`](https://github.comgit//v47-io/architect-rs/commit/455033c48590cf85f671189fef87baf2517b82ee))
     - Added note about executable flag on Linux or macOS ([`7ffc9ab`](https://github.comgit//v47-io/architect-rs/commit/7ffc9ab6ebeb360fde5266e6e082aa711ce57501))
     - Unified path handling to preempt Windows UNC paths ([`48eb2c8`](https://github.comgit//v47-io/architect-rs/commit/48eb2c865afcf5aa618e71b9d66c0f6369fb6fa5))
@@ -45,11 +95,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.9.0 (2021-10-29)
 
+### Bug Fixes
+
+ - <csr-id-9df8d44d2a4a67bf0bf9a9b594efded44b395601/> Properly handling the result in `is_not_excluded`
+ - <csr-id-b92417644a026953d81da8a147f1a28d0d4a8551/> Fixed split by wrong char
+   Exactly the opposite actually, split by `/` and join by `.` Doh!!! 🤦
+
 ### New Features
 
 - Cloning Git repositories as templates
 - Configuration of template using JSON
 - Rendering templates using Handlebars
+ - <csr-id-60dc3211bab34df82bf851691cfa41712b02be46/> Implemented configurable treatment of actual Handlebars template files
+   This is done so users can have actual Handlebars template files in their repos without them being rendered.
+ - <csr-id-7f1f5af5d3cb769c8437d9677d384e4f00c381e0/> Added template file metadata to rendering context
 
 ### Commit Details
 
