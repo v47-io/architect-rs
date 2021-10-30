@@ -637,7 +637,24 @@ directories from dot-separated values, e.g. a Java package.</p>
 <li>Result: <code>src/main/java/com/github/example/Main.java</code></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="expert-mode"><a class="header" href="#expert-mode">Expert Mode</a></h1>
+<p>This section contains information about topics that are not important for the everyday user, but you might find them
+interesting if you're looking into tweaking the internals of Architect or want to know more about how it does its thing.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h1>
+<p>Architect offers you the ability to modify some behaviors through the use of environment variables.</p>
+<h2 id="render_parallelism"><a class="header" href="#render_parallelism">RENDER_PARALLELISM</a></h2>
+<p>By default, Architect uses multiple threads to render the templates.</p>
+<p>This is the formula: <code>max(1, min(4, number_of_threads / 2))</code></p>
+<p><code>number_of_threads</code> is the number of threads available on your machine.</p>
+<p>If you think four threads are too little or too much, you can change this to any other integer &gt; 0.</p>
+<h2 id="template_inspect_max_lines"><a class="header" href="#template_inspect_max_lines">TEMPLATE_INSPECT_MAX_LINES</a></h2>
+<p>Architect won't read entire files to find out if they are templates. By default, it'll only read 25 lines of each file
+to find out.</p>
+<p>If you have files where the Handlebars &quot;mustaches&quot; only start occurring after the 25th line, this environment variable
+is for you. Just set it to any other integer &gt; 0.</p>
+<h2 id="line_buffer_capacity"><a class="header" href="#line_buffer_capacity">LINE_BUFFER_CAPACITY</a></h2>
+<p>Architect uses a buffer to read lines into memory one at a time. By default, this buffer is 256 bytes long.</p>
+<p>Because the buffer expands automatically this isn't even something I'd recommend adjusting, but if you really want to,
+set it to any other integer &gt; 0.</p>
 
                     </main>
 
