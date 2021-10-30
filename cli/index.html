@@ -162,12 +162,12 @@ Architect removes the original Git remotes from the target.</p>
 <h3 id="--b---branch-branch"><a class="header" href="#--b---branch-branch">--b, --branch &lt;branch&gt;</a></h3>
 <p>Specify a different remote branch to fetch instead of the default branch of the repository.</p>
 <h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
-<p>To customize the behavior of Architect you can specify one or more flags as described here.</p>
+<p>To customize the behavior of Architect even further you can specify one or more flags as described here.</p>
 <h3 id="-d---dirty"><a class="header" href="#-d---dirty">-D, --dirty</a></h3>
 <p>Use the template source in its current (dirty) state.</p>
-<p>This only has an effect if the local path is specified as the source repository. In that case Architect
+<p>This only has an effect if a local path is specified as the source repository. In that case Architect
 won't perform a Git clone but will just copy the directory, regardless of the local state.</p>
-<p>This is most useful to test a template locally, while you are developing it. </p>
+<p>This is most useful to test a template locally while you are developing it. </p>
 <p>This option has no effect with remote repositories.</p>
 <h3 id="-c---ignore-checks"><a class="header" href="#-c---ignore-checks">-C, --ignore-checks</a></h3>
 <p>Ignore some failed checks that would prevent Architect from creating the target files.</p>

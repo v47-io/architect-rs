@@ -266,6 +266,8 @@ write.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it
 under the terms of the aforementioned BSD 3-Clause License.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<p>Architect uses your existing Git installation, so you should have the <code>git</code> command on your <code>PATH</code>.</p>
 <h2 id="using-pre-built-binaries"><a class="header" href="#using-pre-built-binaries">Using pre-built binaries</a></h2>
 <p>You can easily get pre-built binaries for Architect if you don't want to build it yourself.</p>
 <p>Simply navigate to the <a href="https://github.com/v47-io/architect-rs/releases">Releases</a> page on GitHub and download 
@@ -324,12 +326,12 @@ Architect removes the original Git remotes from the target.</p>
 <h3 id="--b---branch-branch"><a class="header" href="#--b---branch-branch">--b, --branch &lt;branch&gt;</a></h3>
 <p>Specify a different remote branch to fetch instead of the default branch of the repository.</p>
 <h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
-<p>To customize the behavior of Architect you can specify one or more flags as described here.</p>
+<p>To customize the behavior of Architect even further you can specify one or more flags as described here.</p>
 <h3 id="-d---dirty"><a class="header" href="#-d---dirty">-D, --dirty</a></h3>
 <p>Use the template source in its current (dirty) state.</p>
-<p>This only has an effect if the local path is specified as the source repository. In that case Architect
+<p>This only has an effect if a local path is specified as the source repository. In that case Architect
 won't perform a Git clone but will just copy the directory, regardless of the local state.</p>
-<p>This is most useful to test a template locally, while you are developing it. </p>
+<p>This is most useful to test a template locally while you are developing it. </p>
 <p>This option has no effect with remote repositories.</p>
 <h3 id="-c---ignore-checks"><a class="header" href="#-c---ignore-checks">-C, --ignore-checks</a></h3>
 <p>Ignore some failed checks that would prevent Architect from creating the target files.</p>
@@ -347,8 +349,42 @@ won't perform a Git clone but will just copy the directory, regardless of the lo
 <p>Enables verbose output.</p>
 <p>This is very technical at places. Make sure to specify this option before reporting a bug.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="templates"><a class="header" href="#templates">Templates</a></h1>
+<p>Architect makes it easy to scaffold entire projects from Git repositories, here referred to as templates.</p>
+<p>All Git repositories are potential templates, and all files in them are also treated as Handlebars templates
+if they contain Handlebars template expressions indicated by <code>{{</code> and <code>}}</code>. All other files are simply
+copied as long as they are not excluded.</p>
+<p>On top of that all file names are also potential Handlebars templates that are rendered when generating
+sources from a template.</p>
+<p>Architect preserves the original directory structure but allows the creation of new nested directory structures
+by way of Handlebars expressions in directory names.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="fetching"><a class="header" href="#fetching">Fetching</a></h1>
+<p>Architect uses Git to fetch remote repositories, therefore it supports all the ways to fetch and
+authenticate that Git does.</p>
+<p>Fetching a remote repository is pretty straightforward, but Architect also supports fetching 
+templates from a local directory.</p>
+<p>Architect will either fetch it using Git, using the directory like a remote repository, or copy the 
+directories contents, e.g. if the directory doesn't contain a Git repository.</p>
+<p>When fetching from a local directory you can force Architect to copy the contents instead of using
+Git using the <code>--dirty</code> <a href="templates/../cli/README.html">CLI</a> flag. This is particularly useful when you want to 
+test a template you are creating without having to commit your changes or pushing it to a remote 
+Git repository.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="structure"><a class="header" href="#structure">Structure</a></h1>
+<p>Architect treats the entire directory and all included files in a Git repository as templates.</p>
+<p>This means that the original directory structure is preserved, and you can create additional nested
+directory structures when using Handlebars expressions.</p>
+<p>Because all directory and file names are treated as potential Handlebars templates themselves, you
+can create nested directory structures, e.g. for Java packages.</p>
+<p><strong>Example</strong>:</p>
+<p>Provided you have a directory in your template <code>src/main/java/{{ package javaPackage }}</code> there are few 
+things to consider.</p>
+<p>Let's consider <code>javaPackage</code> contains the value <code>com.github.example</code>. The <code>package</code> helper (described 
+<a href="templates/rendering/helpers.html">here</a>) will transform that value to <code>com/github/example</code>. The resulting value 
+will then be inserted into the path which will give us the final path <code>src/main/java/com/github/example</code>.</p>
+<p>Architect will then create that path's nested directories copy all files from the source directory into 
+this new, dynamically created directory.</p>
+<h2 id="a-hreftemplatesconfigurationreadmehtmlarchitectjsona"><a class="header" href="#a-hreftemplatesconfigurationreadmehtmlarchitectjsona"><a href="templates/configuration/README.html">.architect.json</a></a></h2>
+<p>The template directory can also contain a <code>.architect.json</code> file which can specify various configuration
+values influencing template rendering.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="context"><a class="header" href="#context">Context</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="questions"><a class="header" href="#questions">Questions</a></h1>

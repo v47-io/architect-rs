@@ -135,6 +135,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="templates"><a class="header" href="#templates">Templates</a></h1>
+<p>Architect makes it easy to scaffold entire projects from Git repositories, here referred to as templates.</p>
+<p>All Git repositories are potential templates, and all files in them are also treated as Handlebars templates
+if they contain Handlebars template expressions indicated by <code>{{</code> and <code>}}</code>. All other files are simply
+copied as long as they are not excluded.</p>
+<p>On top of that all file names are also potential Handlebars templates that are rendered when generating
+sources from a template.</p>
+<p>Architect preserves the original directory structure but allows the creation of new nested directory structures
+by way of Handlebars expressions in directory names.</p>
 
                     </main>
 

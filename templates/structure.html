@@ -135,6 +135,22 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="structure"><a class="header" href="#structure">Structure</a></h1>
+<p>Architect treats the entire directory and all included files in a Git repository as templates.</p>
+<p>This means that the original directory structure is preserved, and you can create additional nested
+directory structures when using Handlebars expressions.</p>
+<p>Because all directory and file names are treated as potential Handlebars templates themselves, you
+can create nested directory structures, e.g. for Java packages.</p>
+<p><strong>Example</strong>:</p>
+<p>Provided you have a directory in your template <code>src/main/java/{{ package javaPackage }}</code> there are few 
+things to consider.</p>
+<p>Let's consider <code>javaPackage</code> contains the value <code>com.github.example</code>. The <code>package</code> helper (described 
+<a href="rendering/helpers.html">here</a>) will transform that value to <code>com/github/example</code>. The resulting value 
+will then be inserted into the path which will give us the final path <code>src/main/java/com/github/example</code>.</p>
+<p>Architect will then create that path's nested directories copy all files from the source directory into 
+this new, dynamically created directory.</p>
+<h2 id="a-hrefconfigurationreadmehtmlarchitectjsona"><a class="header" href="#a-hrefconfigurationreadmehtmlarchitectjsona"><a href="configuration/README.html">.architect.json</a></a></h2>
+<p>The template directory can also contain a <code>.architect.json</code> file which can specify various configuration
+values influencing template rendering.</p>
 
                     </main>
 
