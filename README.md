@@ -234,22 +234,6 @@ ARGS:
             This defaults to the Git repository name as a child of the current working directory
 ```
 
-## Development
-
-How to build:
-
-```shell
-cargo build --bin architect
-```
-
-How to test:
-
-```shell
-cargo test --bin architect
-```
-
-The result should be an `architect(\.exe)?` file in the `./target/debug` directory, ready for execution.
-
 ## License and Contributions
 
 Architect is provided under the terms of the BSD 3-Clause License.
