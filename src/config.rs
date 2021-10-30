@@ -35,10 +35,10 @@ use std::fs::{metadata, read_to_string};
 use std::io;
 use std::path::Path;
 
-use globset::{Glob, GlobMatcher};
+use globset::GlobMatcher;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{is_identifier, ToolConfig};
+use crate::utils::{glob, is_identifier, ToolConfig};
 
 pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Result<Option<String>> {
     let config_file_path = base_path.join(".architect.json");
@@ -156,10 +156,10 @@ pub fn read_config(input: &str) -> io::Result<Config> {
                 return None;
             }
 
-            match Glob::new(raw_cond_templates.matcher) {
-                Ok(glob) => Some(ConditionalFilesSpec {
+            match glob(raw_cond_templates.matcher) {
+                Ok(matcher) => Some(ConditionalFilesSpec {
                     condition: raw_cond_templates.condition.trim(),
-                    matcher: glob.compile_matcher(),
+                    matcher,
                 }),
                 Err(e) => {
                     eprintln!(
@@ -190,8 +190,8 @@ pub fn read_config(input: &str) -> io::Result<Config> {
 fn map_glob_matchers(raw: Option<&Vec<&str>>) -> Vec<GlobMatcher> {
     raw.unwrap_or(&vec![])
         .iter()
-        .filter_map(|&raw_glob| match Glob::new(raw_glob) {
-            Ok(glob) => Some(glob.compile_matcher()),
+        .filter_map(|&raw_glob| match glob(raw_glob) {
+            Ok(matcher) => Some(matcher),
             Err(e) => {
                 eprintln!("Failed to parse glob expression {} ({})", raw_glob, e);
                 None

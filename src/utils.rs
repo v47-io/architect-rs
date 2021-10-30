@@ -30,6 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+use globset::{Error, GlobBuilder, GlobMatcher};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -149,6 +150,14 @@ lazy_static! {
 
 pub fn is_identifier(value: &str) -> bool {
     ID_REGEX.is_match(value)
+}
+
+pub fn glob(input: &str) -> Result<GlobMatcher, Error> {
+    GlobBuilder::new(input)
+        .case_insensitive(true)
+        .literal_separator(true)
+        .build()
+        .map(|it| it.compile_matcher())
 }
 
 #[cfg(test)]

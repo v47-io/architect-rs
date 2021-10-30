@@ -788,13 +788,13 @@ pub struct RenderConflict {
 mod tests {
     use std::fs::read_to_string;
 
-    use globset::Glob;
     use itertools::Itertools;
     use lazy_static::lazy_static;
     use serde_json::{Map, Number, Value};
     use tempfile::{tempdir, TempDir};
 
     use crate::context::UnsafeContext;
+    use crate::utils::glob;
     use crate::utils::tests::RESOURCES_DIR;
 
     use super::*;
@@ -832,8 +832,8 @@ mod tests {
             name: Some("Auto Template"),
             version: Some("0.x"),
             questions: vec![],
-            include_hidden: vec![Glob::new("**/*still-included*").unwrap().compile_matcher()],
-            exclude: vec![Glob::new("*excluded*").unwrap().compile_matcher()],
+            include_hidden: vec![glob("**/*still-included*").unwrap()],
+            exclude: vec![glob("*excluded*").unwrap()],
             conditional_files: vec![],
             render_hbs: false,
             hbs_xt: ".handlebars".into(),
@@ -986,8 +986,8 @@ mod tests {
             name: Some("Auto Template"),
             version: Some("0.x"),
             questions: vec![],
-            include_hidden: vec![Glob::new("**/*still-included*").unwrap().compile_matcher()],
-            exclude: vec![Glob::new("*excluded*").unwrap().compile_matcher()],
+            include_hidden: vec![glob("**/*still-included*").unwrap()],
+            exclude: vec![glob("*excluded*").unwrap()],
             conditional_files: vec![],
             render_hbs: true,
             hbs_xt: ".handlebars".into(),
@@ -1062,15 +1062,15 @@ mod tests {
             conditional_files: vec![
                 ConditionalFilesSpec {
                     condition: "someValue",
-                    matcher: Glob::new("matched_file").unwrap().compile_matcher(),
+                    matcher: glob("matched_file").unwrap(),
                 },
                 ConditionalFilesSpec {
                     condition: "not someValue",
-                    matcher: Glob::new("unmatched_file").unwrap().compile_matcher(),
+                    matcher: glob("unmatched_file").unwrap(),
                 },
             ],
-            include_hidden: vec![Glob::new(".github").unwrap().compile_matcher()],
-            exclude: vec![Glob::new("excluded_file").unwrap().compile_matcher()],
+            include_hidden: vec![glob(".github").unwrap()],
+            exclude: vec![glob("excluded_file").unwrap()],
             render_hbs: false,
             hbs_xt: ".hbs".into(),
         };
@@ -1208,7 +1208,7 @@ mod tests {
         assert!(eval_condition(
             &ConditionalFilesSpec {
                 condition: "simple",
-                matcher: Glob::new("").unwrap().compile_matcher()
+                matcher: glob("").unwrap()
             },
             &HANDLEBARS,
             &context
@@ -1218,7 +1218,7 @@ mod tests {
         assert!(!eval_condition(
             &ConditionalFilesSpec {
                 condition: "falsy",
-                matcher: Glob::new("").unwrap().compile_matcher()
+                matcher: glob("").unwrap()
             },
             &HANDLEBARS,
             &context
