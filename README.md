@@ -24,7 +24,7 @@ Architect uses this [Handlebars implementation](https://docs.rs/crate/handlebars
 For more information you can also refer to [handlebarsjs.com](https://handlebarsjs.com/), however, not all features may
 be supported.
 
-## [Documentation](https://v47-io.github.io/architect-rs/)
+## [&gt;&gt; 📚 Documentation &lt;&lt;](https://v47-io.github.io/architect-rs/)
 
 ## TL;DR
 
