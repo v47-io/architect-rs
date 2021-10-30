@@ -135,6 +135,33 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<h2 id="using-pre-built-binaries"><a class="header" href="#using-pre-built-binaries">Using pre-built binaries</a></h2>
+<p>You can easily get pre-built binaries for Architect if you don't want to build it yourself.</p>
+<p>Simply navigate to the <a href="https://github.com/v47-io/architect-rs/releases">Releases</a> page on GitHub and download 
+the latest binary for your platform. </p>
+<p>Currently, the supported platforms are:</p>
+<ul>
+<li>Linux (x86_64, libc, musl coming soon!)</li>
+<li>Windows (x86_64)</li>
+<li>macOS (darwin)</li>
+</ul>
+<p>After downloading the executable file simply place it or a link to it in your <code>PATH</code> and you're ready to go.</p>
+<h2 id="building-from-source"><a class="header" href="#building-from-source">Building from source</a></h2>
+<p>If you're in the mood for some action, or you want to try the latest features before they appear in a release
+you can get the source from GitHub and build Architect yourself.</p>
+<p>Fork it or get the source from the <a href="https://github.com/v47-io/architect-rs">repository</a>, and you're ready to go.</p>
+<p>Make sure you've got at least Rust 2018 installed and the <code>cargo</code> command is available.</p>
+<h3 id="building"><a class="header" href="#building">Building</a></h3>
+<pre><code class="language-shell">cargo build --bin architect
+</code></pre>
+<p>This command should create an executable file in the <code>target/debug</code> directory, ready for use.</p>
+<p>To create an optimized build add the <code>--release</code> flag to the command:</p>
+<pre><code class="language-shell">cargo build --release --bin architect
+</code></pre>
+<p>The executable file should then be located in the <code>target/release</code> directory.</p>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<pre><code class="language-shell">cargo test --bin architect
+</code></pre>
 
                     </main>
 
