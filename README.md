@@ -11,18 +11,13 @@
 
 [codecov-url]: https://codecov.io/gh/v47-io/architect-rs
 
-> A straightforward and technology-agnostic project scaffolding tool
+Architect is a straightforward and technology-agnostic project scaffolding tool.
 
-Architect works using a few simple features:
+This means you can prepare templates for projects using any technology and Architect will spit out a perfect new
+project.
 
-- Clone template using Git
-- Ask any defined questions to determine some user-specific values
-- Render Handlebars templates using those values as input
-
-Architect uses this [Handlebars implementation](https://docs.rs/crate/handlebars/4.1.3).
-
-For more information you can also refer to [handlebarsjs.com](https://handlebarsjs.com/), however, not all features may
-be supported.
+For its templating Architect uses the Handlebars templating language. Please check the documentation for more
+information.
 
 ## [&gt;&gt; 📚 Documentation &lt;&lt;](https://v47-io.github.io/architect-rs/)
 
