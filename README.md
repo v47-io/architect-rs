@@ -1,7 +1,13 @@
 # Architect
 
+[![License][license-badge]][license-url]
 [![.github/workflows/rust.yml][build-badge]][workflow-url]
 [![codecov][codecov-badge]][codecov-url]
+[![Latest Release][release-badge]][release-url]
+
+[license-badge]: https://img.shields.io/github/license/v47-io/architect-rs
+
+[license-url]: https://github.com/v47-io/architect-rs/blob/master/LICENSE
 
 [build-badge]: https://github.com/v47-io/architect-rs/actions/workflows/tests.yml/badge.svg
 
@@ -10,6 +16,10 @@
 [codecov-badge]: https://codecov.io/gh/v47-io/architect-rs/branch/master/graph/badge.svg?token=FDASC57M7H
 
 [codecov-url]: https://codecov.io/gh/v47-io/architect-rs
+
+[release-badge]: https://img.shields.io/github/v/release/v47-io/architect-rs?include_prereleases
+
+[release-url]: https://github.com/v47-io/architect-rs/releases
 
 Architect is a straightforward and technology-agnostic project scaffolding tool.
 
