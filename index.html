@@ -260,61 +260,6 @@ evaluates to a truthy value.</p>
 initialized from the questions.</p>
 <p>The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
 write.</p>
-<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
-<pre><code class="language-text">USAGE:
-    architect [FLAGS] [OPTIONS] &lt;REPOSITORY&gt; [TARGET]
-
-FLAGS:
-    -D, --dirty
-            Uses the template repository in it's current (dirty) state.
-
-            This only has an effect if a local path is specified as the repository. In that
-            case Architect won't perform a clean clone but will just copy the directory,
-            regardless of the local state.
-
-            This is most useful to test a template locally, with remote repositories this
-            option doesn't have any effect
-    -h, --help
-            Prints help information
-
-    -C, --ignore-checks
-            Ignores some failed checks that would prevent generation otherwise.
-
-            These errors will be ignored:
-              - Condition evaluation errors (for conditional files)
-    -H, --no-history
-            Don't copy over Git history from template to target.
-
-            Instead the target directory will be initialized as a new Git repository
-    -I, --no-init
-            Don't initialize the target directory as a Git repository.
-
-            This requires the --no-history flag to be specified as well
-    -V, --version
-            Prints version information
-
-        --verbose
-            Enables verbose output
-
-
-OPTIONS:
-    -b, --branch &lt;branch&gt;
-            The remote branch to fetch instead of the default branch
-
-
-ARGS:
-    &lt;REPOSITORY&gt;
-            The git repository to use as the project template.
-
-            This can be specified in any way that you can refer to a git repository,
-            i.e. an HTTP(S) URL, ssh connection string, or a local path.
-
-            Example: git@github.com:some-user/his-template-repo.git
-    &lt;TARGET&gt;
-            The target directory for the final output.
-
-            This defaults to the Git repository name as a child of the current working directory
-</code></pre>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it

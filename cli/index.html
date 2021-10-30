@@ -135,6 +135,55 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
+<p>Architect provides a simple command-line interface that uses sensible default values to get going
+as quickly as possible.</p>
+<p>To instantiate a template in a child directory of the working directory execute this command:</p>
+<pre><code class="language-shell">architect &amp;lt;PATH-OR-URL&amp;gt;
+</code></pre>
+<p>Architect follows the Git way of determining the output directory. If you don't explicitly specify 
+an output directory, it will use the name of the source Git repository or the directory name of the
+path as the target directory name.</p>
+<p><strong>Example</strong>:</p>
+<ul>
+<li>Git repository: <code>https://github.com/v47-io/architect-test-template.git</code></li>
+<li>Output directory: <code>./architect-test-template</code></li>
+</ul>
+<p>Additionally, you can also specify a target directory yourself, e.g. if you don't want to use the name
+of the source repository:</p>
+<pre><code class="language-shell">architect &amp;lt;PATH-OR-URL&amp;gt; some-directory
+</code></pre>
+<p>Architect behaves the same as Git in this instance, it will create a directory with this name, relative
+to the working directory. Of course, you can also specify an absolute path.</p>
+<p>By default, Architect will copy the entire Git history of the source repository to the target, or 
+initialize the target as a Git repository. To prevent you from accidentally overwriting the template
+Architect removes the original Git remotes from the target.</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>Architect offers some options to customize the behavior of Architect.</p>
+<h3 id="--b---branch-branch"><a class="header" href="#--b---branch-branch">--b, --branch &lt;branch&gt;</a></h3>
+<p>Specify a different remote branch to fetch instead of the default branch of the repository.</p>
+<h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
+<p>To customize the behavior of Architect you can specify one or more flags as described here.</p>
+<h3 id="-d---dirty"><a class="header" href="#-d---dirty">-D, --dirty</a></h3>
+<p>Use the template source in its current (dirty) state.</p>
+<p>This only has an effect if the local path is specified as the source repository. In that case Architect
+won't perform a Git clone but will just copy the directory, regardless of the local state.</p>
+<p>This is most useful to test a template locally, while you are developing it. </p>
+<p>This option has no effect with remote repositories.</p>
+<h3 id="-c---ignore-checks"><a class="header" href="#-c---ignore-checks">-C, --ignore-checks</a></h3>
+<p>Ignore some failed checks that would prevent Architect from creating the target files.</p>
+<p>These errors will be ignored:</p>
+<ul>
+<li>Condition evaluation errors (for conditional files)</li>
+</ul>
+<h3 id="-h---no-history"><a class="header" href="#-h---no-history">-H, --no-history</a></h3>
+<p>Don't copy the Git history from the source repository to the target.</p>
+<p>Instead, the target will be initialized as a new Git repository.</p>
+<h3 id="-i---no-init"><a class="header" href="#-i---no-init">-I, --no-init</a></h3>
+<p>Don't initialize the target directory as a Git repository.</p>
+<p>This requires the <code>--no-history</code> flag to be present as well.</p>
+<h3 id="--verbose"><a class="header" href="#--verbose">--verbose</a></h3>
+<p>Enables verbose output.</p>
+<p>This is very technical at places. Make sure to specify this option before reporting a bug.</p>
 
                     </main>
 

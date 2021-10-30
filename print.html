@@ -261,61 +261,6 @@ evaluates to a truthy value.</p>
 initialized from the questions.</p>
 <p>The globbing expression is evaluated before any Handlebars templates in file paths are rendered to make it easier to
 write.</p>
-<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
-<pre><code class="language-text">USAGE:
-    architect [FLAGS] [OPTIONS] &lt;REPOSITORY&gt; [TARGET]
-
-FLAGS:
-    -D, --dirty
-            Uses the template repository in it's current (dirty) state.
-
-            This only has an effect if a local path is specified as the repository. In that
-            case Architect won't perform a clean clone but will just copy the directory,
-            regardless of the local state.
-
-            This is most useful to test a template locally, with remote repositories this
-            option doesn't have any effect
-    -h, --help
-            Prints help information
-
-    -C, --ignore-checks
-            Ignores some failed checks that would prevent generation otherwise.
-
-            These errors will be ignored:
-              - Condition evaluation errors (for conditional files)
-    -H, --no-history
-            Don't copy over Git history from template to target.
-
-            Instead the target directory will be initialized as a new Git repository
-    -I, --no-init
-            Don't initialize the target directory as a Git repository.
-
-            This requires the --no-history flag to be specified as well
-    -V, --version
-            Prints version information
-
-        --verbose
-            Enables verbose output
-
-
-OPTIONS:
-    -b, --branch &lt;branch&gt;
-            The remote branch to fetch instead of the default branch
-
-
-ARGS:
-    &lt;REPOSITORY&gt;
-            The git repository to use as the project template.
-
-            This can be specified in any way that you can refer to a git repository,
-            i.e. an HTTP(S) URL, ssh connection string, or a local path.
-
-            Example: git@github.com:some-user/his-template-repo.git
-    &lt;TARGET&gt;
-            The target directory for the final output.
-
-            This defaults to the Git repository name as a child of the current working directory
-</code></pre>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but any contributor must have all rights to the contributed material and agree to provide it
@@ -327,7 +272,7 @@ under the terms of the aforementioned BSD 3-Clause License.</p>
 the latest binary for your platform. </p>
 <p>Currently, the supported platforms are:</p>
 <ul>
-<li>Linux (x86_64, libc, musl coming soon!)</li>
+<li>Linux (x86_64, libc)</li>
 <li>Windows (x86_64)</li>
 <li>macOS (darwin)</li>
 </ul>
@@ -352,6 +297,55 @@ you can get the source from GitHub and build Architect yourself.</p>
 <pre><code class="language-shell">cargo test --bin architect
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
+<p>Architect provides a simple command-line interface that uses sensible default values to get going
+as quickly as possible.</p>
+<p>To instantiate a template in a child directory of the working directory execute this command:</p>
+<pre><code class="language-shell">architect &amp;lt;PATH-OR-URL&amp;gt;
+</code></pre>
+<p>Architect follows the Git way of determining the output directory. If you don't explicitly specify 
+an output directory, it will use the name of the source Git repository or the directory name of the
+path as the target directory name.</p>
+<p><strong>Example</strong>:</p>
+<ul>
+<li>Git repository: <code>https://github.com/v47-io/architect-test-template.git</code></li>
+<li>Output directory: <code>./architect-test-template</code></li>
+</ul>
+<p>Additionally, you can also specify a target directory yourself, e.g. if you don't want to use the name
+of the source repository:</p>
+<pre><code class="language-shell">architect &amp;lt;PATH-OR-URL&amp;gt; some-directory
+</code></pre>
+<p>Architect behaves the same as Git in this instance, it will create a directory with this name, relative
+to the working directory. Of course, you can also specify an absolute path.</p>
+<p>By default, Architect will copy the entire Git history of the source repository to the target, or 
+initialize the target as a Git repository. To prevent you from accidentally overwriting the template
+Architect removes the original Git remotes from the target.</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>Architect offers some options to customize the behavior of Architect.</p>
+<h3 id="--b---branch-branch"><a class="header" href="#--b---branch-branch">--b, --branch &lt;branch&gt;</a></h3>
+<p>Specify a different remote branch to fetch instead of the default branch of the repository.</p>
+<h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
+<p>To customize the behavior of Architect you can specify one or more flags as described here.</p>
+<h3 id="-d---dirty"><a class="header" href="#-d---dirty">-D, --dirty</a></h3>
+<p>Use the template source in its current (dirty) state.</p>
+<p>This only has an effect if the local path is specified as the source repository. In that case Architect
+won't perform a Git clone but will just copy the directory, regardless of the local state.</p>
+<p>This is most useful to test a template locally, while you are developing it. </p>
+<p>This option has no effect with remote repositories.</p>
+<h3 id="-c---ignore-checks"><a class="header" href="#-c---ignore-checks">-C, --ignore-checks</a></h3>
+<p>Ignore some failed checks that would prevent Architect from creating the target files.</p>
+<p>These errors will be ignored:</p>
+<ul>
+<li>Condition evaluation errors (for conditional files)</li>
+</ul>
+<h3 id="-h---no-history"><a class="header" href="#-h---no-history">-H, --no-history</a></h3>
+<p>Don't copy the Git history from the source repository to the target.</p>
+<p>Instead, the target will be initialized as a new Git repository.</p>
+<h3 id="-i---no-init"><a class="header" href="#-i---no-init">-I, --no-init</a></h3>
+<p>Don't initialize the target directory as a Git repository.</p>
+<p>This requires the <code>--no-history</code> flag to be present as well.</p>
+<h3 id="--verbose"><a class="header" href="#--verbose">--verbose</a></h3>
+<p>Enables verbose output.</p>
+<p>This is very technical at places. Make sure to specify this option before reporting a bug.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="templates"><a class="header" href="#templates">Templates</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="fetching"><a class="header" href="#fetching">Fetching</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="structure"><a class="header" href="#structure">Structure</a></h1>
