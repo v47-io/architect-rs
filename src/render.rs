@@ -406,7 +406,7 @@ fn build_render_specs(
             });
 
             dir_context_stack.push(DirContext {
-                source_path: entry.path().canonicalize()?,
+                source_path: entry.path().absolutize()?.to_path_buf(),
                 target_path,
             })
         } else {
@@ -444,7 +444,7 @@ fn build_render_specs(
             let render_specs_vec = get_render_specs_vec(&mut render_specs, &singular_target_path);
 
             render_specs_vec.push(RenderSpec {
-                source: entry.into_path().canonicalize()?,
+                source: entry.into_path().absolutize()?.to_path_buf(),
                 target: get_numbered_path(singular_target_path, render_specs_vec.len()),
                 is_template,
             })
@@ -814,7 +814,10 @@ mod tests {
         let target_temp_dir = tempdir()?;
         let target_path = target_temp_dir.path().join("my-project");
 
-        let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
+        let source_path = RESOURCES_DIR
+            .join("auto-template.input")
+            .absolutize()?
+            .to_path_buf();
 
         let mut context_map = Map::new();
         let mut author_map = Map::new();
@@ -906,7 +909,10 @@ mod tests {
         let target_temp_dir = tempdir()?;
         let target_path = target_temp_dir.path().join("my-project");
 
-        let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
+        let source_path = RESOURCES_DIR
+            .join("auto-template.input")
+            .absolutize()?
+            .to_path_buf();
 
         let context_map = Map::new();
         let context = UnsafeContext::new(context_map).into();
@@ -962,7 +968,10 @@ mod tests {
         let target_temp_dir = tempdir()?;
         let target_path = target_temp_dir.path().join("my-project");
 
-        let source_path = RESOURCES_DIR.join("auto-template.input").canonicalize()?;
+        let source_path = RESOURCES_DIR
+            .join("auto-template.input")
+            .absolutize()?
+            .to_path_buf();
 
         let mut context_map = Map::new();
         let mut author_map = Map::new();

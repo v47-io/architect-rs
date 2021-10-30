@@ -36,6 +36,7 @@ use std::process::exit;
 use std::{env, io};
 
 use handlebars::Context;
+use path_absolutize::Absolutize;
 use serde_json::Value;
 use tempfile::tempdir;
 
@@ -124,7 +125,7 @@ where
     if tool_config.verbose {
         println!(
             "Using temporary directory    \"{}\"",
-            working_dir.path().canonicalize()?.display()
+            working_dir.path().absolutize()?.display()
         )
     }
 

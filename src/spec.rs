@@ -33,6 +33,8 @@
 use std::fmt::{Display, Error, Formatter};
 use std::path::{Path, PathBuf};
 
+use path_absolutize::Absolutize;
+
 #[derive(Debug, PartialEq)]
 pub enum TemplateSpec<'spec> {
     Local(PathBuf),
@@ -67,15 +69,29 @@ pub fn is_valid_template_spec(spec: &str) -> bool {
 }
 
 pub fn parse_template_spec(template_spec_raw: &str) -> TemplateSpec {
-    match template_spec_as_path(template_spec_raw) {
-        Some(dir) => TemplateSpec::Local(dir),
-        None => TemplateSpec::Remote(template_spec_raw),
+    if template_spec_raw.contains("://") || template_spec_raw.contains('@') {
+        TemplateSpec::Remote(template_spec_raw)
+    } else if let Some(dir) = template_spec_as_path(template_spec_raw) {
+        TemplateSpec::Local(dir)
+    } else {
+        TemplateSpec::Remote(template_spec_raw)
     }
 }
 
 fn template_spec_as_path(template_spec: &str) -> Option<PathBuf> {
-    match Path::new(template_spec).canonicalize() {
-        Ok(dir) => Some(dir),
+    match Path::new(template_spec).absolutize() {
+        Ok(dir) => {
+            if dir.is_dir() {
+                Some(dir.to_path_buf())
+            } else {
+                eprintln!(
+                    "Path doesn't point to a directory: {} (original: {})",
+                    dir.display(),
+                    template_spec
+                );
+                None
+            }
+        }
         Err(err) => {
             eprintln!("Not pointing to a valid path: {} ({})", template_spec, err);
             None
@@ -92,7 +108,7 @@ mod tests {
     fn test_template_spec_as_path_win() {
         assert_eq!(
             template_spec_as_path("C:\\Windows\\System32"),
-            Some(PathBuf::from("\\\\?\\C:\\Windows\\System32"))
+            Some(PathBuf::from("C:\\Windows\\System32"))
         );
 
         assert_eq!(
