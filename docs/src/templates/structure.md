@@ -20,7 +20,7 @@ will then be inserted into the path which will give us the final path `src/main/
 Architect will then create that path's nested directories copy all files from the source directory into 
 this new, dynamically created directory.
 
-## [.architect.json](configuration/README.md)
+## [.architect.json](configuration/)
 
 The template directory can also contain a `.architect.json` file which can specify various configuration
 values influencing template rendering.
