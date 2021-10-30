@@ -42,16 +42,16 @@ Specify a different remote branch to fetch instead of the default branch of the 
 
 ## Flags
 
-To customize the behavior of Architect you can specify one or more flags as described here.
+To customize the behavior of Architect even further you can specify one or more flags as described here.
 
 ### -D, --dirty
 
 Use the template source in its current (dirty) state.
 
-This only has an effect if the local path is specified as the source repository. In that case Architect
+This only has an effect if a local path is specified as the source repository. In that case Architect
 won't perform a Git clone but will just copy the directory, regardless of the local state.
 
-This is most useful to test a template locally, while you are developing it. 
+This is most useful to test a template locally while you are developing it. 
 
 This option has no effect with remote repositories.
 

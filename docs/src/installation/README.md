@@ -1,5 +1,9 @@
 # Installation
 
+## Prerequisites
+
+Architect uses your existing Git installation, so you should have the `git` command on your `PATH`.
+
 ## Using pre-built binaries
 
 You can easily get pre-built binaries for Architect if you don't want to build it yourself.
