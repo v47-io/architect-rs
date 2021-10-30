@@ -6,7 +6,7 @@ as quickly as possible.
 To instantiate a template in a child directory of the working directory execute this command:
 
 ```shell
-architect &lt;PATH-OR-URL&gt;
+architect <PATH-OR-URL>
 ```
 
 Architect follows the Git way of determining the output directory. If you don't explicitly specify 
@@ -22,7 +22,7 @@ Additionally, you can also specify a target directory yourself, e.g. if you don'
 of the source repository:
 
 ```shell
-architect &lt;PATH-OR-URL&gt; some-directory
+architect <PATH-OR-URL> some-directory
 ```
 
 Architect behaves the same as Git in this instance, it will create a directory with this name, relative
