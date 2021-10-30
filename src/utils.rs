@@ -42,6 +42,7 @@ pub mod constants {
 }
 
 pub mod reader {
+    use std::cmp::max;
     use std::env::var;
     use std::fs::File;
     use std::io;
@@ -55,7 +56,7 @@ pub mod reader {
     lazy_static! {
         static ref LINE_BUFFER_CAPACITY: usize =
             if let Ok(Ok(cap)) = var("LINE_BUFFER_CAPACITY").map(|raw| usize::from_str(&raw)) {
-                cap
+                max(1, cap)
             } else {
                 // this is already huge, most source code has lines that are only in the 80-100 characters range
                 256

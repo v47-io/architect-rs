@@ -57,14 +57,14 @@ use crate::utils::{ToolConfig, NEW_LINE_REGEX};
 lazy_static! {
     static ref RENDER_PARALLELISM: usize =
         if let Ok(Ok(value)) = var("RENDER_PARALLELISM").map(|raw| usize::from_str(&raw)) {
-            value
+            max(1, value)
         } else {
             max(1, min(4, num_cpus::get() / 2))
         };
 
     static ref TEMPLATE_INSPECT_MAX_LINES: usize =
         if let Ok(Ok(value)) = var("TEMPLATE_INSPECT_MAX_LINES").map(|raw| usize::from_str(&raw)) {
-            value
+            max(1, value)
         } else {
             // this feels like a sensible default, like who puts a Handlebars expression at the end of a 1000 line template?
             25
