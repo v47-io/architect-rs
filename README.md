@@ -48,3 +48,6 @@ Architect is provided under the terms of the BSD 3-Clause License.
 
 Contributions are welcome, but you must have all rights to the contributed material and agree to provide it under the
 terms of the aforementioned BSD 3-Clause License.
+
+A good idea would be to check out the [Architect 1.0](https://github.com/v47-io/architect-rs/projects/1) project, it
+tracks all the work needed to get Architect to 1.0.
