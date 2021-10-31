@@ -135,7 +135,19 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         })
         .collect();
 
-    let cond_files_specs = json
+    Ok(Config {
+        name: json.name.map(|it| it.trim()),
+        version: json.version.map(|it| it.trim()),
+        questions,
+        filters: json
+            .filters
+            .map(read_filters)
+            .unwrap_or_else(Filters::empty),
+    })
+}
+
+fn read_filters(raw_filters: RawFilters) -> Filters {
+    let cond_files_specs = raw_filters
         .conditional_files
         .unwrap_or_default()
         .iter()
@@ -172,23 +184,18 @@ pub fn read_config(input: &str) -> io::Result<Config> {
         })
         .collect();
 
-    let include_hidden = map_glob_matchers(json.include_hidden.as_ref());
-    let exclude = map_glob_matchers(json.exclude.as_ref());
-
-    Ok(Config {
-        name: json.name.map(|it| it.trim()),
-        version: json.version.map(|it| it.trim()),
-        questions,
+    Filters {
         conditional_files: cond_files_specs,
-        include_hidden,
-        exclude,
-        render_hbs: json.render_hbs.unwrap_or(false),
-        hbs_xt: read_hbs_xt(json.hbs_extension),
-    })
+        include_hidden: map_glob_matchers(raw_filters.include_hidden.as_ref()).unwrap_or_default(),
+        exclude: map_glob_matchers(raw_filters.exclude.as_ref()).unwrap_or_default(),
+        templates: map_glob_matchers(raw_filters.templates.as_ref()),
+        non_templates: map_glob_matchers(raw_filters.non_templates.as_ref()),
+    }
 }
 
-fn map_glob_matchers(raw: Option<&Vec<&str>>) -> Vec<GlobMatcher> {
-    raw.unwrap_or(&vec![])
+fn map_glob_matchers(raw: Option<&Vec<&str>>) -> Option<Vec<GlobMatcher>> {
+    let result = raw
+        .unwrap_or(&vec![])
         .iter()
         .filter_map(|&raw_glob| match glob(raw_glob) {
             Ok(matcher) => Some(matcher),
@@ -197,7 +204,13 @@ fn map_glob_matchers(raw: Option<&Vec<&str>>) -> Vec<GlobMatcher> {
                 None
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    if result.is_empty() {
+        None
+    } else {
+        Some(result)
+    }
 }
 
 fn check_context_tree<'cfg>(
@@ -247,38 +260,12 @@ fn check_context_tree<'cfg>(
     }
 }
 
-fn read_hbs_xt(input: Option<&str>) -> String {
-    match input {
-        Some(xt) => {
-            if xt.is_empty() {
-                ".hbs".into()
-            } else if !xt.starts_with('.') {
-                format!(".{}", xt.to_lowercase())
-            } else {
-                xt.to_lowercase()
-            }
-        }
-        None => ".hbs".into(),
-    }
-}
-
 #[derive(Deserialize, Serialize)]
 struct ConfigJson<'cfg> {
     name: Option<&'cfg str>,
     version: Option<&'cfg str>,
     questions: Option<Vec<RawQuestion<'cfg>>>,
-    #[serde(rename(
-        deserialize = "conditionalTemplates",
-        serialize = "conditionalTemplates"
-    ))]
-    conditional_files: Option<Vec<RawConditionalFiles<'cfg>>>,
-    #[serde(rename(deserialize = "includeHidden", serialize = "includeHidden"))]
-    include_hidden: Option<Vec<&'cfg str>>,
-    exclude: Option<Vec<&'cfg str>>,
-    #[serde(rename(deserialize = "renderHbs", serialize = "renderHbs"))]
-    render_hbs: Option<bool>,
-    #[serde(rename(deserialize = "hbsExtension", serialize = "hbsExtension"))]
-    hbs_extension: Option<&'cfg str>,
+    filters: Option<RawFilters<'cfg>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -300,6 +287,34 @@ enum RawQuestionType {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(bound(deserialize = "'de: 'cfg"))]
+struct RawFilters<'cfg> {
+    #[serde(rename(
+        deserialize = "conditionalTemplates",
+        serialize = "conditionalTemplates"
+    ))]
+    conditional_files: Option<Vec<RawConditionalFiles<'cfg>>>,
+    #[serde(rename(deserialize = "includeHidden", serialize = "includeHidden"))]
+    include_hidden: Option<Vec<&'cfg str>>,
+    exclude: Option<Vec<&'cfg str>>,
+    templates: Option<Vec<&'cfg str>>,
+    #[serde(rename(deserialize = "nonTemplates", serialize = "nonTemplates"))]
+    non_templates: Option<Vec<&'cfg str>>,
+}
+
+impl Default for RawFilters<'_> {
+    fn default() -> Self {
+        RawFilters {
+            conditional_files: None,
+            include_hidden: None,
+            exclude: None,
+            templates: None,
+            non_templates: None,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
 struct RawConditionalFiles<'cfg> {
     condition: &'cfg str,
     matcher: &'cfg str,
@@ -317,15 +332,7 @@ pub struct Config<'cfg> {
     #[serde(skip)]
     pub questions: Vec<Question<'cfg>>,
     #[serde(skip)]
-    pub conditional_files: Vec<ConditionalFilesSpec<'cfg>>,
-    #[serde(skip)]
-    pub include_hidden: Vec<GlobMatcher>,
-    #[serde(skip)]
-    pub exclude: Vec<GlobMatcher>,
-    #[serde(skip)]
-    pub render_hbs: bool,
-    #[serde(skip)]
-    pub hbs_xt: String,
+    pub filters: Filters<'cfg>,
 }
 
 impl<'cfg> Config<'cfg> {
@@ -334,11 +341,7 @@ impl<'cfg> Config<'cfg> {
             name: None,
             version: None,
             questions: vec![],
-            conditional_files: vec![],
-            include_hidden: vec![],
-            exclude: vec![],
-            render_hbs: false,
-            hbs_xt: ".hbs".into(),
+            filters: Filters::empty(),
         }
     }
 }
@@ -377,6 +380,27 @@ pub enum QuestionSpec<'cfg> {
     Option,
     Selection { items: Vec<&'cfg str>, multi: bool },
     Text,
+}
+
+#[derive(Debug)]
+pub struct Filters<'cfg> {
+    pub conditional_files: Vec<ConditionalFilesSpec<'cfg>>,
+    pub include_hidden: Vec<GlobMatcher>,
+    pub exclude: Vec<GlobMatcher>,
+    pub templates: Option<Vec<GlobMatcher>>,
+    pub non_templates: Option<Vec<GlobMatcher>>,
+}
+
+impl<'cfg> Filters<'cfg> {
+    pub(crate) fn empty() -> Self {
+        Filters {
+            conditional_files: vec![],
+            include_hidden: vec![],
+            exclude: vec![],
+            templates: None,
+            non_templates: None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -473,11 +497,7 @@ mod tests {
                     pretty: None,
                 },
             ]),
-            conditional_files: None,
-            include_hidden: None,
-            exclude: None,
-            render_hbs: None,
-            hbs_extension: None,
+            filters: None,
         })
         .unwrap();
 
@@ -521,11 +541,7 @@ mod tests {
                         pretty: None
                     }
                 ],
-                conditional_files: vec![],
-                include_hidden: vec![],
-                exclude: vec![],
-                render_hbs: false,
-                hbs_xt: ".hbs".into()
+                filters: Filters::empty()
             }
         );
 
@@ -535,11 +551,7 @@ mod tests {
                 name: Some("Some Template"),
                 version: None,
                 questions: vec![],
-                conditional_files: vec![],
-                include_hidden: vec![],
-                exclude: vec![],
-                render_hbs: false,
-                hbs_xt: ".hbs".into()
+                filters: Filters::empty()
             }
         )
     }
@@ -586,11 +598,7 @@ mod tests {
                     pretty: None,
                 },
             ]),
-            conditional_files: None,
-            include_hidden: None,
-            exclude: None,
-            render_hbs: None,
-            hbs_extension: None,
+            filters: None,
         })
         .unwrap();
 
@@ -600,11 +608,7 @@ mod tests {
                 name: Some("Some Template"),
                 version: Some("0.1.0"),
                 questions: vec![],
-                conditional_files: vec![],
-                include_hidden: vec![],
-                exclude: vec![],
-                render_hbs: false,
-                hbs_xt: ".hbs".into()
+                filters: Filters::empty()
             }
         );
 
@@ -634,11 +638,7 @@ mod tests {
                     multi: None,
                 },
             ]),
-            conditional_files: None,
-            include_hidden: None,
-            exclude: None,
-            render_hbs: None,
-            hbs_extension: None,
+            filters: None,
         })
         .unwrap();
 
@@ -654,11 +654,7 @@ mod tests {
                     pretty: Some("Who is the author of this project?"),
                     spec: QuestionSpec::Text
                 },],
-                conditional_files: vec![],
-                include_hidden: vec![],
-                exclude: vec![],
-                render_hbs: false,
-                hbs_xt: ".hbs".into()
+                filters: Filters::empty()
             }
         );
 
@@ -688,11 +684,7 @@ mod tests {
                     multi: None,
                 },
             ]),
-            conditional_files: None,
-            include_hidden: None,
-            exclude: None,
-            render_hbs: None,
-            hbs_extension: None,
+            filters: None,
         })
         .unwrap();
 
@@ -711,11 +703,7 @@ mod tests {
                     },
                     pretty: None
                 }],
-                conditional_files: vec![],
-                include_hidden: vec![],
-                exclude: vec![],
-                render_hbs: false,
-                hbs_xt: ".hbs".into()
+                filters: Filters::empty()
             }
         )
     }
@@ -725,9 +713,17 @@ mod tests {
             self.name == other.name
                 && self.version == other.version
                 && self.questions == other.questions
-                && self.conditional_files == other.conditional_files
+                && self.filters == other.filters
+        }
+    }
+
+    impl<'cfg> PartialEq for Filters<'cfg> {
+        fn eq(&self, other: &Self) -> bool {
+            self.conditional_files == other.conditional_files
                 && matchers_eq(&self.include_hidden, &other.include_hidden)
                 && matchers_eq(&self.exclude, &other.exclude)
+                && opt_matchers_eq(&self.templates, &other.templates)
+                && opt_matchers_eq(&self.non_templates, &other.non_templates)
         }
     }
 
@@ -750,6 +746,19 @@ mod tests {
                 return false;
             }
         }
+    }
+
+    fn opt_matchers_eq(
+        matchers_a: &Option<Vec<GlobMatcher>>,
+        matchers_b: &Option<Vec<GlobMatcher>>,
+    ) -> bool {
+        if matchers_a.is_none() {
+            return matchers_b.is_none();
+        } else if matchers_b.is_none() {
+            return false;
+        }
+
+        matchers_eq(matchers_a.as_ref().unwrap(), matchers_b.as_ref().unwrap())
     }
 
     #[inline]

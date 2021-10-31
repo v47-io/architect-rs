@@ -41,6 +41,7 @@ use std::str::FromStr;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
+use globset::GlobMatcher;
 use handlebars::{Context, Handlebars, RenderError};
 use indicatif::{MultiProgress, ProgressBar};
 use lazy_static::lazy_static;
@@ -69,6 +70,8 @@ lazy_static! {
             // this feels like a sensible default, like who puts a Handlebars expression at the end of a 1000 line template?
             25
         };
+
+    static ref HANDLEBARS_XTS: Vec<&'static str> = vec![".hbs", ".handlebars"];
 }
 
 pub fn render(
@@ -414,9 +417,15 @@ fn build_render_specs(
 
             let source_file_name = entry.file_name().to_string_lossy().to_string();
 
-            let is_explicit_template = source_file_name.to_lowercase().ends_with(&config.hbs_xt);
-            let is_template = (is_explicit_template && config.render_hbs)
-                || (!is_explicit_template && is_hbs_template(entry.path())?);
+            let is_potential_template = if let Some(templates) = &config.filters.templates {
+                matches_globs(templates, root_dir, entry.path())
+            } else if let Some(non_templates) = &config.filters.non_templates {
+                !matches_globs(non_templates, root_dir, entry.path())
+            } else {
+                true
+            };
+
+            let is_template = is_potential_template && is_hbs_template(entry.path())?;
 
             let mut target_file_name = if it_contains_template(&source_file_name) {
                 create_entry_target_file_name(&source_file_name, hbs, ctx)
@@ -424,8 +433,8 @@ fn build_render_specs(
                 source_file_name
             };
 
-            if is_template || !is_explicit_template {
-                target_file_name = strip_handlebars_xt(target_file_name, &config.hbs_xt);
+            if is_template {
+                target_file_name = strip_handlebars_xt(target_file_name);
             }
 
             let singular_target_path = create_proper_target_path(
@@ -487,6 +496,7 @@ fn is_not_hidden_or_is_included(
             .map(|globbing_path| {
                 let check_glob = || {
                     let result = config
+                        .filters
                         .include_hidden
                         .iter()
                         .any(|matcher| matcher.is_match(globbing_path));
@@ -524,7 +534,9 @@ fn is_conditionally_included(
 ) -> bool {
     path.strip_prefix(root_dir)
         .map(|globbing_path| {
-            if let Some(cond_spec) = find_condition_spec(globbing_path, &config.conditional_files) {
+            if let Some(cond_spec) =
+                find_condition_spec(globbing_path, &config.filters.conditional_files)
+            {
                 let skip = match eval_condition(cond_spec, hbs, ctx) {
                     Ok(is_match) => !is_match,
                     Err(e) => {
@@ -570,6 +582,7 @@ fn is_not_excluded(
     path.strip_prefix(root_dir)
         .map(|globbing_path| {
             if config
+                .filters
                 .exclude
                 .iter()
                 .any(|glob| glob.is_match(globbing_path))
@@ -624,6 +637,20 @@ fn is_truthy(value: &str) -> bool {
         && value != "[]"
         && value != "false"
         && value != "null"
+}
+
+fn matches_globs(globs: &[GlobMatcher], root_dir: &Path, path: &Path) -> bool {
+    path.strip_prefix(root_dir)
+        .map(|globbing_path| globs.iter().any(|it| it.is_match(globbing_path)))
+        .unwrap_or_else(|err| {
+            eprintln!(
+                "Failed to strip root dir prefix from path {} ({})",
+                path.display(),
+                err
+            );
+
+            false
+        })
 }
 
 fn it_contains_template(value: &str) -> bool {
@@ -684,12 +711,14 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
         }))
 }
 
-fn strip_handlebars_xt(name: String, xt: &str) -> String {
-    if name.to_lowercase().ends_with(xt) {
-        String::from(&name[..name.len() - xt.len()])
-    } else {
-        name
-    }
+fn strip_handlebars_xt(name: String) -> String {
+    let name_lower = name.to_lowercase();
+
+    HANDLEBARS_XTS
+        .iter()
+        .find(|&&xt| name_lower.ends_with(xt))
+        .map(|xt| String::from(&name[..name.len() - xt.len()]))
+        .unwrap_or(name)
 }
 
 fn render_line_template(template: &str, handlebars: &Handlebars, ctx: &Context) -> (String, bool) {
@@ -793,6 +822,7 @@ mod tests {
     use serde_json::{Map, Number, Value};
     use tempfile::{tempdir, TempDir};
 
+    use crate::config::Filters;
     use crate::context::UnsafeContext;
     use crate::utils::glob;
     use crate::utils::tests::RESOURCES_DIR;
@@ -832,11 +862,13 @@ mod tests {
             name: Some("Auto Template"),
             version: Some("0.x"),
             questions: vec![],
-            include_hidden: vec![glob("**/*still-included*").unwrap()],
-            exclude: vec![glob("*excluded*").unwrap()],
-            conditional_files: vec![],
-            render_hbs: false,
-            hbs_xt: ".handlebars".into(),
+            filters: Filters {
+                include_hidden: vec![glob("**/*still-included*").unwrap()],
+                exclude: vec![glob("*excluded*").unwrap()],
+                conditional_files: vec![],
+                templates: None,
+                non_templates: Some(vec![glob("**/*.handlebars").unwrap()]),
+            },
         };
 
         let tool_config = ToolConfig {
@@ -880,7 +912,7 @@ mod tests {
             ),
             format!("io{}v47{}test{}file-in-generated-path.txt", sep, sep, sep),
             format!("templates{}override-template.txt.handlebars", sep),
-            format!("templates{}some-template.txt.hbs", sep),
+            format!("templates{}some-template.txt", sep),
         ];
 
         let target_dir_content = WalkDir::new(&target_path)
@@ -986,11 +1018,13 @@ mod tests {
             name: Some("Auto Template"),
             version: Some("0.x"),
             questions: vec![],
-            include_hidden: vec![glob("**/*still-included*").unwrap()],
-            exclude: vec![glob("*excluded*").unwrap()],
-            conditional_files: vec![],
-            render_hbs: true,
-            hbs_xt: ".handlebars".into(),
+            filters: Filters {
+                include_hidden: vec![glob("**/*still-included*").unwrap()],
+                exclude: vec![glob("*excluded*").unwrap()],
+                conditional_files: vec![],
+                templates: None,
+                non_templates: Some(vec![glob("**/some-template.txt.hbs").unwrap()]),
+            },
         };
 
         let tool_config = ToolConfig {
@@ -1059,20 +1093,22 @@ mod tests {
             name: None,
             version: None,
             questions: vec![],
-            conditional_files: vec![
-                ConditionalFilesSpec {
-                    condition: "someValue",
-                    matcher: glob("matched_file").unwrap(),
-                },
-                ConditionalFilesSpec {
-                    condition: "not someValue",
-                    matcher: glob("unmatched_file").unwrap(),
-                },
-            ],
-            include_hidden: vec![glob(".github").unwrap()],
-            exclude: vec![glob("excluded_file").unwrap()],
-            render_hbs: false,
-            hbs_xt: ".hbs".into(),
+            filters: Filters {
+                conditional_files: vec![
+                    ConditionalFilesSpec {
+                        condition: "someValue",
+                        matcher: glob("matched_file").unwrap(),
+                    },
+                    ConditionalFilesSpec {
+                        condition: "not someValue",
+                        matcher: glob("unmatched_file").unwrap(),
+                    },
+                ],
+                include_hidden: vec![glob(".github").unwrap()],
+                exclude: vec![glob("excluded_file").unwrap()],
+                templates: None,
+                non_templates: None,
+            },
         };
 
         let mut context_map = Map::new();

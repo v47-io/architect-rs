@@ -8,6 +8,8 @@ The filters are:
 - `exclude` (Exclusion of files, strongest)
 - `includeHidden` (Inclusion of certain hidden files)
 - `conditionalFiles` (Inclusion of files if a certain condition is true)
+- `templates` (Which files to treat as templates and render, overrides `nonTemplates`)
+- `nonTemplates` (Which files not to render as templates)
 
 These filters have a precedence assigned to them, exclusions are the strongest. Files that match an exclusion rule are
 never added to the target. Hidden files can only be added through a condition if they have also been matched by an
@@ -28,8 +30,8 @@ Define _glob_ expressions to match files you don't want to have in the target.
 
 ## Include Hidden
 
-Architect by default excludes all hidden files or directories. This applies to both file/directory names starting with a
-dot or files explicitly hidden in file system (Windows).
+Architect by default excludes all hidden files or directories. This only applies to files or directories starting with a
+dot (`.`) character, files marked as hidden in Windows will still be included.
 
 Define _glob_ expressions to match hidden files you want to include anyway.
 
@@ -46,17 +48,38 @@ included. These Handlebars expression don't need to be delimited by `{{` and `}}
 The _glob_ expression will be applied to the file in the source repository, so before any possible Handlebars templates
 in file or directory names are evaluated.
 
-Please keep in mind that when working with hidden files conditions can only be applied to files included
-using `includeHidden`.
+Please keep in mind that when working with hidden files conditions can only be applied to files included using
+`includeHidden`.
 
 Format in the configuration file:
 
 <!--@formatter:off-->
 ```ts
 // Config
-{{#include ../../../../src/schema/architect.ts:66}}
+{{#include ../../../../src/schema/architect.ts:58:61}}
+
+// Filters
+{{#include ../../../../src/schema/architect.ts:108:116}}
 
 // ConditionalFiles
-{{#include ../../../../src/schema/architect.ts:120:134}}
+{{#include ../../../../src/schema/architect.ts:143:157}}
 ```
 <!--@formatter:on-->
+
+## Templates
+
+Define _glob_ expressions to match files you want to have rendered as templates, this can be seen as an allow-list or
+whitelist that defines rendered files.
+
+This leads to all other files not being rendered as Handlebars templates, instead they are copied as-is.
+
+`templates` overrides `nonTemplates`, so even if you specify the latter it won't have any effect.
+
+## Non-Templates
+
+Define _glob_ expressions to match files you don't want to have rendered as templates, this can be seen as a deny-list
+or blacklist that defines non-rendered files.
+
+Files that are matched by this are copied as-is instead of being rendered using Handlebars.
+
+This property is ignored if `templates` is configured.
