@@ -156,6 +156,56 @@ latest <a href="https://github.com/v47-io/architect-rs/releases">Release</a>.</l
 <li>Execute <code>architect &lt;PATH-TO-REPO&gt;</code> in your desired local directory, answer user-defined questions, et voila, you got
 a fully functional project created from a template.</li>
 </ol>
+<h3 id="sample-architectjson"><a class="header" href="#sample-architectjson">Sample <code>.architect.json</code></a></h3>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;My Awesome Microservice Template&quot;,
+  &quot;version&quot;: &quot;1.0&quot;,
+  &quot;questions&quot;: [
+    {
+      &quot;name&quot;: &quot;author.name&quot;,
+      &quot;type&quot;: &quot;Text&quot;,
+      &quot;pretty&quot;: &quot;What's your name?&quot;
+    },
+    {
+      &quot;name&quot;: &quot;author.email&quot;,
+      &quot;type&quot;: &quot;Text&quot;,
+      &quot;pretty&quot;: &quot;What's your email address?&quot;
+    },
+    {
+      &quot;name&quot;: &quot;project.package&quot;,
+      &quot;type&quot;: &quot;Identifier&quot;,
+      &quot;pretty&quot;: &quot;What should be the root package for your Kotlin sources?&quot;
+    },
+    {
+      &quot;name&quot;: &quot;project.features&quot;,
+      &quot;type&quot;: &quot;Selection&quot;,
+      &quot;pretty&quot;: &quot;Which features would you like to use?&quot;,
+      &quot;items&quot;: [
+        &quot;jdbc&quot;,
+        &quot;kafka&quot;,
+        &quot;redis&quot;,
+        &quot;mySpecialLibrary&quot;
+      ],
+      &quot;multi&quot;: true
+    },
+    {
+      &quot;name&quot;: &quot;project.tests&quot;,
+      &quot;type&quot;: &quot;Option&quot;,
+      &quot;pretty&quot;: &quot;Do you want to generate test stubs?&quot;
+    }
+  ],
+  &quot;filters&quot;: {
+    &quot;conditionalFiles&quot;: [
+      {
+        &quot;condition&quot;: &quot;project.features.mySpecialLibrary&quot;,
+        &quot;matcher&quot;: &quot;libs/mySpecialLibrary-*.jar&quot;
+      }
+    ],
+    &quot;includeHidden&quot;: [&quot;.github/**&quot;, &quot;.gitignore&quot;],
+    &quot;nonTemplates&quot;: [&quot;**/*.{gradle.kts,jar}&quot;]
+  }
+}
+</code></pre>
 <h2 id="license-and-contributions"><a class="header" href="#license-and-contributions">License and Contributions</a></h2>
 <p>Architect is provided under the terms of the BSD 3-Clause License.</p>
 <p>Contributions are welcome, but you must have all rights to the contributed material and agree to provide it under the
