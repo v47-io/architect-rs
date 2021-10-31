@@ -42,6 +42,59 @@ Architect uses Handlebars and Git to create proper projects from template reposi
 4. Execute `architect <PATH-TO-REPO>` in your desired local directory, answer user-defined questions, et voila, you got
    a fully functional project created from a template.
 
+### Sample `.architect.json`
+
+```json
+{
+  "name": "My Awesome Microservice Template",
+  "version": "1.0",
+  "questions": [
+    {
+      "name": "author.name",
+      "type": "Text",
+      "pretty": "What's your name?"
+    },
+    {
+      "name": "author.email",
+      "type": "Text",
+      "pretty": "What's your email address?"
+    },
+    {
+      "name": "project.package",
+      "type": "Identifier",
+      "pretty": "What should be the root package for your Kotlin sources?"
+    },
+    {
+      "name": "project.features",
+      "type": "Selection",
+      "pretty": "Which features would you like to use?",
+      "items": [
+        "jdbc",
+        "kafka",
+        "redis",
+        "mySpecialLibrary"
+      ],
+      "multi": true
+    },
+    {
+      "name": "project.tests",
+      "type": "Option",
+      "pretty": "Do you want to generate test stubs?"
+    }
+  ],
+  "filters": {
+    "conditionalFiles": [
+      {
+        "condition": "project.features.mySpecialLibrary",
+        "matcher": "libs/mySpecialLibrary-*.jar"
+      }
+    ],
+    "includeHidden": [".github/**", ".gitignore"],
+    "nonTemplates": ["**/*.{gradle.kts,jar}"]
+  }
+}
+```
+
 ## License and Contributions
 
 Architect is provided under the terms of the BSD 3-Clause License.
