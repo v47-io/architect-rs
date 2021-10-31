@@ -142,6 +142,8 @@ actually added to the target.</p>
 <li><code>exclude</code> (Exclusion of files, strongest)</li>
 <li><code>includeHidden</code> (Inclusion of certain hidden files)</li>
 <li><code>conditionalFiles</code> (Inclusion of files if a certain condition is true)</li>
+<li><code>templates</code> (Which files to treat as templates and render, overrides <code>nonTemplates</code>)</li>
+<li><code>nonTemplates</code> (Which files not to render as templates)</li>
 </ul>
 <p>These filters have a precedence assigned to them, exclusions are the strongest. Files that match an exclusion rule are
 never added to the target. Hidden files can only be added through a condition if they have also been matched by an
@@ -155,8 +157,8 @@ expressions (Architect enables the <code>literal_separator</code> option and cas
 <h2 id="exclusions"><a class="header" href="#exclusions">Exclusions</a></h2>
 <p>Define <em>glob</em> expressions to match files you don't want to have in the target.</p>
 <h2 id="include-hidden"><a class="header" href="#include-hidden">Include Hidden</a></h2>
-<p>Architect by default excludes all hidden files or directories. This applies to both file/directory names starting with a
-dot or files explicitly hidden in file system (Windows).</p>
+<p>Architect by default excludes all hidden files or directories. This only applies to files or directories starting with a
+dot (<code>.</code>) character, files marked as hidden in Windows will still be included.</p>
 <p>Define <em>glob</em> expressions to match hidden files you want to include anyway.</p>
 <p>Please keep in mind that you cannot include the top-level <code>.git</code> directory or any of its descendants using this.</p>
 <h2 id="conditional-files"><a class="header" href="#conditional-files">Conditional Files</a></h2>
@@ -166,31 +168,55 @@ as Architect will only evaluate the condition for the first match.</p>
 included. These Handlebars expression don't need to be delimited by <code>{{</code> and <code>}}</code>, and have full access to the context.</p>
 <p>The <em>glob</em> expression will be applied to the file in the source repository, so before any possible Handlebars templates
 in file or directory names are evaluated.</p>
-<p>Please keep in mind that when working with hidden files conditions can only be applied to files included
-using <code>includeHidden</code>.</p>
+<p>Please keep in mind that when working with hidden files conditions can only be applied to files included using
+<code>includeHidden</code>.</p>
 <p>Format in the configuration file:</p>
 <!--@formatter:off-->
 <pre><code class="language-ts">// Config
-    conditionalFiles?: ConditionalFiles[];
+    /**
+     * Contains multiple filters to control which files are actually considered and rendered
+     */
+    filters?: Filters;
+
+// Filters
+     * Specifies Glob expressions to exclude files in the target.
+     *
+     * Note that exclusions have a higher precedence than inclusions and conditional files
+     */
+    exclude?: string[];
+    /**
+     * Specifies Glob expressions that indicate the files that should be rendered using Handlebars.
+     *
+     * This disables Handlebars rendering for all other files. Directory or file names are not affected
 
 // ConditionalFiles
-export interface ConditionalFiles {
+interface BaseQuestion {
     /**
-     * The condition that decides whether the matched files are created.
+     * The name in the context for the value specified when answering this question.
      *
-     * This is an expression that is handled by handlebars.
+     * Can be multiple names concatenated using `.` to create hierarchical structures in
+     * the context.
      *
-     * The expression is automatically wrapped in curly braces (`{{` `}}`) so you
-     * only need to specify the actual content of the expression here
+     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
      */
-    condition: string;
+    name: string;
     /**
-     * A Glob string specifying the files affected by the condition
+     * The type of the question, which indicates the expected values
      */
-    matcher: string;
-}
+    type: QuestionType;
+    /**
 </code></pre>
 <!--@formatter:on-->
+<h2 id="templates"><a class="header" href="#templates">Templates</a></h2>
+<p>Define <em>glob</em> expressions to match files you want to have rendered as templates, this can be seen as an allow-list or
+whitelist that defines rendered files.</p>
+<p>This leads to all other files not being rendered as Handlebars templates, instead they are copied as-is.</p>
+<p><code>templates</code> overrides <code>nonTemplates</code>, so even if you specify the latter it won't have any effect.</p>
+<h2 id="non-templates"><a class="header" href="#non-templates">Non-Templates</a></h2>
+<p>Define <em>glob</em> expressions to match files you don't want to have rendered as templates, this can be seen as a deny-list
+or blacklist that defines non-rendered files.</p>
+<p>Files that are matched by this are copied as-is instead of being rendered using Handlebars.</p>
+<p>This property is ignored if <code>templates</code> is configured.</p>
 
                     </main>
 

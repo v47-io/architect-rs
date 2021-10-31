@@ -164,42 +164,9 @@ export interface Config {
      */
     questions?: Question[];
     /**
-     * Specifies conditions for certain files to be created.
-     * 
-     * These conditions have full access to the context that is created by the questions.
-     *
-     * Note that conditions specified here don't apply to hidden files that weren't explicitly
-     * included using `includeHidden` or files excluded using `exclude`
+     * Contains multiple filters to control which files are actually considered and rendered
      */
-    conditionalFiles?: ConditionalFiles[];
-    /**
-     * Specifies Glob expressions to include hidden files in the target.
-     *
-     * Note that including the `.git` directory here will have no effect
-     */
-    includeHidden?: string[];
-    /**
-     * Specifies Glob expressions to exclude files in the target.
-     *
-     * Note that exclusions have a higher precedence than inclusions and conditional files
-     */
-    exclude?: string[];
-    /**
-     * Indicates whether to treat explicitly identified Handlebars templates (using their
-     * file extension) as regular templates and render them.
-     *
-     * By default, Handlebars templates that are explicitly identified are not rendered,
-     * rather they are copied as is.
-     *
-     * Note: File names of such files are still treated as templates
-     */
-    renderHbs?: boolean;
-    /**
-     * The extension that is used to explicitly identify Handlebars templates.
-     *
-     * This is specified as a string preceded by a singular dot. The default value is `.hbs`
-     */
-    hbsExtension?: string;
+    filters?: Filters;
 }
 
 export type Question = SimpleQuestion | SelectionQuestion;
@@ -223,6 +190,46 @@ export interface SelectionQuestion extends BaseQuestion {
      * Specifies whether multiple items can be selected
      */
     multi?: boolean;
+}
+
+/**
+ * This interface specifies the configuration properties that decide which files are considered
+ * for Handlebars rendering or even included in the target directory
+ */
+export interface Filters {
+    /**
+     * Specifies conditions for certain files to be created.
+     *
+     * These conditions have full access to the context that is created by the questions.
+     *
+     * Note that conditions specified here don't apply to hidden files that weren't explicitly
+     * included using `includeHidden` or files excluded using `exclude`
+     */
+    conditionalFiles?: ConditionalFiles[];
+    /**
+     * Specifies Glob expressions to include hidden files in the target.
+     *
+     * Note that including the `.git` directory here will have no effect
+     */
+    includeHidden?: string[];
+    /**
+     * Specifies Glob expressions to exclude files in the target.
+     *
+     * Note that exclusions have a higher precedence than inclusions and conditional files
+     */
+    exclude?: string[];
+    /**
+     * Specifies Glob expressions that indicate the files that should be rendered using Handlebars.
+     *
+     * This disables Handlebars rendering for all other files. Directory or file names are not affected
+     */
+    templates?: string[];
+    /**
+     * Specifies Glob expressions that indicate files that should not be rendered using Handlebars.
+     *
+     * This property has no effect, if `templates` is also specified
+     */
+    nonTemplates?: string[];
 }
 
 export interface ConditionalFiles {
