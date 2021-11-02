@@ -34,6 +34,8 @@ use std::ffi::OsString;
 
 use clap::{crate_authors, crate_version, App, Arg, ArgMatches};
 
+use constants::{args, flags, options};
+
 use crate::utils::constants;
 
 pub fn get_matches<'app, I, T>(args: I) -> ArgMatches<'app>
@@ -46,7 +48,7 @@ where
         .author(crate_authors!(",\n"))
         .about("Scaffolds your projects using platform agnostic handlebars templates")
         .arg(
-            Arg::with_name("REPOSITORY")
+            Arg::with_name(args::REPOSITORY)
                 .help("The Git repository to use as the project template")
                 .long_help(
                     r#"The git repository to use as the project template.
@@ -60,16 +62,15 @@ Example: git@github.com:some-user/his-template-repo.git"#,
                 .index(1),
         )
         .arg(
-            Arg::with_name("branch")
-                .long("branch")
+            Arg::with_name(options::BRANCH)
+                .long(options::BRANCH)
                 .short("b")
                 .takes_value(true)
                 .help("The remote branch to fetch instead of the default branch"),
         )
         .arg(
-            Arg::with_name("dirty")
-                .long("dirty")
-                .short("D")
+            Arg::with_name(flags::DIRTY)
+                .long(flags::DIRTY)
                 .help("Uses the template repository in it's current (dirty) state")
                 .long_help(
                     r#"Uses the template repository in it's current (dirty) state.
@@ -83,7 +84,20 @@ option doesn't have any effect"#,
                 ),
         )
         .arg(
-            Arg::with_name("TARGET")
+            Arg::with_name(options::TEMPLATE)
+                .long(options::TEMPLATE)
+                .short("t")
+                .takes_value(true)
+                .help("Specify a template (sub-directory) within the template repository")
+                .long_help(
+                    r#"Specify a template (sub-directory) within the template repository.
+
+This will then treat that sub-directory within the repository as the template root directory
+and look for an .architect.json file there, instead of in the repository root"#,
+                ),
+        )
+        .arg(
+            Arg::with_name(args::TARGET)
                 .help("The target directory for the final output")
                 .long_help(
                     r#"The target directory for the final output.
@@ -93,9 +107,8 @@ This defaults to the Git repository name as a child of the current working direc
                 .index(2),
         )
         .arg(
-            Arg::with_name(constants::NO_HISTORY)
-                .long(constants::NO_HISTORY)
-                .short("H")
+            Arg::with_name(flags::NO_HISTORY)
+                .long(flags::NO_HISTORY)
                 .help("Don't copy over Git history from template to target")
                 .long_help(
                     r#"Don't copy over Git history from template to target.
@@ -104,9 +117,8 @@ Instead the target directory will be initialized as a new Git repository"#,
                 ),
         )
         .arg(
-            Arg::with_name(constants::NO_INIT)
-                .long(constants::NO_INIT)
-                .short("I")
+            Arg::with_name(flags::NO_INIT)
+                .long(flags::NO_INIT)
                 .requires("no-history")
                 .help("Don't initialize the target directory as a Git repository")
                 .long_help(
@@ -116,9 +128,8 @@ This requires the --no-history flag to be specified as well"#,
                 ),
         )
         .arg(
-            Arg::with_name(constants::IGNORE_CHECKS)
-                .long(constants::IGNORE_CHECKS)
-                .short("C")
+            Arg::with_name(flags::IGNORE_CHECKS)
+                .long(flags::IGNORE_CHECKS)
                 .help("Ignores some failed checks that would prevent generation otherwise")
                 .long_help(
                     r#"Ignores some failed checks that would prevent generation otherwise.
@@ -128,9 +139,21 @@ These errors will be ignored:
                 ),
         )
         .arg(
-            Arg::with_name(constants::VERBOSE)
-                .long(constants::VERBOSE)
+            Arg::with_name(flags::VERBOSE)
+                .long(flags::VERBOSE)
                 .help("Enables verbose output"),
         )
         .get_matches_from(args)
+}
+
+pub(crate) trait TrimmedValueOf<'app> {
+    fn value_of_trimmed(&'app self, name: &str) -> Option<&'app str>;
+}
+
+impl<'app> TrimmedValueOf<'app> for ArgMatches<'app> {
+    fn value_of_trimmed(&'app self, name: &str) -> Option<&'app str> {
+        self.value_of(name)
+            .map(|it| it.trim())
+            .filter(|&it| !it.is_empty())
+    }
 }

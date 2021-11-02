@@ -39,6 +39,7 @@ use std::path::{Path, PathBuf};
 use path_absolutize::Absolutize;
 
 use crate::spec::TemplateSpec;
+use crate::utils::ToolConfig;
 
 pub fn create_target_dir(
     base_dir: &Path,
@@ -107,6 +108,27 @@ fn create_err(template_spec: &TemplateSpec) -> Result<PathBuf, Error> {
             template_spec
         ),
     ))
+}
+
+pub fn find_template_dir(root_dir: &Path, tool_config: &ToolConfig<'_>) -> io::Result<(PathBuf, bool)> {
+    if let Some(template) = tool_config.template {
+        let template_dir = root_dir.join(template).absolutize()?.to_path_buf();
+        if template_dir.join(".architect.json").is_file() {
+            println!("Using template {} from repository", template);
+
+            Ok((template_dir, true))
+        } else {
+            Err(Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Invalid template name: {} ({})",
+                    template, "Doesn't contain .architect.json file"
+                ),
+            ))
+        }
+    } else {
+        Ok((root_dir.to_path_buf(), false))
+    }
 }
 
 #[cfg(test)]

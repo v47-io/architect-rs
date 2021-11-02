@@ -435,6 +435,7 @@ mod tests {
             load_config_file(
                 working_dir.path(),
                 &ToolConfig {
+                    template: None,
                     no_history: false,
                     no_init: false,
                     ignore_checks: false,
@@ -451,6 +452,7 @@ mod tests {
             load_config_file(
                 working_dir.path(),
                 &ToolConfig {
+                    template: None,
                     no_history: false,
                     no_init: false,
                     ignore_checks: false,

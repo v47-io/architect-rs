@@ -45,7 +45,7 @@ use crate::utils::ToolConfig;
 pub struct FetchOptions<'f, 't> {
     pub branch: Option<&'f str>,
     pub dirty: bool,
-    pub tool_config: &'t ToolConfig,
+    pub tool_config: &'t ToolConfig<'t>,
 }
 
 pub fn fetch(template_spec: &TemplateSpec, target: &Path, options: FetchOptions) -> io::Result<()> {
@@ -182,6 +182,20 @@ pub fn init_git_repository(target_dir: &Path, tool_config: &ToolConfig) -> io::R
     Ok(())
 }
 
+pub fn rewrite_git_for_subtemplate(
+    root_dir: &Path,
+    template_dir: &Path,
+    tool_config: &ToolConfig<'_>,
+) -> io::Result<()> {
+    if tool_config.verbose {
+        println!("Rewriting original history for sub template")
+    }
+
+
+
+    todo!()
+}
+
 #[cfg(test)]
 mod tests {
     use tempfile::tempdir;
@@ -192,6 +206,7 @@ mod tests {
 
     const FETCH_URL: &str = "https://github.com/v47-io/architect-test-template.git";
     const TOOL_CONFIG: ToolConfig = ToolConfig {
+        template: None,
         verbose: true,
         no_history: false,
         no_init: false,

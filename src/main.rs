@@ -40,10 +40,15 @@ use path_absolutize::Absolutize;
 use serde_json::Value;
 use tempfile::tempdir;
 
+use constants::{flags, options};
+
+use crate::args::TrimmedValueOf;
 use crate::config::{load_config_file, read_config, Config};
 use crate::context::build_context;
-use crate::dirs::{create_target_dir, is_valid_target_dir};
-use crate::git::{copy_git_directory, init_git_repository, FetchOptions};
+use crate::dirs::{create_target_dir, find_template_dir, is_valid_target_dir};
+use crate::git::{
+    copy_git_directory, init_git_repository, rewrite_git_for_subtemplate, FetchOptions,
+};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
 use crate::utils::{constants, ToolConfig};
 
@@ -75,10 +80,11 @@ where
     let matches = crate::args::get_matches(args);
 
     let tool_config = ToolConfig {
-        no_history: matches.is_present(constants::NO_HISTORY),
-        no_init: matches.is_present(constants::NO_INIT),
-        ignore_checks: matches.is_present(constants::IGNORE_CHECKS),
-        verbose: matches.is_present(constants::VERBOSE),
+        template: matches.value_of_trimmed(options::TEMPLATE),
+        no_history: matches.is_present(flags::NO_HISTORY),
+        no_init: matches.is_present(flags::NO_INIT),
+        ignore_checks: matches.is_present(flags::IGNORE_CHECKS),
+        verbose: matches.is_present(flags::VERBOSE),
     };
 
     if tool_config.ignore_checks {
@@ -89,7 +95,10 @@ where
         println!("Verbose output enabled")
     }
 
-    let template_spec_raw = matches.value_of("REPOSITORY").unwrap().trim();
+    let template_spec_raw = matches
+        .value_of(constants::args::REPOSITORY)
+        .unwrap()
+        .trim();
 
     if !is_valid_template_spec(template_spec_raw) {
         return Err(Error::new(
@@ -107,7 +116,7 @@ where
     let target_dir = create_target_dir(
         &env::current_dir()?,
         &template_spec,
-        matches.value_of("TARGET"),
+        matches.value_of_trimmed(constants::args::TARGET),
     )?;
 
     if !is_valid_target_dir(&target_dir)? {
@@ -133,13 +142,15 @@ where
         &template_spec,
         working_dir.path(),
         FetchOptions {
-            branch: matches.value_of("branch"),
-            dirty: matches.is_present("dirty"),
+            branch: matches.value_of_trimmed(options::BRANCH),
+            dirty: matches.is_present(flags::DIRTY),
             tool_config: &tool_config,
         },
     )?;
 
-    let config_json = load_config_file(working_dir.path(), &tool_config)?;
+    let (template_path, is_subtemplate) = find_template_dir(working_dir.path(), &tool_config)?;
+
+    let config_json = load_config_file(&template_path, &tool_config)?;
     let config = if let Some(config_json) = &config_json {
         Some(read_config(config_json)?)
     } else {
@@ -159,7 +170,7 @@ where
     }
 
     let render_result = render::render(
-        working_dir.path(),
+        &template_path,
         &target_dir,
         config.as_ref().unwrap_or(&Config::empty()),
         &context,
@@ -167,6 +178,10 @@ where
     )?;
 
     if !tool_config.no_history {
+        if is_subtemplate {
+            rewrite_git_for_subtemplate(working_dir.path(), &template_path, &tool_config)?;
+        }
+
         copy_git_directory(working_dir.path(), &target_dir, &tool_config)?;
     } else if !tool_config.no_init {
         init_git_repository(&target_dir, &tool_config)?;

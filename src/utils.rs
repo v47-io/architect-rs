@@ -35,10 +35,23 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 pub mod constants {
-    pub const NO_HISTORY: &str = "no-history";
-    pub const NO_INIT: &str = "no-init";
-    pub const IGNORE_CHECKS: &str = "ignore-checks";
-    pub const VERBOSE: &str = "verbose";
+    pub mod args {
+        pub const REPOSITORY: &str = "REPOSITORY";
+        pub const TARGET: &str = "TARGET";
+    }
+
+    pub mod flags {
+        pub const DIRTY: &str = "dirty";
+        pub const NO_HISTORY: &str = "no-history";
+        pub const NO_INIT: &str = "no-init";
+        pub const IGNORE_CHECKS: &str = "ignore-checks";
+        pub const VERBOSE: &str = "verbose";
+    }
+
+    pub mod options {
+        pub const BRANCH: &str = "branch";
+        pub const TEMPLATE: &str = "template";
+    }
 }
 
 pub mod reader {
@@ -137,7 +150,8 @@ pub mod reader {
     }
 }
 
-pub struct ToolConfig {
+pub struct ToolConfig<'tc> {
+    pub template: Option<&'tc str>,
     pub no_history: bool,
     pub no_init: bool,
     pub ignore_checks: bool,
