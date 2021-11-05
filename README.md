@@ -35,12 +35,18 @@ information.
 
 Architect uses Handlebars and Git to create proper projects from template repositories.
 
-1. Add any file to your template repository and add Handlebars expressions to it.
-2. Add an `.architect.json` configuration file with your questions
+1. Add any file to your template repository and add Handlebars expressions to it. ([docs][rendering-docs])
+2. Add an `.architect.json` configuration file with your questions ([docs][config-docs])
 3. Download the `architect` executable for your platform from the
    latest [Release](https://github.com/v47-io/architect-rs/releases).
 4. Execute `architect <PATH-TO-REPO>` in your desired local directory, answer user-defined questions, et voila, you got
-   a fully functional project created from a template.
+   a fully functional project created from a template. ([docs][cli-docs])
+
+[rendering-docs]: https://v47-io.github.io/architect-rs/templates/rendering/
+
+[config-docs]: https://v47-io.github.io/architect-rs/templates/configuration/
+
+[cli-docs]: https://v47-io.github.io/architect-rs/cli/index.html
 
 ### Sample `.architect.json`
 
@@ -89,8 +95,13 @@ Architect uses Handlebars and Git to create proper projects from template reposi
         "matcher": "libs/mySpecialLibrary-*.jar"
       }
     ],
-    "includeHidden": [".github/**", ".gitignore"],
-    "nonTemplates": ["**/*.{gradle.kts,jar}"]
+    "includeHidden": [
+      ".github/**",
+      ".gitignore"
+    ],
+    "nonTemplates": [
+      "**/*.{gradle.kts,jar}"
+    ]
   }
 }
 ```
