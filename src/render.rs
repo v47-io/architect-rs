@@ -473,7 +473,7 @@ fn include_dir_entry(
     tool_config: &ToolConfig,
 ) -> bool {
     is_not_git_dir_in_root(path, root_dir)
-        && is_not_sub_template_dir(path, path_is_dir, root_dir)
+        && is_not_sub_template_dir(path, path_is_dir, root_dir, tool_config)
         && is_not_hidden_or_is_included(path, path_is_dir, root_dir, config, tool_config)
         && is_not_excluded(path, root_dir, config, tool_config)
         && is_conditionally_included(path, root_dir, config, hbs, ctx, tool_config)
@@ -485,8 +485,13 @@ fn is_not_git_dir_in_root(path: &Path, root_dir: &Path) -> bool {
 }
 
 #[inline]
-fn is_not_sub_template_dir(path: &Path, path_is_dir: bool, root_dir: &Path) -> bool {
-    !path_is_dir || path == root_dir || !path.join(".architect.json").is_file()
+fn is_not_sub_template_dir(path: &Path, path_is_dir: bool, root_dir: &Path, tool_config: &ToolConfig) -> bool {
+    let result = !path_is_dir || path == root_dir || !path.join(".architect.json").is_file();
+    if !result && tool_config.verbose {
+        println!("Skipping sub-template in: {}", path.display())
+    }
+
+    result
 }
 
 fn is_not_hidden_or_is_included(
