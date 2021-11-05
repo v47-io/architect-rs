@@ -110,7 +110,10 @@ fn create_err(template_spec: &TemplateSpec) -> Result<PathBuf, Error> {
     ))
 }
 
-pub fn find_template_dir(root_dir: &Path, tool_config: &ToolConfig<'_>) -> io::Result<(PathBuf, bool)> {
+pub fn find_template_dir(
+    root_dir: &Path,
+    tool_config: &ToolConfig<'_>,
+) -> io::Result<(PathBuf, bool)> {
     if let Some(template) = tool_config.template {
         let template_dir = root_dir.join(template).absolutize()?.to_path_buf();
         if template_dir.join(".architect.json").is_file() {
@@ -139,6 +142,8 @@ mod tests {
 
     use path_absolutize::Absolutize;
     use tempfile::tempdir;
+
+    use crate::utils::tests::RESOURCES_DIR;
 
     use super::*;
 
@@ -235,6 +240,49 @@ mod tests {
 
         assert!(!is_valid_target_dir(dir.path())?);
         assert!(!is_valid_target_dir(&dir.path().join("../.tmp000000"))?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_template_dir() -> io::Result<()> {
+        let project_dir = RESOURCES_DIR.join("..").absolutize()?.to_path_buf();
+        let template_dir = RESOURCES_DIR
+            .join("auto-template.input")
+            .absolutize()?
+            .to_path_buf();
+
+        let tool_config = ToolConfig {
+            template: None,
+            verbose: true,
+            no_history: false,
+            no_init: false,
+            ignore_checks: false,
+        };
+
+        assert!(find_template_dir(&template_dir, &tool_config).is_ok());
+        assert!(find_template_dir(&project_dir, &tool_config).is_ok());
+
+        let tool_config = ToolConfig {
+            template: Some("auto-template.input"),
+            verbose: true,
+            no_history: false,
+            no_init: false,
+            ignore_checks: false,
+        };
+
+        assert!(find_template_dir(&RESOURCES_DIR, &tool_config).is_ok());
+        assert!(find_template_dir(&project_dir, &tool_config).is_err());
+
+        let tool_config = ToolConfig {
+            template: Some("simple-template.input"),
+            verbose: true,
+            no_history: false,
+            no_init: false,
+            ignore_checks: false,
+        };
+
+        assert!(find_template_dir(&RESOURCES_DIR, &tool_config).is_err());
 
         Ok(())
     }
