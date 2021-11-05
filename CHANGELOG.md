@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.11.0 (2021-11-05)
+
+### New Features
+
+ - <csr-id-b0e832662ce9fdad1b23f4fe4353690a65cd954d/> WIP Implemented using subdirectory of template repo as template
+   This implements repositories of templates, each in their own directory. Currently working on rewriting the Git history to fit subdirectory instead of entire repository.
+
+### Bug Fixes
+
+ - <csr-id-36312af87ebf7f29d95bc2213ed9ef588c68e6e7/> Expanded filter to check for sub template dirs and exclude them
+ - <csr-id-9c513cce1cfb067975d755e53b65c15f432e2f67/> Updated TLDR
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 15 commits contributed to the release over the course of 5 calendar days.
+ - 13 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 1 unique issue was worked on: [#3](https://github.comgit//v47-io/architect-rs/issues/3)
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **[#3](https://github.comgit//v47-io/architect-rs/issues/3)**
+    - Allow- and deny-list for template generation in configuration ([`cf1e019`](https://github.comgit//v47-io/architect-rs/commit/cf1e01940b753c4f6454b116680716b39a83c7ea))
+ * **Uncategorized**
+    - Bump version ([`2cc1c85`](https://github.comgit//v47-io/architect-rs/commit/2cc1c854dc7222195fe5d7ad10f3ab96070014c7))
+    - Fixed formatting ([`b717fc3`](https://github.comgit//v47-io/architect-rs/commit/b717fc3f63f41cc43408b6f93c4db21740e27c43))
+    - Added log statement ([`1f4936d`](https://github.comgit//v47-io/architect-rs/commit/1f4936d21b0653f6b25fff2a258e8fda47af2027))
+    - Expanded filter to check for sub template dirs and exclude them ([`36312af`](https://github.comgit//v47-io/architect-rs/commit/36312af87ebf7f29d95bc2213ed9ef588c68e6e7))
+    - Merge pull request #8 from v47-io/feat/#7-multi-template-repos ([`16234e6`](https://github.comgit//v47-io/architect-rs/commit/16234e6bdee66da9ae473471b8e8f06c4d449141))
+    - Fixed expect file for test-binary job ([`fd0085a`](https://github.comgit//v47-io/architect-rs/commit/fd0085a7e1ad52331c3e7562555d447b9b44fc92))
+    - Added test for `find_template_dir` ([`fec7a70`](https://github.comgit//v47-io/architect-rs/commit/fec7a70f9b2d8eeb9514693c05c2e2b695474a2f))
+    - Got rid of Git tree rewriting, that's a task for another day ([`52c4f8c`](https://github.comgit//v47-io/architect-rs/commit/52c4f8cc9c44078cdc951dc9cbe7e8e9131bedf2))
+    - Executing tests, and doc building on all branches ([`77f461a`](https://github.comgit//v47-io/architect-rs/commit/77f461afb39b18e9c32d7102162dfba2c8d5f307))
+    - WIP Implemented using subdirectory of template repo as template ([`b0e8326`](https://github.comgit//v47-io/architect-rs/commit/b0e832662ce9fdad1b23f4fe4353690a65cd954d))
+    - Added a sample config to the README ([`6bc33ec`](https://github.comgit//v47-io/architect-rs/commit/6bc33ecebf7deb3fca64cf1c8fc8cff88d0fed79))
+    - Added a note to README about project and open issues ([`de29a70`](https://github.comgit//v47-io/architect-rs/commit/de29a70c0039c499c4c48e0ceab48f46ce6a85f7))
+    - Update issue templates ([`4144fa9`](https://github.comgit//v47-io/architect-rs/commit/4144fa92d8e8cb6a6594985c28e87290b8f1a543))
+    - Updated TLDR ([`9c513cc`](https://github.comgit//v47-io/architect-rs/commit/9c513cce1cfb067975d755e53b65c15f432e2f67))
+</details>
+
 ## 0.10.0 (2021-10-30)
 
 ### Documentation
@@ -29,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 12 commits contributed to the release.
+ - 13 commits contributed to the release.
  - 12 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' where seen in commit messages
 
@@ -40,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release architect-rs v0.10.0 ([`b1924aa`](https://github.comgit//v47-io/architect-rs/commit/b1924aab7b6efa999f539ac5eef1dffcc87dfe36))
     - Added more badges to README 🎉 ([`effd69f`](https://github.comgit//v47-io/architect-rs/commit/effd69fd13c1e2be1513b3b01027d060aeeca104))
     - Even better README ([`d8e0e6e`](https://github.comgit//v47-io/architect-rs/commit/d8e0e6e15c5001de16732db967d8f510b6d9c94e))
     - Added documentation about expert topics ([`1a3a15e`](https://github.comgit//v47-io/architect-rs/commit/1a3a15e212cbda563ec746d6e54514d41f1b551d))
