@@ -485,7 +485,12 @@ fn is_not_git_dir_in_root(path: &Path, root_dir: &Path) -> bool {
 }
 
 #[inline]
-fn is_not_sub_template_dir(path: &Path, path_is_dir: bool, root_dir: &Path, tool_config: &ToolConfig) -> bool {
+fn is_not_sub_template_dir(
+    path: &Path,
+    path_is_dir: bool,
+    root_dir: &Path,
+    tool_config: &ToolConfig,
+) -> bool {
     let result = !path_is_dir || path == root_dir || !path.join(".architect.json").is_file();
     if !result && tool_config.verbose {
         println!("Skipping sub-template in: {}", path.display())
