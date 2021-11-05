@@ -297,13 +297,42 @@ won't perform a Git clone but will just copy the directory, regardless of the lo
 <p>This is very technical at places. Make sure to specify this option before reporting a bug.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="templates"><a class="header" href="#templates">Templates</a></h1>
 <p>Architect makes it easy to scaffold entire projects from Git repositories, here referred to as templates.</p>
-<p>All Git repositories are potential templates, and all files in them are also treated as Handlebars templates
-if they contain Handlebars template expressions indicated by <code>{{</code> and <code>}}</code>. All other files are simply
-copied as long as they are not excluded.</p>
-<p>On top of that all file names are also potential Handlebars templates that are rendered when generating
-sources from a template.</p>
-<p>Architect preserves the original directory structure but allows the creation of new nested directory structures
-by way of Handlebars expressions in directory names.</p>
+<p>All Git repositories are potential templates, and all files in them are also treated as Handlebars templates if they
+contain Handlebars template expressions indicated by <code>{{</code> and <code>}}</code>. All other files are simply copied as long as they
+are not excluded.</p>
+<p>On top of that all file names are also potential Handlebars templates that are rendered when generating sources from a
+template.</p>
+<p>Architect preserves the original directory structure but allows the creation of new nested directory structures by way
+of Handlebars expressions in directory names.</p>
+<h2 id="template-repositories"><a class="header" href="#template-repositories">Template Repositories</a></h2>
+<p>Instead of just using the entire Git repository as a template, Architect provides the option to maintain multiple
+templates in one repository and referring to them by their directory name when generating a project.</p>
+<p>When using template repositories, each template must contain an <code>.architect.json</code> file to be usable as a template.</p>
+<p>Looking at the following example you can then specify the option <code>--template template-1</code> to use the specified template
+instead of the repository.</p>
+<p>Example for a directory structure with multiple templates:</p>
+<pre><code class="language-text">repository-dir
+├── template-1
+|  └── .architect.json
+├── template-2
+|  └── .architect.json
+└── README.md
+</code></pre>
+<p>You can still use the entire repository as a template (by not specifying a template name), but all subdirectories
+containing an <code>.architect.json</code> file will be ignored.</p>
+<p>Although nesting templates is not possible, you can still group multiple templates in directories.</p>
+<p>To use one of the grouped templates of the following example you would specify the
+option <code>--template template-group-1/template-1</code>.</p>
+<pre><code class="language-text">repository-dir
+├── template-group-1
+|  ├── template-1
+|  |  └── .architect.json
+|  └── template-2
+|     └── .architect.json
+├── template-3
+|  └── .architect.json
+└── README.md
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="fetching"><a class="header" href="#fetching">Fetching</a></h1>
 <p>Architect uses Git to fetch remote repositories, therefore it supports all the ways to fetch and
 authenticate that Git does.</p>
