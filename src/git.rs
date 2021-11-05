@@ -182,20 +182,6 @@ pub fn init_git_repository(target_dir: &Path, tool_config: &ToolConfig) -> io::R
     Ok(())
 }
 
-pub fn rewrite_git_for_subtemplate(
-    root_dir: &Path,
-    template_dir: &Path,
-    tool_config: &ToolConfig<'_>,
-) -> io::Result<()> {
-    if tool_config.verbose {
-        println!("Rewriting original history for sub template")
-    }
-
-
-
-    todo!()
-}
-
 #[cfg(test)]
 mod tests {
     use tempfile::tempdir;
