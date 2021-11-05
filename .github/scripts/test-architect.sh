@@ -31,7 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-spawn target/debug/architect --verbose --dirty test-resources/auto-template.input /tmp/output -H -I
+spawn target/debug/architect --verbose --dirty test-resources/auto-template.input /tmp/output --no-history --no-init
 
 expect "author.name"
 send "Some Dude\r"

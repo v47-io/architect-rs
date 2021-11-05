@@ -45,7 +45,7 @@ use crate::utils::ToolConfig;
 pub struct FetchOptions<'f, 't> {
     pub branch: Option<&'f str>,
     pub dirty: bool,
-    pub tool_config: &'t ToolConfig,
+    pub tool_config: &'t ToolConfig<'t>,
 }
 
 pub fn fetch(template_spec: &TemplateSpec, target: &Path, options: FetchOptions) -> io::Result<()> {
@@ -192,6 +192,7 @@ mod tests {
 
     const FETCH_URL: &str = "https://github.com/v47-io/architect-test-template.git";
     const TOOL_CONFIG: ToolConfig = ToolConfig {
+        template: None,
         verbose: true,
         no_history: false,
         no_init: false,

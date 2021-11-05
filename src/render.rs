@@ -872,6 +872,7 @@ mod tests {
         };
 
         let tool_config = ToolConfig {
+            template: None,
             no_history: false,
             no_init: false,
             ignore_checks: false,
@@ -1028,6 +1029,7 @@ mod tests {
         };
 
         let tool_config = ToolConfig {
+            template: None,
             no_history: false,
             no_init: false,
             ignore_checks: false,
@@ -1117,6 +1119,7 @@ mod tests {
         let context = UnsafeContext::new(context_map).into();
 
         let tool_config = ToolConfig {
+            template: None,
             verbose: true,
             ignore_checks: false,
             no_history: false,
