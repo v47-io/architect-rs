@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "questions": [
+    {
+      "type": "Selection",
+      "name": "features",
+      "items": [
+        "jdbc",
+        "kafka",
+        "redis"
+      ],
+      "multi": true,
+      "default": [
+        "kafka"
+      ]
+    }
+  ]
+}

@@ -152,7 +152,8 @@ fn ask_for_selection(
         select.items(items);
 
         if !default.is_empty() {
-            select.default(items.iter().position(|&it| it == default[0]).unwrap());
+            eprintln!("Defaults are not supported yet with multi-selections, sorry...");
+            // select.default(items.iter().position(|&item| item == default[0]).unwrap());
         }
 
         select.interact().map(|it| vec![it])?

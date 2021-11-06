@@ -52,8 +52,9 @@ jobs:
           args: --package architect-rs --bin architect --all-targets
       - run: |
           chmod +x target/debug/architect
-          chmod +x .github/scripts/test-architect.sh
+          chmod +x .github/scripts/*.sh
           .github/scripts/test-architect.sh
+          .github/scripts/test-architect-select.sh
 
   lint:
     runs-on: ubuntu-latest

@@ -31,12 +31,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-spawn target/debug/architect --verbose test-resources/auto-template.input /tmp/output
+spawn target/debug/architect --verbose test-resources/select-template.input /tmp/select-output
 
-expect "author.name"
-send "Some Dude\r"
-
-expect "somePackage"
-send "io.v47.test\r"
+expect "features"
+send " \033OB \033OB \n"
 
 expect eof
