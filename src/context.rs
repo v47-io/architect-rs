@@ -143,8 +143,8 @@ fn ask_for_selection(
     let selection = if multi_select {
         MultiSelect::new()
             .with_prompt(prompt)
-            .defaults(&defaults)
             .items(items)
+            .defaults(&*defaults)
             .interact()?
     } else {
         let mut select = Select::new();
@@ -152,8 +152,13 @@ fn ask_for_selection(
         select.items(items);
 
         if !default.is_empty() {
-            eprintln!("Defaults are not supported yet with multi-selections, sorry...");
-            // select.default(items.iter().position(|&item| item == default[0]).unwrap());
+            let first_item_in_defaults = &*default[0];
+            select.default(
+                items
+                    .iter()
+                    .position(|&item| item == first_item_in_defaults)
+                    .unwrap(),
+            );
         }
 
         select.interact().map(|it| vec![it])?
