@@ -32,26 +32,26 @@
 
 /**
  * The configuration used by Architect when creating an instance of this project template.
- * 
+ *
  * Everything (including the file itself) is optional, but Architect makes more sense to
  * use when actually configured
  */
 export interface Config {
     /**
      * The name of the template.
-     * 
+     *
      * Can be used in handlebars templates using `__template__.name`
      */
     name?: string;
     /**
      * The version of the template.
-     * 
+     *
      * Can be used in handlebars templates using `__template__.version`
      */
     version?: string;
     /**
      * Questions to ask the user to specify dynamic context values.
-     * 
+     *
      * These values are then available in handlebars templates
      */
     questions?: Question[];
@@ -159,6 +159,16 @@ interface BaseQuestion {
      * processing input
      */
     pretty?: string;
+    /**
+     * The default answer for this question.
+     *
+     * If the question is of type `Option`, this should specify a boolean, if it's 'Selection'
+     * you can specify either a string or a list of strings, otherwise just a string.
+     *
+     * Note: Specifying a list of strings will only be accepted if the `Selection` question
+     * allows the selection of multiple items
+     */
+    default?: string | boolean | string[]
 }
 
 export enum QuestionType {

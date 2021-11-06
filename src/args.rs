@@ -135,6 +135,8 @@ This requires the --no-history flag to be specified as well"#,
                     r#"Ignores some failed checks that would prevent generation otherwise.
 
 These errors will be ignored:
+  - Unexpected type of default value (for question)
+  - Unknown default item (for question)
   - Condition evaluation errors (for conditional files)"#,
                 ),
         )

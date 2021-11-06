@@ -33,10 +33,12 @@
 use std::collections::HashMap;
 use std::fs::{metadata, read_to_string};
 use std::io;
+use std::io::{Error, ErrorKind};
 use std::path::Path;
 
 use globset::GlobMatcher;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::utils::{glob, is_identifier, ToolConfig};
 
@@ -57,7 +59,7 @@ pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Resul
     }
 }
 
-pub fn read_config(input: &str) -> io::Result<Config> {
+pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Result<Config<'cfg>> {
     let json: ConfigJson = serde_json::from_str(input)?;
 
     let mut context_tree = HashMap::new();
@@ -93,6 +95,22 @@ pub fn read_config(input: &str) -> io::Result<Config> {
                 return None;
             }
 
+            let default_value = match read_default_value(
+                raw_question,
+                matches!(raw_question.question_type, RawQuestionType::Identifier | RawQuestionType::Selection),
+            ) {
+                Ok(value) => value,
+                Err(err) => {
+                    eprintln!("{}", err);
+
+                    if tool_config.ignore_checks {
+                        None
+                    } else {
+                        return None;
+                    }
+                }
+            };
+
             Some(Question {
                 path,
                 pretty: match raw_question.pretty {
@@ -106,9 +124,15 @@ pub fn read_config(input: &str) -> io::Result<Config> {
                     None => None,
                 },
                 spec: match raw_question.question_type {
-                    RawQuestionType::Identifier => QuestionSpec::Identifier,
-                    RawQuestionType::Option => QuestionSpec::Option,
-                    RawQuestionType::Text => QuestionSpec::Text,
+                    RawQuestionType::Identifier => QuestionSpec::Identifier {
+                        default: get_default_str(default_value),
+                    },
+                    RawQuestionType::Option => QuestionSpec::Option {
+                        default: get_default_bool(default_value),
+                    },
+                    RawQuestionType::Text => QuestionSpec::Text {
+                        default: get_default_str(default_value),
+                    },
                     RawQuestionType::Selection => {
                         let items = if let Some(raw_items) = &raw_question.items {
                             raw_items
@@ -125,9 +149,36 @@ pub fn read_config(input: &str) -> io::Result<Config> {
                             return None;
                         }
 
+                        let default = get_default_str_list(default_value);
+                        let mut default = if default.iter().any(|item| !items.contains(&&**item)) {
+                            eprintln!(
+                                "Default value for question {} contains unknown items",
+                                raw_question.name
+                            );
+
+                            if tool_config.ignore_checks {
+                                vec![]
+                            } else {
+                                return None;
+                            }
+                        } else {
+                            default
+                        };
+
+                        let multi = raw_question.multi.unwrap_or(false);
+
+                        let default = if !multi && default.len() > 1 {
+                            eprintln!("Multiple default values specified, but selection doesn't allow multiple selection");
+
+                            vec![default.remove(0)]
+                        } else {
+                            default
+                        };
+
                         QuestionSpec::Selection {
                             items,
-                            multi: raw_question.multi.unwrap_or(false),
+                            multi,
+                            default,
                         }
                     }
                 },
@@ -260,6 +311,110 @@ fn check_context_tree<'cfg>(
     }
 }
 
+fn read_default_value(
+    question: &RawQuestion,
+    must_be_identifier: bool,
+) -> io::Result<Option<Value>> {
+    match question.default.as_ref() {
+        Some(value) => match question.question_type {
+            RawQuestionType::Option => match value {
+                it @ Value::Bool(_) => Ok(Some(it.clone())),
+                _ => Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Invalid default value for 'Option': {}", value),
+                )),
+            },
+            RawQuestionType::Selection => match value {
+                it @ Value::String(value) => {
+                    if must_be_identifier && !is_identifier(value) {
+                        Err(Error::new(
+                            ErrorKind::InvalidData,
+                            format!("Default value is not an identifier: {}", value),
+                        ))
+                    } else {
+                        Ok(Some(it.clone()))
+                    }
+                }
+                it @ Value::Array(list) => {
+                    if list.iter().any(|item| {
+                        if let Value::String(value) = item {
+                            must_be_identifier && !is_identifier(value)
+                        } else {
+                            true
+                        }
+                    }) {
+                        Err(Error::new(
+                            ErrorKind::InvalidData,
+                            format!(
+                                "Invalid default value, contains non-{}: {:?}",
+                                if must_be_identifier {
+                                    "identifiers"
+                                } else {
+                                    "strings"
+                                },
+                                list
+                            ),
+                        ))
+                    } else {
+                        Ok(Some(it.clone()))
+                    }
+                }
+                _ => Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Invalid default value for 'Selection': {}", value),
+                )),
+            },
+            _ => match value {
+                it @ Value::String(_) => Ok(Some(it.clone())),
+                _ => Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "Invalid default value for '{:?}': {}",
+                        question.question_type, value
+                    ),
+                )),
+            },
+        },
+        None => Ok(None),
+    }
+}
+
+fn get_default_str(value: Option<Value>) -> Option<String> {
+    value.map(|it| {
+        if let Value::String(str) = it {
+            str
+        } else {
+            panic!()
+        }
+    })
+}
+
+fn get_default_str_list(value: Option<Value>) -> Vec<String> {
+    value
+        .map(|it| match it {
+            Value::String(str) => vec![str],
+            Value::Array(list) => list
+                .into_iter()
+                .map(|item| match item {
+                    Value::String(str) => str,
+                    _ => panic!(),
+                })
+                .collect(),
+            _ => panic!(),
+        })
+        .unwrap_or_default()
+}
+
+fn get_default_bool(value: Option<Value>) -> Option<bool> {
+    value.map(|it| {
+        if let Value::Bool(value) = it {
+            value
+        } else {
+            panic!()
+        }
+    })
+}
+
 #[derive(Deserialize, Serialize)]
 struct ConfigJson<'cfg> {
     name: Option<&'cfg str>,
@@ -276,9 +431,10 @@ struct RawQuestion<'cfg> {
     pretty: Option<&'cfg str>,
     items: Option<Vec<&'cfg str>>,
     multi: Option<bool>,
+    default: Option<Value>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 enum RawQuestionType {
     Identifier,
     Option,
@@ -376,10 +532,20 @@ impl<'cfg> QuestionPath<'cfg> {
 
 #[derive(Debug, PartialEq)]
 pub enum QuestionSpec<'cfg> {
-    Identifier,
-    Option,
-    Selection { items: Vec<&'cfg str>, multi: bool },
-    Text,
+    Identifier {
+        default: Option<String>,
+    },
+    Option {
+        default: Option<bool>,
+    },
+    Selection {
+        items: Vec<&'cfg str>,
+        multi: bool,
+        default: Vec<String>,
+    },
+    Text {
+        default: Option<String>,
+    },
 }
 
 #[derive(Debug)]
@@ -427,6 +593,14 @@ mod tests {
 }
 "#;
 
+    const TOOL_CONFIG: ToolConfig<'_> = ToolConfig {
+        verbose: true,
+        no_history: false,
+        no_init: false,
+        ignore_checks: false,
+        template: None,
+    };
+
     #[test]
     fn test_load_config_file() {
         let working_dir = tempdir().unwrap();
@@ -439,8 +613,8 @@ mod tests {
                     no_history: false,
                     no_init: false,
                     ignore_checks: false,
-                    verbose: true
-                }
+                    verbose: true,
+                },
             )
             .unwrap(),
             None
@@ -456,8 +630,8 @@ mod tests {
                     no_history: false,
                     no_init: false,
                     ignore_checks: false,
-                    verbose: true
-                }
+                    verbose: true,
+                },
             )
             .unwrap(),
             Some(CONFIG_CONTENT.to_string())
@@ -476,6 +650,7 @@ mod tests {
                     question_type: RawQuestionType::Text,
                     items: None,
                     multi: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "debug",
@@ -483,6 +658,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    default: Some(Value::Bool(true)),
                 },
                 RawQuestion {
                     name: "main.package",
@@ -490,6 +666,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "main.features",
@@ -497,13 +674,17 @@ mod tests {
                     items: Some(vec!["feature_1", "feature_2", "feature_3"]),
                     multi: Some(true),
                     pretty: None,
+                    default: Some(Value::Array(vec![
+                        Value::String("feature_2".into()),
+                        Value::String("feature_3".into()),
+                    ])),
                 },
             ]),
             filters: None,
         })
         .unwrap();
 
-        let config = read_config(&config_json).unwrap();
+        let config = read_config(&config_json, &TOOL_CONFIG).unwrap();
 
         assert_eq!(
             config,
@@ -516,21 +697,23 @@ mod tests {
                             names: vec!["author"]
                         },
                         pretty: Some("Who is the author of this project?"),
-                        spec: QuestionSpec::Text
+                        spec: QuestionSpec::Text { default: None },
                     },
                     Question {
                         path: QuestionPath {
                             names: vec!["debug"]
                         },
-                        spec: QuestionSpec::Option,
-                        pretty: None
+                        spec: QuestionSpec::Option {
+                            default: Some(true)
+                        },
+                        pretty: None,
                     },
                     Question {
                         path: QuestionPath {
                             names: vec!["main", "package"]
                         },
-                        spec: QuestionSpec::Identifier,
-                        pretty: None
+                        spec: QuestionSpec::Identifier { default: None },
+                        pretty: None,
                     },
                     Question {
                         path: QuestionPath {
@@ -538,22 +721,27 @@ mod tests {
                         },
                         spec: QuestionSpec::Selection {
                             items: vec!["feature_1", "feature_2", "feature_3"],
-                            multi: true
+                            multi: true,
+                            default: vec!["feature_2".into(), "feature_3".into()],
                         },
-                        pretty: None
-                    }
+                        pretty: None,
+                    },
                 ],
-                filters: Filters::empty()
+                filters: Filters::empty(),
             }
         );
 
         assert_eq!(
-            read_config(r#"{ "name": "Some Template", "version": null }"#).unwrap(),
+            read_config(
+                r#"{ "name": "Some Template", "version": null }"#,
+                &TOOL_CONFIG,
+            )
+            .unwrap(),
             Config {
                 name: Some("Some Template"),
                 version: None,
                 questions: vec![],
-                filters: Filters::empty()
+                filters: Filters::empty(),
             }
         )
     }
@@ -570,6 +758,7 @@ mod tests {
                     question_type: RawQuestionType::Text,
                     items: None,
                     multi: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "1.debug",
@@ -577,6 +766,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "main..package",
@@ -584,6 +774,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "",
@@ -591,6 +782,7 @@ mod tests {
                     items: Some(vec!["feature_1", "feature_2", "feature_3"]),
                     multi: Some(true),
                     pretty: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "__template__.something",
@@ -598,6 +790,7 @@ mod tests {
                     items: Some(vec!["feature_1", "feature_2", "feature_3"]),
                     multi: Some(true),
                     pretty: None,
+                    default: None,
                 },
             ]),
             filters: None,
@@ -605,12 +798,12 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            read_config(&malformed_names_json).unwrap(),
+            read_config(&malformed_names_json, &TOOL_CONFIG).unwrap(),
             Config {
                 name: Some("Some Template"),
                 version: Some("0.1.0"),
                 questions: vec![],
-                filters: Filters::empty()
+                filters: Filters::empty(),
             }
         );
 
@@ -624,6 +817,7 @@ mod tests {
                     question_type: RawQuestionType::Text,
                     items: None,
                     multi: None,
+                    default: Some(Value::String("You".into())),
                 },
                 RawQuestion {
                     name: "author.email",
@@ -631,6 +825,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    default: None,
                 },
                 RawQuestion {
                     name: "author.email.domain",
@@ -638,6 +833,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    default: None,
                 },
             ]),
             filters: None,
@@ -645,7 +841,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            read_config(&malformed_context_tree).unwrap(),
+            read_config(&malformed_context_tree, &TOOL_CONFIG).unwrap(),
             Config {
                 name: Some("Some Template"),
                 version: Some("0.1.0"),
@@ -654,9 +850,11 @@ mod tests {
                         names: vec!["author"]
                     },
                     pretty: Some("Who is the author of this project?"),
-                    spec: QuestionSpec::Text
+                    spec: QuestionSpec::Text {
+                        default: Some("You".into())
+                    },
                 },],
-                filters: Filters::empty()
+                filters: Filters::empty(),
             }
         );
 
@@ -670,6 +868,7 @@ mod tests {
                     items: None,
                     pretty: None,
                     multi: Some(true),
+                    default: None,
                 },
                 RawQuestion {
                     name: "features2",
@@ -677,6 +876,7 @@ mod tests {
                     items: Some(vec!["#feature1", "feature2", "abc.def"]),
                     pretty: None,
                     multi: None,
+                    default: Some(Value::Array(vec!["feature2".into()])),
                 },
                 RawQuestion {
                     name: "features3",
@@ -684,6 +884,7 @@ mod tests {
                     items: Some(vec![]),
                     pretty: None,
                     multi: None,
+                    default: None,
                 },
             ]),
             filters: None,
@@ -691,7 +892,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            read_config(&malformed_selection_items).unwrap(),
+            read_config(&malformed_selection_items, &TOOL_CONFIG).unwrap(),
             Config {
                 name: None,
                 version: None,
@@ -701,11 +902,12 @@ mod tests {
                     },
                     spec: QuestionSpec::Selection {
                         items: vec!["feature2"],
-                        multi: false
+                        multi: false,
+                        default: vec!["feature2".into()],
                     },
-                    pretty: None
+                    pretty: None,
                 }],
-                filters: Filters::empty()
+                filters: Filters::empty(),
             }
         )
     }
