@@ -13,6 +13,10 @@
       "default": [
         "kafka"
       ]
+    },
+    {
+      "type": "Option",
+      "name": "do.it"
     }
   ]
 }

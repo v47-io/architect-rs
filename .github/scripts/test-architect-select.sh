@@ -36,4 +36,7 @@ spawn target/debug/architect --verbose test-resources/select-template.input /tmp
 expect "features"
 send " \033\[B \033\[B \n"
 
+expect "do.it"
+send "y"
+
 expect eof
