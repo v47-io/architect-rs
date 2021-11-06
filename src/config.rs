@@ -365,7 +365,16 @@ fn read_default_value(
                 )),
             },
             _ => match value {
-                it @ Value::String(_) => Ok(Some(it.clone())),
+                it @ Value::String(value) => {
+                    if must_be_identifier && !is_identifier(value) {
+                        Err(Error::new(
+                            ErrorKind::InvalidData,
+                            format!("Default value is not an identifier: {}", value),
+                        ))
+                    } else {
+                        Ok(Some(it.clone()))
+                    }
+                }
                 _ => Err(Error::new(
                     ErrorKind::InvalidData,
                     format!(
@@ -579,6 +588,7 @@ pub struct ConditionalFilesSpec<'cfg> {
 mod tests {
     use std::fs;
 
+    use serde_json::Number;
     use tempfile::tempdir;
 
     use super::*;
@@ -910,6 +920,161 @@ mod tests {
                 filters: Filters::empty(),
             }
         )
+    }
+
+    #[test]
+    fn test_read_default_value() {
+        let no_default = RawQuestion {
+            name: "an_option",
+            question_type: RawQuestionType::Option,
+            default: None,
+            pretty: None,
+            items: None,
+            multi: None,
+        };
+
+        let no_default_result = read_default_value(&no_default, false);
+        assert!(no_default_result.is_ok());
+        assert_eq!(None, no_default_result.unwrap());
+
+        let valid_option = RawQuestion {
+            name: "an_option",
+            question_type: RawQuestionType::Option,
+            default: Some(Value::Bool(true)),
+            pretty: None,
+            items: None,
+            multi: None,
+        };
+
+        let valid_option_default = read_default_value(&valid_option, false);
+
+        assert!(valid_option_default.is_ok());
+        assert_eq!(valid_option_default.unwrap(), Some(Value::Bool(true)));
+
+        let invalid_option = RawQuestion {
+            name: "an_option",
+            question_type: RawQuestionType::Option,
+            default: Some(Value::Number(Number::from(0))),
+            pretty: None,
+            items: None,
+            multi: None,
+        };
+
+        let invalid_option_default = read_default_value(&invalid_option, false);
+        assert!(invalid_option_default.is_err());
+
+        let valid_selection = RawQuestion {
+            name: "a_selection",
+            question_type: RawQuestionType::Selection,
+            items: Some(vec!["item1", "item2"]),
+            default: Some(Value::String("item1".into())),
+            pretty: None,
+            multi: None,
+        };
+
+        let valid_selection_default = read_default_value(&valid_selection, false);
+
+        assert!(valid_selection_default.is_ok());
+        assert_eq!(
+            valid_selection_default.unwrap(),
+            Some(Value::String("item1".into()))
+        );
+
+        let invalid_selection = RawQuestion {
+            name: "a_selection",
+            question_type: RawQuestionType::Selection,
+            items: Some(vec!["item1", "item2"]),
+            default: Some(Value::String("item-1".into())),
+            pretty: None,
+            multi: None,
+        };
+
+        let invalid_selection_default = read_default_value(&invalid_selection, true);
+        assert!(invalid_selection_default.is_err());
+
+        let another_invalid_selection = RawQuestion {
+            name: "a_selection",
+            question_type: RawQuestionType::Selection,
+            items: Some(vec!["item1", "item2"]),
+            default: Some(Value::Bool(true)),
+            pretty: None,
+            multi: None,
+        };
+
+        let another_invalid_selection_default =
+            read_default_value(&another_invalid_selection, true);
+
+        assert!(another_invalid_selection_default.is_err());
+
+        let valid_selection_list = RawQuestion {
+            name: "a_selection",
+            question_type: RawQuestionType::Selection,
+            items: Some(vec!["item1", "item2"]),
+            default: Some(Value::Array(vec!["item1".into()])),
+            pretty: None,
+            multi: None,
+        };
+
+        let valid_selection_list_default = read_default_value(&valid_selection_list, true);
+
+        assert!(valid_selection_list_default.is_ok());
+        assert_eq!(
+            Some(Value::Array(vec!["item1".into()])),
+            valid_selection_list_default.unwrap()
+        );
+
+        let invalid_selection_list = RawQuestion {
+            name: "a_selection",
+            question_type: RawQuestionType::Selection,
+            items: Some(vec!["item1", "item2"]),
+            default: Some(Value::Array(vec!["item-1".into()])),
+            pretty: None,
+            multi: None,
+        };
+
+        let invalid_selection_list_default = read_default_value(&invalid_selection_list, true);
+        assert!(invalid_selection_list_default.is_err());
+
+        let another_invalid_sel_list = RawQuestion {
+            name: "a_selection",
+            question_type: RawQuestionType::Selection,
+            items: Some(vec!["item1", "item2"]),
+            default: Some(Value::Bool(true)),
+            pretty: None,
+            multi: None,
+        };
+
+        let another_invalid_sel_list_default = read_default_value(&another_invalid_sel_list, true);
+        assert!(another_invalid_sel_list_default.is_err());
+
+        let other_question = RawQuestion {
+            name: "a_text",
+            question_type: RawQuestionType::Text,
+            default: Some(Value::String("the content".into())),
+            items: None,
+            pretty: None,
+            multi: None,
+        };
+
+        let other_question_default = read_default_value(&other_question, false);
+
+        assert!(other_question_default.is_ok());
+        assert_eq!(
+            Some(Value::String("the content".into())),
+            other_question_default.unwrap()
+        );
+
+        let inv_id_question = RawQuestion {
+            name: "a_text",
+            question_type: RawQuestionType::Identifier,
+            default: Some(Value::String("the content".into())),
+            items: None,
+            pretty: None,
+            multi: None,
+        };
+
+        let inv_id_question_default = read_default_value(&inv_id_question, true);
+        assert!(inv_id_question_default.is_err());
     }
 
     impl<'cfg> PartialEq for Config<'cfg> {

@@ -1,6 +1,6 @@
 [package]
 name = "architect-rs"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Alex Katlein <dev@vemilyus.com>"]
 license = "BSD 3-Clause"
 edition = "2018"
