@@ -1149,7 +1149,7 @@ mod tests {
             &config,
             &HANDLEBARS,
             &context,
-            &tool_config
+            &tool_config,
         ));
 
         assert!(!include_dir_entry(
@@ -1159,7 +1159,7 @@ mod tests {
             &config,
             &HANDLEBARS,
             &context,
-            &tool_config
+            &tool_config,
         ));
 
         assert!(include_dir_entry(
@@ -1169,7 +1169,7 @@ mod tests {
             &config,
             &HANDLEBARS,
             &context,
-            &tool_config
+            &tool_config,
         ));
 
         assert!(include_dir_entry(
@@ -1179,7 +1179,7 @@ mod tests {
             &config,
             &HANDLEBARS,
             &context,
-            &tool_config
+            &tool_config,
         ));
 
         assert!(!include_dir_entry(
@@ -1189,7 +1189,7 @@ mod tests {
             &config,
             &HANDLEBARS,
             &context,
-            &tool_config
+            &tool_config,
         ));
 
         assert!(!include_dir_entry(
@@ -1199,7 +1199,7 @@ mod tests {
             &config,
             &HANDLEBARS,
             &context,
-            &tool_config
+            &tool_config,
         ));
 
         Ok(())
@@ -1263,20 +1263,20 @@ mod tests {
         assert!(eval_condition(
             &ConditionalFilesSpec {
                 condition: "simple",
-                matcher: glob("").unwrap()
+                matcher: glob("").unwrap(),
             },
             &HANDLEBARS,
-            &context
+            &context,
         )
         .unwrap_or(false));
 
         assert!(!eval_condition(
             &ConditionalFilesSpec {
                 condition: "falsy",
-                matcher: glob("").unwrap()
+                matcher: glob("").unwrap(),
             },
             &HANDLEBARS,
-            &context
+            &context,
         )
         .unwrap_or(false));
     }

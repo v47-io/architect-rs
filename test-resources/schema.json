@@ -25,34 +25,10 @@
         "Config": {
             "description": "The configuration used by Architect when creating an instance of this project template.\n\nEverything (including the file itself) is optional, but Architect makes more sense to\nuse when actually configured",
             "properties": {
-                "conditionalFiles": {
-                    "description": "Specifies conditions for certain files to be created.\n\nThese conditions have full access to the context that is created by the questions.\n\nNote that conditions specified here don't apply to hidden files that weren't explicitly\nincluded using `includeHidden` or files excluded using `exclude`",
-                    "items": {
-                        "$ref": "#/definitions/ConditionalFiles"
-                    },
-                    "title": "conditionalFiles",
-                    "type": "array"
-                },
-                "exclude": {
-                    "description": "Specifies Glob expressions to exclude files in the target.\n\nNote that exclusions have a higher precedence than inclusions and conditional files",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "exclude",
-                    "type": "array"
-                },
-                "hbsExtension": {
-                    "description": "The extension that is used to explicitly identify Handlebars templates.\n\nThis is specified as a string preceded by a singular dot. The default value is `.hbs`",
-                    "title": "hbsExtension",
-                    "type": "string"
-                },
-                "includeHidden": {
-                    "description": "Specifies Glob expressions to include hidden files in the target.\n\nNote that including the `.git` directory here will have no effect",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "includeHidden",
-                    "type": "array"
+                "filters": {
+                    "$ref": "#/definitions/Filters",
+                    "description": "Contains multiple filters to control which files are actually considered and rendered",
+                    "title": "filters"
                 },
                 "name": {
                     "description": "The name of the template.\n\nCan be used in handlebars templates using `__template__.name`",
@@ -74,11 +50,6 @@
                     "title": "questions",
                     "type": "array"
                 },
-                "renderHbs": {
-                    "description": "Indicates whether to treat explicitly identified Handlebars templates (using their\nfile extension) as regular templates and render them.\n\nBy default, Handlebars templates that are explicitly identified are not rendered,\nrather they are copied as is.\n\nNote: File names of such files are still treated as templates",
-                    "title": "renderHbs",
-                    "type": "boolean"
-                },
                 "version": {
                     "description": "The version of the template.\n\nCan be used in handlebars templates using `__template__.version`",
                     "title": "version",
@@ -88,8 +59,73 @@
             "title": "Config",
             "type": "object"
         },
+        "Filters": {
+            "description": "This interface specifies the configuration properties that decide which files are considered\nfor Handlebars rendering or even included in the target directory",
+            "properties": {
+                "conditionalFiles": {
+                    "description": "Specifies conditions for certain files to be created.\n\nThese conditions have full access to the context that is created by the questions.\n\nNote that conditions specified here don't apply to hidden files that weren't explicitly\nincluded using `includeHidden` or files excluded using `exclude`",
+                    "items": {
+                        "$ref": "#/definitions/ConditionalFiles"
+                    },
+                    "title": "conditionalFiles",
+                    "type": "array"
+                },
+                "exclude": {
+                    "description": "Specifies Glob expressions to exclude files in the target.\n\nNote that exclusions have a higher precedence than inclusions and conditional files",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "exclude",
+                    "type": "array"
+                },
+                "includeHidden": {
+                    "description": "Specifies Glob expressions to include hidden files in the target.\n\nNote that including the `.git` directory here will have no effect",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "includeHidden",
+                    "type": "array"
+                },
+                "nonTemplates": {
+                    "description": "Specifies Glob expressions that indicate files that should not be rendered using Handlebars.\n\nThis property has no effect, if `templates` is also specified",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "nonTemplates",
+                    "type": "array"
+                },
+                "templates": {
+                    "description": "Specifies Glob expressions that indicate the files that should be rendered using Handlebars.\n\nThis disables Handlebars rendering for all other files. Directory or file names are not affected",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "templates",
+                    "type": "array"
+                }
+            },
+            "title": "Filters",
+            "type": "object"
+        },
         "SelectionQuestion": {
             "properties": {
+                "default": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": [
+                                "string",
+                                "boolean"
+                            ]
+                        }
+                    ],
+                    "description": "The default answer for this question.\n\nIf the question is of type `Option`, this should specify a boolean, if it's 'Selection'\nyou can specify either a string or a list of strings, otherwise just a string.\n\nNote: Specifying a list of strings will only be accepted if the `Selection` question\nallows the selection of multiple items",
+                    "title": "default"
+                },
                 "items": {
                     "description": "The items available for selection.\n\nThese will be set to `true` in the context if selected.\n\nFormat: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`",
                     "items": {
@@ -132,6 +168,24 @@
         },
         "SimpleQuestion": {
             "properties": {
+                "default": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": [
+                                "string",
+                                "boolean"
+                            ]
+                        }
+                    ],
+                    "description": "The default answer for this question.\n\nIf the question is of type `Option`, this should specify a boolean, if it's 'Selection'\nyou can specify either a string or a list of strings, otherwise just a string.\n\nNote: Specifying a list of strings will only be accepted if the `Selection` question\nallows the selection of multiple items",
+                    "title": "default"
+                },
                 "name": {
                     "description": "The name in the context for the value specified when answering this question.\n\nCan be multiple names concatenated using `.` to create hierarchical structures in\nthe context.\n\nFormat: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`",
                     "title": "name",

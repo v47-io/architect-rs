@@ -163,7 +163,7 @@ mod tests {
             create_target_dir(
                 base_dir.path(),
                 &TemplateSpec::Remote(""),
-                Some(&abs_target_override)
+                Some(&abs_target_override),
             )?
         );
 
@@ -181,7 +181,7 @@ mod tests {
             create_target_dir(
                 base_dir.path(),
                 &TemplateSpec::Remote(""),
-                Some(rel_target_override)
+                Some(rel_target_override),
             )?
         );
 

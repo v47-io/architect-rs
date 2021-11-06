@@ -72,66 +72,101 @@ pub fn build_context(config: &Config) -> io::Result<Context> {
 
 fn ask(question: &Question) -> io::Result<Value> {
     match &question.spec {
-        QuestionSpec::Identifier => ask_for_text(question, true),
-        QuestionSpec::Text => ask_for_text(question, false),
-        QuestionSpec::Option => ask_for_option(question),
+        QuestionSpec::Identifier { default } => ask_for_text(question, true, default),
+        QuestionSpec::Text { default } => ask_for_text(question, false, default),
+        QuestionSpec::Option { default } => ask_for_option(question, default),
         QuestionSpec::Selection {
             items,
             multi: multi_select,
-        } => ask_for_selection(question, items, *multi_select),
+            default,
+        } => ask_for_selection(question, items, *multi_select, default),
     }
 }
 
-fn ask_for_text(question: &Question, must_be_identifier: bool) -> io::Result<Value> {
+fn ask_for_text(
+    question: &Question,
+    must_be_identifier: bool,
+    default: &Option<String>,
+) -> io::Result<Value> {
     let prompt = question
         .pretty
         .map(|it| it.to_string())
         .unwrap_or_else(|| question.path.names().join("."));
 
-    loop {
-        let result_text = Input::<String>::new()
-            .with_prompt(&prompt)
-            .interact_text()?;
+    let mut text_input = Input::<String>::new();
+    text_input.with_prompt(&prompt);
 
-        let result_trimmed = result_text.trim();
-
-        if must_be_identifier && !result_trimmed.split('.').all(|it| is_identifier(it)) {
-            eprintln!("Not a valid identifier: {}", result_trimmed);
-            continue;
-        } else if result_trimmed.is_empty() {
-            eprintln!("You must enter a value");
-            continue;
-        }
-
-        return Ok(Value::String(result_trimmed.to_string()));
+    if let Some(value) = default {
+        text_input.default(value.clone());
     }
+
+    if must_be_identifier {
+        text_input.validate_with(|value: &String| -> Result<(), &str> {
+            if value.split('.').all(|name| is_identifier(name)) {
+                Ok(())
+            } else {
+                Err("Not a valid identifier")
+            }
+        });
+    }
+
+    Ok(Value::String(text_input.interact_text()?))
 }
 
-fn ask_for_option(question: &Question) -> io::Result<Value> {
-    Confirm::new()
-        .with_prompt(question.pretty.unwrap_or(&question.path.names().join(".")))
-        .interact()
-        .map(Value::Bool)
+fn ask_for_option(question: &Question, default: &Option<bool>) -> io::Result<Value> {
+    let mut confirm_prompt = Confirm::new();
+    confirm_prompt.with_prompt(question.pretty.unwrap_or(&question.path.names().join(".")));
+
+    if let Some(default) = default {
+        confirm_prompt.default(*default);
+    }
+
+    confirm_prompt.interact().map(Value::Bool)
 }
 
-fn ask_for_selection(question: &Question, items: &[&str], multi_select: bool) -> io::Result<Value> {
+fn ask_for_selection(
+    question: &Question,
+    items: &[&str],
+    multi_select: bool,
+    default: &[String],
+) -> io::Result<Value> {
     let prompt = question
         .pretty
         .map(|it| it.to_string())
         .unwrap_or_else(|| question.path.names().join("."));
+
+    let defaults = items
+        .iter()
+        .map(|&item| default.contains(&item.to_string()))
+        .collect::<Vec<_>>();
 
     let selection = if multi_select {
-        MultiSelect::new().with_prompt(prompt).interact()?
-    } else {
-        Select::new()
+        MultiSelect::new()
             .with_prompt(prompt)
-            .interact()
-            .map(|it| vec![it])?
+            .items(items)
+            .defaults(&*defaults)
+            .interact()?
+    } else {
+        let mut select = Select::new();
+        select.with_prompt(prompt);
+        select.items(items);
+
+        if !default.is_empty() {
+            let first_item_in_defaults = &*default[0];
+            select.default(
+                items
+                    .iter()
+                    .position(|&item| item == first_item_in_defaults)
+                    .unwrap(),
+            );
+        }
+
+        select.interact().map(|it| vec![it])?
     };
 
     let mut result_map = Map::new();
     for i in selection {
-        result_map.insert(items[i].to_string(), Value::Bool(true));
+        result_map.insert(items[i].into(), Value::Bool(true));
     }
 
     Ok(Value::Object(result_map))

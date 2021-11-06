@@ -150,7 +150,7 @@ where
 
     let config_json = load_config_file(&template_path, &tool_config)?;
     let config = if let Some(config_json) = &config_json {
-        Some(read_config(config_json)?)
+        Some(read_config(config_json, &tool_config)?)
     } else {
         None
     };
