@@ -68,7 +68,8 @@ Architect uses Handlebars and Git to create proper projects from template reposi
     {
       "name": "project.package",
       "type": "Identifier",
-      "pretty": "What should be the root package for your Kotlin sources?"
+      "pretty": "What should be the root package for your Kotlin sources?",
+      "default": "com.github.example"
     },
     {
       "name": "project.features",
@@ -78,6 +79,10 @@ Architect uses Handlebars and Git to create proper projects from template reposi
         "jdbc",
         "kafka",
         "redis",
+        "mySpecialLibrary"
+      ],
+      "default": [
+        "jdbc",
         "mySpecialLibrary"
       ],
       "multi": true
