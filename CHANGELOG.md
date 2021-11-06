@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.12.0 (2021-11-06)
+
+### Documentation
+
+ - <csr-id-288280cfbaf80ab2d647d189f8c57acd556a7059/> Added information about default values for questions
+
+### New Features
+
+ - <csr-id-addcd66a3c4d546d124632d47b946656debda8fe/> Default values for questions
+   Works for text, identifiers, selections, multi-selections, and options.
+
+### Bug Fixes
+
+ - <csr-id-6b3ef343d2a569ab47b1788eb26ec6055e91484d/> Handling of questions asking for Identifiers, now accepting dot-concatenated identifiers
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 11 commits contributed to the release over the course of 1 calendar day.
+ - 10 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 1 unique issue was worked on: [#5](https://github.comgit//v47-io/architect-rs/issues/5)
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **[#5](https://github.comgit//v47-io/architect-rs/issues/5)**
+    - Default values for questions ([`addcd66`](https://github.comgit//v47-io/architect-rs/commit/addcd66a3c4d546d124632d47b946656debda8fe))
+ * **Uncategorized**
+    - Expanded test-architect-select as bit to also test option ([`6ee5548`](https://github.comgit//v47-io/architect-rs/commit/6ee55484546d97c0c7f135a5d9e42ec2df220f29))
+    - Added information about default values for questions ([`288280c`](https://github.comgit//v47-io/architect-rs/commit/288280cfbaf80ab2d647d189f8c57acd556a7059))
+    - Added some more detail to the sample config ([`7a23bf2`](https://github.comgit//v47-io/architect-rs/commit/7a23bf28d9af249c99f5ff34cf58f89f3c038cd0))
+    - Merge pull request #10 from v47-io/feature/default-value-for-questions ([`f9789af`](https://github.comgit//v47-io/architect-rs/commit/f9789affaab58be137eaf69a32fbad4cd2b1eb3f))
+    - Handling of questions asking for Identifiers, now accepting dot-concatenated identifiers ([`6b3ef34`](https://github.comgit//v47-io/architect-rs/commit/6b3ef343d2a569ab47b1788eb26ec6055e91484d))
+    - Fixed escape in expect for selection test ([`d083682`](https://github.comgit//v47-io/architect-rs/commit/d083682f70d23053e166d4f72d3c8dc6c8fcfd12))
+    - Fixed multi-selection ([`292d607`](https://github.comgit//v47-io/architect-rs/commit/292d60734b421998875d7fbc84cfc15c9d8d598e))
+    - Added another expect file to test the selection input ([`78c5b1e`](https://github.comgit//v47-io/architect-rs/commit/78c5b1e231335056c968db699e628147c3c6916d))
+    - Added tests for the new default value config ([`b2b4797`](https://github.comgit//v47-io/architect-rs/commit/b2b4797198f3f6e2a49a6f28bbfb29aebe6107b5))
+    - Added docs shortcut links to README ([`4f348fd`](https://github.comgit//v47-io/architect-rs/commit/4f348fdebd642bbfe15c16a187c94a3f95b3578d))
+</details>
+
 ## 0.11.0 (2021-11-05)
 
 ### New Features
@@ -21,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 15 commits contributed to the release over the course of 5 calendar days.
+ - 16 commits contributed to the release over the course of 5 calendar days.
  - 13 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#3](https://github.comgit//v47-io/architect-rs/issues/3)
 
@@ -34,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#3](https://github.comgit//v47-io/architect-rs/issues/3)**
     - Allow- and deny-list for template generation in configuration ([`cf1e019`](https://github.comgit//v47-io/architect-rs/commit/cf1e01940b753c4f6454b116680716b39a83c7ea))
  * **Uncategorized**
+    - Release architect-rs v0.11.0 ([`2230a99`](https://github.comgit//v47-io/architect-rs/commit/2230a992797d4e1241218d023b5d4922c57b0ffc))
     - Bump version ([`2cc1c85`](https://github.comgit//v47-io/architect-rs/commit/2cc1c854dc7222195fe5d7ad10f3ab96070014c7))
     - Fixed formatting ([`b717fc3`](https://github.comgit//v47-io/architect-rs/commit/b717fc3f63f41cc43408b6f93c4db21740e27c43))
     - Added log statement ([`1f4936d`](https://github.comgit//v47-io/architect-rs/commit/1f4936d21b0653f6b25fff2a258e8fda47af2027))
