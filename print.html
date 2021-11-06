@@ -592,12 +592,19 @@ specifying multiple dot-delimited identifiers you can create nested objects in t
   &quot;somethingElse&quot;: ...
 }
 </code></pre>
+<h3 id="default-values"><a class="header" href="#default-values">Default Values</a></h3>
+<p>You can also specify default values for all your questions. Specifying a default value makes the question optional and
+you can proceed without entering a custom value.</p>
 <h2 id="identifier"><a class="header" href="#identifier">Identifier</a></h2>
-<p>Ask for an identifier, i.e. a String that can only consist of a limited subset of characters.</p>
+<p>Ask for an identifier, i.e. a String that can only consist of a limited subset of characters, or multiple such strings
+concatenated by dot (<code>.</code>) characters.</p>
 <p><strong>Format</strong>:</p>
 <pre><code class="language-regexp">^[a-zA-Z_$][a-zA-Z0-9_$]*$
 </code></pre>
-<p>A possible use-case for this question type can be to ask for a class name for an application's main class.</p>
+<p>A possible use-case for this question type can be to ask for a class name for an application's main class or a package
+name for Java.</p>
+<h3 id="default-values-1"><a class="header" href="#default-values-1">Default Values</a></h3>
+<p>You can specify any value as a default value that would fit the specified format.</p>
 <h2 id="option"><a class="header" href="#option">Option</a></h2>
 <p>A simple yes or no question. This will store a Boolean in the context.</p>
 <p><strong>Example</strong>:</p>
@@ -610,6 +617,8 @@ specifying multiple dot-delimited identifiers you can create nested objects in t
 </code></pre>
 <p>This question type is useful when you want to present the user with a binary choice, e.g. whether to generate
 a <code>.gitignore</code> in the target directory.</p>
+<h3 id="default-values-2"><a class="header" href="#default-values-2">Default Values</a></h3>
+<p>You can specify a boolean value as the default value (<code>true</code> or <code>false</code>)</p>
 <h2 id="selection"><a class="header" href="#selection">Selection</a></h2>
 <p>Useful where you want to offer a predefined list of values to choose from. The selected value(s)
 will be created as properties in the context and have the value <code>true</code>.</p>
@@ -631,9 +640,14 @@ will be created as properties in the context and have the value <code>true</code
 </code></pre>
 <p>A possible use-case for this type of question is to define several features a user could choose to enable when using a
 template, e.g. whether to use logging statements, or to include a certain dependency.</p>
+<h3 id="default-values-3"><a class="header" href="#default-values-3">Default Values</a></h3>
+<p>Depending on whether multi-selection is enabled you can either specify a single string as the default value or an array
+of strings.</p>
 <h2 id="text"><a class="header" href="#text">Text</a></h2>
 <p>This question type allows you to ask for arbitrary text to store in the context. No format is enforced for answers.</p>
 <p>Possible use-cases for this question type can be to ask for a person's full name or an email address.</p>
+<h3 id="default-values-4"><a class="header" href="#default-values-4">Default Values</a></h3>
+<p>You can set any string as the default value.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="filters"><a class="header" href="#filters">Filters</a></h1>
 <p>The Architect configuration file allows you to define filters in multiple ways to control whether certain files get
 actually added to the target.</p>
