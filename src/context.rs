@@ -102,7 +102,7 @@ fn ask_for_text(
 
     if must_be_identifier {
         text_input.validate_with(|value: &String| -> Result<(), &str> {
-            if is_identifier(value) {
+            if value.split('.').all(|name| is_identifier(name)) {
                 Ok(())
             } else {
                 Err("Not a valid identifier")
