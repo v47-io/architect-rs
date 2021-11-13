@@ -284,22 +284,28 @@ Architect removes the original Git remotes from the target.</p>
 <p>Specify a different remote branch to fetch instead of the default branch of the repository.</p>
 <h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
 <p>To customize the behavior of Architect even further you can specify one or more flags as described here.</p>
-<h3 id="-d---dirty"><a class="header" href="#-d---dirty">-D, --dirty</a></h3>
+<h3 id="--local-git"><a class="header" href="#--local-git">--local-git</a></h3>
+<p>Use your local Git installation instead of embedded Git.</p>
+<p>This is intended as an escape hatch if you are using authentication scenarios not supported by the
+embedded Git functionality in Architect.</p>
+<p>Architect is able to use most SSH agent scenarios and username/password authentication, so this 
+should not be needed often.</p>
+<h3 id="--dirty"><a class="header" href="#--dirty">--dirty</a></h3>
 <p>Use the template source in its current (dirty) state.</p>
 <p>This only has an effect if a local path is specified as the source repository. In that case Architect
 won't perform a Git clone but will just copy the directory, regardless of the local state.</p>
 <p>This is most useful to test a template locally while you are developing it. </p>
 <p>This option has no effect with remote repositories.</p>
-<h3 id="-c---ignore-checks"><a class="header" href="#-c---ignore-checks">-C, --ignore-checks</a></h3>
+<h3 id="--ignore-checks"><a class="header" href="#--ignore-checks">--ignore-checks</a></h3>
 <p>Ignore some failed checks that would prevent Architect from creating the target files.</p>
 <p>These errors will be ignored:</p>
 <ul>
 <li>Condition evaluation errors (for conditional files)</li>
 </ul>
-<h3 id="-h---no-history"><a class="header" href="#-h---no-history">-H, --no-history</a></h3>
+<h3 id="--no-history"><a class="header" href="#--no-history">--no-history</a></h3>
 <p>Don't copy the Git history from the source repository to the target.</p>
 <p>Instead, the target will be initialized as a new Git repository.</p>
-<h3 id="-i---no-init"><a class="header" href="#-i---no-init">-I, --no-init</a></h3>
+<h3 id="--no-init"><a class="header" href="#--no-init">--no-init</a></h3>
 <p>Don't initialize the target directory as a Git repository.</p>
 <p>This requires the <code>--no-history</code> flag to be present as well.</p>
 <h3 id="--verbose"><a class="header" href="#--verbose">--verbose</a></h3>
@@ -344,8 +350,7 @@ option <code>--template template-group-1/template-1</code>.</p>
 └── README.md
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="fetching"><a class="header" href="#fetching">Fetching</a></h1>
-<p>Architect uses Git to fetch remote repositories, therefore it supports all the ways to fetch and
-authenticate that Git does.</p>
+<p>Architect uses Git to fetch remote repositories.</p>
 <p>Fetching a remote repository is pretty straightforward, but Architect also supports fetching 
 templates from a local directory.</p>
 <p>Architect will either fetch it using Git, using the directory like a remote repository, or copy the 
