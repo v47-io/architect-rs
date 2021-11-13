@@ -426,3 +426,75 @@ fn with_fetch_options(
         cb(opts)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use path_absolutize::Absolutize;
+
+    use crate::utils::tests::{REMOTE_TEMPLATE_URL, RESOURCES_DIR};
+
+    use super::*;
+
+    const TOOL_CONFIG: ToolConfig<'_> = ToolConfig {
+        template: None,
+        verbose: true,
+        no_history: false,
+        no_init: false,
+        ignore_checks: false,
+    };
+
+    #[test]
+    fn test_is_git_repo() {
+        let work_dir = PathBuf::from(".").absolutize().unwrap().to_path_buf();
+
+        assert!(is_git_repo(&work_dir, &TOOL_CONFIG));
+        assert!(!is_git_repo(&RESOURCES_DIR, &TOOL_CONFIG));
+    }
+
+    //noinspection DuplicatedCode
+    #[test]
+    fn test_fetch() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let spec = TemplateSpec::Remote(REMOTE_TEMPLATE_URL);
+
+        assert!(fetch(
+            &spec,
+            tempdir.path(),
+            &FetchOptions {
+                branch: None,
+                tool_config: &TOOL_CONFIG,
+                dirty: false,
+                local_git: true
+            }
+        )
+        .is_ok());
+
+        assert!(!tempdir
+            .path()
+            .join("io/v47/test/added-file-in-branch.txt")
+            .exists());
+
+        drop(tempdir);
+
+        let tempdir = tempfile::tempdir().unwrap();
+
+        assert!(fetch(
+            &spec,
+            tempdir.path(),
+            &FetchOptions {
+                branch: Some("test-branch"),
+                tool_config: &TOOL_CONFIG,
+                dirty: false,
+                local_git: true
+            }
+        )
+        .is_ok());
+
+        assert!(tempdir
+            .path()
+            .join("io/v47/test/added-file-in-branch.txt")
+            .exists());
+    }
+}

@@ -71,6 +71,8 @@ pub(crate) mod tests {
 
     use super::*;
 
+    pub const REMOTE_TEMPLATE_URL: &str = "https://github.com/v47-io/architect-test-template.git";
+
     lazy_static! {
         pub static ref RESOURCES_DIR: PathBuf =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-resources");

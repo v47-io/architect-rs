@@ -60,3 +60,64 @@ pub fn fetch(spec: &TemplateSpec, target: &Path, options: &FetchOptions) -> Arch
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::tests::REMOTE_TEMPLATE_URL;
+    use crate::ToolConfig;
+
+    use super::*;
+
+    const TOOL_CONFIG: ToolConfig<'_> = ToolConfig {
+        template: None,
+        verbose: true,
+        no_history: false,
+        no_init: false,
+        ignore_checks: false,
+    };
+
+    //noinspection DuplicatedCode
+    #[test]
+    fn test_fetch() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let spec = TemplateSpec::Remote(REMOTE_TEMPLATE_URL);
+
+        assert!(fetch(
+            &spec,
+            tempdir.path(),
+            &FetchOptions {
+                branch: None,
+                tool_config: &TOOL_CONFIG,
+                dirty: false,
+                local_git: true
+            }
+        )
+        .is_ok());
+
+        assert!(!tempdir
+            .path()
+            .join("io/v47/test/added-file-in-branch.txt")
+            .exists());
+
+        drop(tempdir);
+
+        let tempdir = tempfile::tempdir().unwrap();
+
+        assert!(fetch(
+            &spec,
+            tempdir.path(),
+            &FetchOptions {
+                branch: Some("test-branch"),
+                tool_config: &TOOL_CONFIG,
+                dirty: false,
+                local_git: true
+            }
+        )
+        .is_ok());
+
+        assert!(tempdir
+            .path()
+            .join("io/v47/test/added-file-in-branch.txt")
+            .exists());
+    }
+}
