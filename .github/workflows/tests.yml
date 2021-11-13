@@ -25,6 +25,8 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - if: ${{ matrix.os == 'macos-latest' }}
+        run: brew install openssl@1.1
       - uses: actions-rs/cargo@v1
         with:
           command: build

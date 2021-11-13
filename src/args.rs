@@ -84,6 +84,19 @@ option doesn't have any effect"#,
                 ),
         )
         .arg(
+            Arg::with_name(flags::LOCAL_GIT)
+                .long(flags::LOCAL_GIT)
+                .help("Use the local Git installation instead of the embedded Git functions")
+                .long_help(
+                    r#"Use the local Git installation instead of the embedded Git functions.
+
+Normally Architect uses its own embedded Git functionality to fetch templates. If you are
+using unusual or unsupported authentication methods this might fail, so you can use this
+as an escape hatch to have Architect use your local Git installation and environment to
+fetch remote repositories"#,
+                ),
+        )
+        .arg(
             Arg::with_name(options::TEMPLATE)
                 .long(options::TEMPLATE)
                 .short("t")

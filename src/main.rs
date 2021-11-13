@@ -30,11 +30,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+use std::env;
 use std::ffi::OsString;
-use std::io::{Error, ErrorKind};
 use std::process::exit;
-use std::{env, io};
 
+use anyhow::bail;
 use handlebars::Context;
 use path_absolutize::Absolutize;
 use serde_json::Value;
@@ -46,15 +46,16 @@ use crate::args::TrimmedValueOf;
 use crate::config::{load_config_file, read_config, Config};
 use crate::context::build_context;
 use crate::dirs::{create_target_dir, find_template_dir, is_valid_target_dir};
-use crate::git::{copy_git_directory, init_git_repository, FetchOptions};
+use crate::fetch::{copy_git_directory, init_git_repository, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
+use crate::utils::errors::ArchResult;
 use crate::utils::{constants, ToolConfig};
 
 mod args;
 mod config;
 mod context;
 mod dirs;
-mod git;
+mod fetch;
 mod helpers;
 mod render;
 mod spec;
@@ -64,13 +65,13 @@ fn main() {
     exit(match run(&mut env::args_os()) {
         Ok(code) => code,
         Err(err) => {
-            eprintln!("Error ({:?}): {}", err.kind(), err.to_string());
+            eprintln!("{:?}", err);
             1
         }
     })
 }
 
-fn run<I, T>(args: I) -> io::Result<i32>
+fn run<I, T>(args: I) -> ArchResult<i32>
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
@@ -99,10 +100,7 @@ where
         .trim();
 
     if !is_valid_template_spec(template_spec_raw) {
-        return Err(Error::new(
-            ErrorKind::InvalidInput,
-            format!("Invalid template specification \"{}\"\n", template_spec_raw),
-        ));
+        bail!("Invalid template specification: {}", template_spec_raw);
     }
 
     let template_spec = parse_template_spec(template_spec_raw);
@@ -118,10 +116,7 @@ where
     )?;
 
     if !is_valid_target_dir(&target_dir)? {
-        return Err(Error::new(
-            ErrorKind::InvalidInput,
-            format!("Invalid target directory \"{}\"", target_dir.display()),
-        ));
+        bail!("Invalid target directory: {}", target_dir.display());
     }
 
     if tool_config.verbose {
@@ -136,15 +131,14 @@ where
         )
     }
 
-    git::fetch(
-        &template_spec,
-        working_dir.path(),
-        FetchOptions {
-            branch: matches.value_of_trimmed(options::BRANCH),
-            dirty: matches.is_present(flags::DIRTY),
-            tool_config: &tool_config,
-        },
-    )?;
+    let fetch_options = FetchOptions {
+        branch: matches.value_of(options::BRANCH),
+        dirty: matches.is_present(flags::DIRTY),
+        local_git: matches.is_present(flags::LOCAL_GIT),
+        tool_config: &tool_config,
+    };
+
+    template_spec.fetch(working_dir.path(), fetch_options)?;
 
     let (template_path, is_subtemplate) = find_template_dir(working_dir.path(), &tool_config)?;
 

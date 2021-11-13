@@ -44,7 +44,17 @@ Specify a different remote branch to fetch instead of the default branch of the 
 
 To customize the behavior of Architect even further you can specify one or more flags as described here.
 
-### -D, --dirty
+### --local-git
+
+Use your local Git installation instead of embedded Git.
+
+This is intended as an escape hatch if you are using authentication scenarios not supported by the
+embedded Git functionality in Architect.
+
+Architect is able to use most SSH agent scenarios and username/password authentication, so this 
+should not be needed often.
+
+### --dirty
 
 Use the template source in its current (dirty) state.
 
@@ -55,7 +65,7 @@ This is most useful to test a template locally while you are developing it.
 
 This option has no effect with remote repositories.
 
-### -C, --ignore-checks
+### --ignore-checks
 
 Ignore some failed checks that would prevent Architect from creating the target files.
 
@@ -63,13 +73,13 @@ These errors will be ignored:
 
 - Condition evaluation errors (for conditional files)
 
-### -H, --no-history
+### --no-history
 
 Don't copy the Git history from the source repository to the target.
 
 Instead, the target will be initialized as a new Git repository.
 
-### -I, --no-init
+### --no-init
 
 Don't initialize the target directory as a Git repository.
 
