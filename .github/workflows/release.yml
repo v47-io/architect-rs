@@ -31,6 +31,17 @@ jobs:
           profile: minimal
           toolchain: stable
 
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get install pkg-config libssl-dev
+
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: vcpkg install openssl:x64-windows
+
+      - if: ${{ matrix.os == 'macos-latest' }}
+        run: brew install openssl@1.1
+
       - name: Build
         run: cargo build --release --bin architect --locked
 
