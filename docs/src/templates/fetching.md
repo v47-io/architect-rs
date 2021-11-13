@@ -1,7 +1,6 @@
 # Fetching
 
-Architect uses Git to fetch remote repositories, therefore it supports all the ways to fetch and
-authenticate that Git does.
+Architect uses Git to fetch remote repositories.
 
 Fetching a remote repository is pretty straightforward, but Architect also supports fetching 
 templates from a local directory.
