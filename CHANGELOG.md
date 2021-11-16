@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 10 commits contributed to the release over the course of 9 calendar days.
+ - 11 commits contributed to the release over the course of 9 calendar days.
  - 9 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#4](https://github.comgit//v47-io/architect-rs/issues/4)
 
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#4](https://github.comgit//v47-io/architect-rs/issues/4)**
     - Implemented fetching using embedded Git for portability ([`232408c`](https://github.comgit//v47-io/architect-rs/commit/232408c37feb928cbfb128f105d8ba84ea10165f))
  * **Uncategorized**
+    - Release architect-rs v0.13.0 ([`91640f2`](https://github.comgit//v47-io/architect-rs/commit/91640f21b59875336bc4e121751881a7f9bacf40))
     - Didn't need to update the version before release ([`d198f0b`](https://github.comgit//v47-io/architect-rs/commit/d198f0b49c2685d555583244ff8b16df6fb53a74))
     - Added note about embedded Git and local fallback ([`afd37e5`](https://github.comgit//v47-io/architect-rs/commit/afd37e546f2a988fec118b4041637ac64c1e563a))
     - Updated version number for next release ([`1953e7a`](https://github.comgit//v47-io/architect-rs/commit/1953e7a46e5bb83a5d296e80dd0294238b285346))
