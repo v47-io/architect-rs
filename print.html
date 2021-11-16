@@ -359,6 +359,13 @@ directories contents, e.g. if the directory doesn't contain a Git repository.</p
 Git using the <code>--dirty</code> <a href="templates/../cli/README.html">CLI</a> flag. This is particularly useful when you want to 
 test a template you are creating without having to commit your changes or pushing it to a remote 
 Git repository.</p>
+<h2 id="embedded-git-and-fallback"><a class="header" href="#embedded-git-and-fallback">Embedded Git and Fallback</a></h2>
+<p>Architect embeds some Git functionality to have portable way of fetching templates without depending 
+on a local Git installation.</p>
+<p>However, some authentication scenarios or other features provided by a proper Git installation are
+going to be absent, therefore breaking the functionality of Architect.</p>
+<p>To circumvent this Architect offers the CLI flag <code>--local-git</code> which tells Architect to use the local
+Git installation instead of the embedded Git functions.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="structure"><a class="header" href="#structure">Structure</a></h1>
 <p>Architect treats the entire directory and all included files in a Git repository as templates.</p>
 <p>This means that the original directory structure is preserved, and you can create additional nested
