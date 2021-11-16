@@ -32,11 +32,11 @@
 
 use std::borrow::Cow;
 use std::convert::TryFrom;
-use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::Context;
+use dialoguer::{Input, Password};
 use git2::build::{CheckoutBuilder, CloneLocal, RepoBuilder};
 use git2::{self, BranchType, ErrorClass, Repository, RepositoryOpenFlags};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -131,15 +131,13 @@ where
     let mut cred_helper = git2::CredentialHelper::new(url);
     cred_helper.config(cfg);
 
-    let mut ssh_username_requested = false;
-    let mut cred_helper_bad = None;
     let mut ssh_agent_attempts = Vec::new();
     let mut any_attempts = false;
     let mut tried_sshkey = false;
     let mut url_attempt = None;
 
     let orig_url = url;
-    let mut res = f(&mut |url, username, allowed| {
+    let res = f(&mut |url, username, allowed| {
         any_attempts = true;
 
         if url != orig_url {
@@ -166,9 +164,7 @@ where
         // the flag `ssh_username_requested`, and then we handle this below.
         if allowed.contains(git2::CredentialType::USERNAME) {
             debug_assert!(username.is_none());
-
-            ssh_username_requested = true;
-            return Err(git2::Error::from_str("gonna try usernames later"));
+            return git2::Cred::username(&read_username()?);
         }
 
         // An "SSH_KEY" authentication indicates that we need some sort of SSH
@@ -187,8 +183,6 @@ where
             tried_sshkey = true;
             let username = username.unwrap();
 
-            debug_assert!(!ssh_username_requested);
-
             ssh_agent_attempts.push(username.to_string());
             return git2::Cred::ssh_key_from_agent(username);
         }
@@ -203,11 +197,31 @@ where
         // callback asking for other authentication methods to try. Check
         // cred_helper_bad to make sure we only try the git credentail helper
         // once, to avoid looping forever.
-        if allowed.contains(git2::CredentialType::USER_PASS_PLAINTEXT) && cred_helper_bad.is_none()
-        {
+        if allowed.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
             let r = git2::Cred::credential_helper(cfg, url, username);
-            cred_helper_bad = Some(r.is_err());
-            return r;
+
+            return if r.is_err() {
+                let mut final_username = username.map(|it| it.to_string());
+                let final_password: Option<String>;
+
+                if final_username.is_none() {
+                    final_username = Some(read_username()?);
+                }
+
+                match Password::new().with_prompt("Password").interact() {
+                    Ok(password) => final_password = Some(password),
+                    Err(err) => {
+                        return Err(git2::Error::from_str(&format!(
+                            "failed to enter password ({})",
+                            err
+                        )));
+                    }
+                }
+
+                git2::Cred::userpass_plaintext(&final_username.unwrap(), &final_password.unwrap())
+            } else {
+                r
+            };
         }
 
         // I'm... not sure what the DEFAULT kind of authentication is, but seems
@@ -219,71 +233,6 @@ where
         // Whelp, we tried our best
         Err(git2::Error::from_str("no authentication available"))
     });
-
-    // Ok, so if it looks like we're going to be doing ssh authentication, we
-    // want to try a few different usernames as one wasn't specified in the URL
-    // for us to use. In order, we'll try:
-    //
-    // * A credential helper's username for this URL, if available.
-    // * This account's username.
-    // * "git"
-    //
-    // We have to restart the authentication session each time (due to
-    // constraints in libssh2 I guess? maybe this is inherent to ssh?), so we
-    // call our callback, `f`, in a loop here.
-    if ssh_username_requested {
-        debug_assert!(res.is_err());
-
-        let mut attempts = vec![String::from("git")];
-
-        if let Ok(s) = env::var("USER").or_else(|_| env::var("USERNAME")) {
-            attempts.push(s);
-        }
-
-        if let Some(ref s) = cred_helper.username {
-            attempts.push(s.clone());
-        }
-
-        while let Some(s) = attempts.pop() {
-            // We should get `USERNAME` first, where we just return our attempt,
-            // and then after that we should get `SSH_KEY`. If the first attempt
-            // fails we'll get called again, but we don't have another option so
-            // we bail out.
-            let mut attempts = 0;
-            res = f(&mut |_url, username, allowed| {
-                if allowed.contains(git2::CredentialType::USERNAME) {
-                    return git2::Cred::username(&s);
-                }
-
-                if allowed.contains(git2::CredentialType::SSH_KEY) {
-                    debug_assert_eq!(Some(&s[..]), username);
-                    attempts += 1;
-                    if attempts == 1 {
-                        ssh_agent_attempts.push(s.to_string());
-                        return git2::Cred::ssh_key_from_agent(&s);
-                    }
-                }
-
-                Err(git2::Error::from_str("no authentication available"))
-            });
-
-            // If we made two attempts then that means:
-            //
-            // 1. A username was requested, we returned `s`.
-            // 2. An ssh key was requested, we returned to look up `s` in the
-            //    ssh agent.
-            // 3. For whatever reason that lookup failed, so we were asked again
-            //    for another mode of authentication.
-            //
-            // Essentially, if `attempts == 2` then in theory the only error was
-            // that this username failed to authenticate (e.g., no other network
-            // errors happened). Otherwise something else is funny so we bail
-            // out.
-            if attempts != 2 {
-                break;
-            }
-        }
-    }
 
     let mut err = match res {
         Ok(e) => return Ok(e),
@@ -315,21 +264,6 @@ where
                  no usernames succeeded: {}",
                 names
             ));
-        }
-
-        if let Some(failed_cred_helper) = cred_helper_bad {
-            if failed_cred_helper {
-                msg.push_str(
-                    "\n* attempted to find username/password via \
-                     git's `credential.helper` support, but failed",
-                );
-            } else {
-                msg.push_str(
-                    "\n* attempted to find username/password via \
-                     `credential.helper`, but maybe the found \
-                     credentials were incorrect",
-                );
-            }
         }
 
         msg.push_str("\n\n");
@@ -364,6 +298,19 @@ where
     Err(err)
 }
 //endregion
+
+fn read_username() -> core::result::Result<String, git2::Error> {
+    match Input::<String>::new()
+        .with_prompt("Username")
+        .interact_text()
+    {
+        Ok(res) => Ok(res),
+        Err(err) => Err(git2::Error::from_str(&format!(
+            "failed to read username ({})",
+            err
+        ))),
+    }
+}
 
 static PROGRESS_BAR_TEMPLATE: &str = "{prefix} {wide_bar} {pos}/{len}";
 

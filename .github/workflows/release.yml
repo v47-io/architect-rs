@@ -37,7 +37,7 @@ jobs:
       - if: ${{ matrix.os == 'windows-latest' }}
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
       - if: ${{ matrix.os == 'windows-latest' }}
-        run: vcpkg install openssl:x64-windows
+        run: vcpkg install openssl:x64-windows-static-md
 
       - if: ${{ matrix.os == 'macos-latest' }}
         run: brew install openssl@1.1
