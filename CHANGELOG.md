@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.0 (2021-11-16)
+
+### Documentation
+
+ - <csr-id-afd37e546f2a988fec118b4041637ac64c1e563a/> Added note about embedded Git and local fallback
+ - <csr-id-0b059c3ca3a73f05b8942521a361d9d5048adce8/> Added some information about local Git
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 10 commits contributed to the release over the course of 9 calendar days.
+ - 9 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 1 unique issue was worked on: [#4](https://github.comgit//v47-io/architect-rs/issues/4)
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **[#4](https://github.comgit//v47-io/architect-rs/issues/4)**
+    - Implemented fetching using embedded Git for portability ([`232408c`](https://github.comgit//v47-io/architect-rs/commit/232408c37feb928cbfb128f105d8ba84ea10165f))
+ * **Uncategorized**
+    - Didn't need to update the version before release ([`d198f0b`](https://github.comgit//v47-io/architect-rs/commit/d198f0b49c2685d555583244ff8b16df6fb53a74))
+    - Added note about embedded Git and local fallback ([`afd37e5`](https://github.comgit//v47-io/architect-rs/commit/afd37e546f2a988fec118b4041637ac64c1e563a))
+    - Updated version number for next release ([`1953e7a`](https://github.comgit//v47-io/architect-rs/commit/1953e7a46e5bb83a5d296e80dd0294238b285346))
+    - Added some input processing to embedded git ([`09d013e`](https://github.comgit//v47-io/architect-rs/commit/09d013e3a6a299cfd8bb9785c47bd479e2376b47))
+    - Updated edition to 2021 ([`847ea5c`](https://github.comgit//v47-io/architect-rs/commit/847ea5c0ea3f4519de17f959eb5f72383beaac28))
+    - Merge pull request #13 from v47-io/feature/handle-git-internally-without-bin-dependency ([`bb1d9c0`](https://github.comgit//v47-io/architect-rs/commit/bb1d9c0422c621accaf84078598aef4b903c03bd))
+    - Added some basic tests to the fetch module ([`ca7bfcd`](https://github.comgit//v47-io/architect-rs/commit/ca7bfcd0e81f3f223e55d1fba33c10a3dd812733))
+    - Added some information about local Git ([`0b059c3`](https://github.comgit//v47-io/architect-rs/commit/0b059c3ca3a73f05b8942521a361d9d5048adce8))
+    - Updated version number for next release ([`88b45a8`](https://github.comgit//v47-io/architect-rs/commit/88b45a80f22be8b814c1b5f34ab65334b082a4f0))
+</details>
+
 ## 0.12.0 (2021-11-06)
 
 ### Documentation
@@ -24,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 11 commits contributed to the release over the course of 1 calendar day.
+ - 12 commits contributed to the release over the course of 1 calendar day.
  - 10 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#5](https://github.comgit//v47-io/architect-rs/issues/5)
 
@@ -37,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#5](https://github.comgit//v47-io/architect-rs/issues/5)**
     - Default values for questions ([`addcd66`](https://github.comgit//v47-io/architect-rs/commit/addcd66a3c4d546d124632d47b946656debda8fe))
  * **Uncategorized**
+    - Release architect-rs v0.12.0 ([`d2c26f6`](https://github.comgit//v47-io/architect-rs/commit/d2c26f69f9806d41c08a1fee5838827de150b590))
     - Expanded test-architect-select as bit to also test option ([`6ee5548`](https://github.comgit//v47-io/architect-rs/commit/6ee55484546d97c0c7f135a5d9e42ec2df220f29))
     - Added information about default values for questions ([`288280c`](https://github.comgit//v47-io/architect-rs/commit/288280cfbaf80ab2d647d189f8c57acd556a7059))
     - Added some more detail to the sample config ([`7a23bf2`](https://github.comgit//v47-io/architect-rs/commit/7a23bf28d9af249c99f5ff34cf58f89f3c038cd0))
