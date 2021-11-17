@@ -35,6 +35,7 @@ use std::mem::transmute;
 
 use dialoguer::{Confirm, Input, MultiSelect, Select};
 use handlebars::Context;
+use regex::Regex;
 use serde_json::{to_value, Map, Value};
 
 use crate::config::{Config, Question, QuestionSpec};
@@ -80,6 +81,7 @@ fn ask(question: &Question) -> io::Result<Value> {
             multi: multi_select,
             default,
         } => ask_for_selection(question, items, *multi_select, default),
+        QuestionSpec::Custom { format, default } => ask_for_custom(question, *format, default),
     }
 }
 
@@ -88,13 +90,10 @@ fn ask_for_text(
     must_be_identifier: bool,
     default: &Option<String>,
 ) -> io::Result<Value> {
-    let prompt = question
-        .pretty
-        .map(|it| it.to_string())
-        .unwrap_or_else(|| question.path.names().join("."));
+    let prompt = question.prompt();
 
     let mut text_input = Input::<String>::new();
-    text_input.with_prompt(&prompt);
+    text_input.with_prompt(prompt);
 
     if let Some(value) = default {
         text_input.default(value.clone());
@@ -115,7 +114,7 @@ fn ask_for_text(
 
 fn ask_for_option(question: &Question, default: &Option<bool>) -> io::Result<Value> {
     let mut confirm_prompt = Confirm::new();
-    confirm_prompt.with_prompt(question.pretty.unwrap_or(&question.path.names().join(".")));
+    confirm_prompt.with_prompt(question.prompt());
 
     if let Some(default) = default {
         confirm_prompt.default(*default);
@@ -130,10 +129,7 @@ fn ask_for_selection(
     multi_select: bool,
     default: &[String],
 ) -> io::Result<Value> {
-    let prompt = question
-        .pretty
-        .map(|it| it.to_string())
-        .unwrap_or_else(|| question.path.names().join("."));
+    let prompt = question.prompt();
 
     let defaults = items
         .iter()
@@ -172,6 +168,33 @@ fn ask_for_selection(
     Ok(Value::Object(result_map))
 }
 
+fn ask_for_custom(
+    question: &Question,
+    format: &str,
+    default: &Option<String>,
+) -> io::Result<Value> {
+    let prompt = question.prompt();
+
+    let mut text_input = Input::<String>::new();
+    text_input.with_prompt(prompt);
+
+    if let Some(value) = default {
+        text_input.default(value.clone());
+    }
+
+    let regex = Regex::new(format.trim()).unwrap();
+
+    text_input.validate_with(move |value: &String| -> Result<(), String> {
+        if regex.is_match(value) {
+            return Ok(());
+        }
+
+        Err(format!("Expected format: {}", format))
+    });
+
+    Ok(Value::String(text_input.interact()?))
+}
+
 fn insert_into_context(context: &mut Map<String, Value>, path: &[&str], value: Value) {
     let name = *path.first().unwrap();
 
@@ -195,6 +218,14 @@ fn insert_into_context(context: &mut Map<String, Value>, path: &[&str], value: V
         };
 
         insert_into_context(new_context, &path[1..], value);
+    }
+}
+
+impl Question<'_> {
+    fn prompt(&self) -> String {
+        self.pretty
+            .map(|it| it.to_string())
+            .unwrap_or_else(|| self.path.names().join("."))
     }
 }
 

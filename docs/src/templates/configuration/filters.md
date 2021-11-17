@@ -56,13 +56,13 @@ Format in the configuration file:
 <!--@formatter:off-->
 ```ts
 // Config
-{{#include ../../../../src/schema/architect.ts:58:61}}
+{{#include ../../../../src/config/schema.ts:58:61}}
 
 // Filters
-{{#include ../../../../src/schema/architect.ts:108:116}}
+{{#include ../../../../src/config/schema.ts:103:111}}
 
 // ConditionalFiles
-{{#include ../../../../src/schema/architect.ts:143:157}}
+{{#include ../../../../src/config/schema.ts:139:151}}
 ```
 <!--@formatter:on-->
 

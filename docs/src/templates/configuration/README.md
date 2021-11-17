@@ -6,6 +6,6 @@ The format of its content is described here using TypeScript, the root object is
 
 <!--@formatter:off-->
 ```ts
-{{#include ../../../../src/schema/architect.ts:33:}}
+{{#include ../../../../src/config/schema.ts:33:}}
 ```
 <!--@formatter:on-->

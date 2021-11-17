@@ -44,6 +44,9 @@
                             },
                             {
                                 "$ref": "#/definitions/SelectionQuestion"
+                            },
+                            {
+                                "$ref": "#/definitions/CustomQuestion"
                             }
                         ]
                     },
@@ -57,6 +60,58 @@
                 }
             },
             "title": "Config",
+            "type": "object"
+        },
+        "CustomQuestion": {
+            "properties": {
+                "default": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": [
+                                "string",
+                                "boolean"
+                            ]
+                        }
+                    ],
+                    "description": "The default answer for this question.\n\nIf the question is of type `Option`, this should specify a boolean, if it's 'Selection'\nyou can specify either a string or a list of strings, otherwise just a string.\n\nNote: Specifying a list of strings will only be accepted if the `Selection` question\nallows the selection of multiple items",
+                    "title": "default"
+                },
+                "format": {
+                    "description": "The regular expression that is used to validate the input for this question.\n\nWhen specifying a default value it must match this regular expression",
+                    "title": "format",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "The name in the context for the value specified when answering this question.\n\nCan be multiple names concatenated using `.` to create hierarchical structures in\nthe context.\n\nFormat: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`",
+                    "title": "name",
+                    "type": "string"
+                },
+                "pretty": {
+                    "description": "A properly spelled out question to ask instead of just presenting the name when\nprocessing input",
+                    "title": "pretty",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "The type of the question, which indicates the expected values",
+                    "enum": [
+                        "Custom"
+                    ],
+                    "title": "type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "format",
+                "name",
+                "type"
+            ],
+            "title": "CustomQuestion",
             "type": "object"
         },
         "Filters": {

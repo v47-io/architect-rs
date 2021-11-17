@@ -91,6 +91,12 @@ Architect uses Handlebars and Git to create proper projects from template reposi
       "name": "project.tests",
       "type": "Option",
       "pretty": "Do you want to generate test stubs?"
+    },
+    {
+      "name": "current.time",
+      "type": "Custom",
+      "format": "^\\d\\d:\\d\\d$",
+      "pretty": "What's the current time?"
     }
   ],
   "filters": {

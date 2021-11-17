@@ -61,7 +61,7 @@ export interface Config {
     filters?: Filters;
 }
 
-export type Question = SimpleQuestion | SelectionQuestion;
+export type Question = SimpleQuestion | SelectionQuestion | CustomQuestion;
 
 export interface SimpleQuestion extends BaseQuestion {
     type: QuestionType.Identifier | QuestionType.Option | QuestionType.Text;
@@ -82,6 +82,17 @@ export interface SelectionQuestion extends BaseQuestion {
      * Specifies whether multiple items can be selected
      */
     multi?: boolean;
+}
+
+export interface CustomQuestion extends BaseQuestion {
+    type: QuestionType.Custom;
+
+    /**
+     * The regular expression that is used to validate the input for this question.
+     *
+     * When specifying a default value it must match this regular expression
+     */
+    format: string;
 }
 
 /**
@@ -175,5 +186,6 @@ export enum QuestionType {
     Identifier = 'Identifier',
     Option = 'Option',
     Selection = 'Selection',
-    Text = 'Text'
+    Text = 'Text',
+    Custom = 'Custom'
 }

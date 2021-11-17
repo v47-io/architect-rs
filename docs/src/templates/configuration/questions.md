@@ -125,3 +125,14 @@ Possible use-cases for this question type can be to ask for a person's full name
 ### Default Values
 
 You can set any string as the default value.
+
+## Custom
+
+You can define a custom regular expression to validate the input. Please keep in mind that the regular expression will
+look for the shortest matching string, so you must specify anchors (`^`, `$`) if you want to match the entire input.
+
+Architect uses [this](https://docs.rs/regex/1.5.4/regex/) implementation.
+
+### Default Values
+
+You can set any string that matches the Regular expression as the default value.

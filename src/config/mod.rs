@@ -37,6 +37,7 @@ use std::io::{Error, ErrorKind};
 use std::path::Path;
 
 use globset::GlobMatcher;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -179,6 +180,37 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
                             items,
                             multi,
                             default,
+                        }
+                    },
+                    RawQuestionType::Custom => {
+                        let format = match raw_question.format {
+                            Some(format) => format.trim(),
+                            None => {
+                                eprintln!("Format missing for custom question type");
+                                return None;
+                            }
+                        };
+
+                        let regex = match Regex::new(format) {
+                            Ok(regex) => regex,
+                            Err(err) => {
+                                eprintln!("Invalid regular expression in format '{}' ({})", format, err);
+                                return None;
+                            }
+                        };
+
+                        let default = get_default_str(default_value);
+
+                        if let Some(default) = &default {
+                            if !regex.is_match(default) {
+                                eprintln!("The default value doesn't match the format '{}': {}", format, default);
+                                return None;
+                            }
+                        }
+
+                        QuestionSpec::Custom {
+                            format,
+                            default
                         }
                     }
                 },
@@ -440,6 +472,7 @@ struct RawQuestion<'cfg> {
     pretty: Option<&'cfg str>,
     items: Option<Vec<&'cfg str>>,
     multi: Option<bool>,
+    format: Option<&'cfg str>,
     default: Option<Value>,
 }
 
@@ -449,6 +482,7 @@ enum RawQuestionType {
     Option,
     Selection,
     Text,
+    Custom,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -553,6 +587,10 @@ pub enum QuestionSpec<'cfg> {
         default: Vec<String>,
     },
     Text {
+        default: Option<String>,
+    },
+    Custom {
+        format: &'cfg str,
         default: Option<String>,
     },
 }
@@ -660,6 +698,7 @@ mod tests {
                     question_type: RawQuestionType::Text,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -668,6 +707,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    format: None,
                     default: Some(Value::Bool(true)),
                 },
                 RawQuestion {
@@ -676,6 +716,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -684,10 +725,20 @@ mod tests {
                     items: Some(vec!["feature_1", "feature_2", "feature_3"]),
                     multi: Some(true),
                     pretty: None,
+                    format: None,
                     default: Some(Value::Array(vec![
                         Value::String("feature_2".into()),
                         Value::String("feature_3".into()),
                     ])),
+                },
+                RawQuestion {
+                    name: "customStuff",
+                    question_type: RawQuestionType::Custom,
+                    format: Some(r#"(a|b|c)"#),
+                    pretty: None,
+                    items: None,
+                    multi: None,
+                    default: None,
                 },
             ]),
             filters: None,
@@ -736,6 +787,16 @@ mod tests {
                         },
                         pretty: None,
                     },
+                    Question {
+                        path: QuestionPath {
+                            names: vec!["customStuff"]
+                        },
+                        spec: QuestionSpec::Custom {
+                            format: r#"(a|b|c)"#,
+                            default: None
+                        },
+                        pretty: None
+                    }
                 ],
                 filters: Filters::empty(),
             }
@@ -768,6 +829,7 @@ mod tests {
                     question_type: RawQuestionType::Text,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -776,6 +838,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -784,6 +847,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -792,6 +856,7 @@ mod tests {
                     items: Some(vec!["feature_1", "feature_2", "feature_3"]),
                     multi: Some(true),
                     pretty: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -800,7 +865,26 @@ mod tests {
                     items: Some(vec!["feature_1", "feature_2", "feature_3"]),
                     multi: Some(true),
                     pretty: None,
+                    format: None,
                     default: None,
+                },
+                RawQuestion {
+                    name: "customStuff",
+                    question_type: RawQuestionType::Custom,
+                    format: Some(r#"(a|b|c"#),
+                    pretty: None,
+                    items: None,
+                    multi: None,
+                    default: None,
+                },
+                RawQuestion {
+                    name: "otherCustomStuff",
+                    question_type: RawQuestionType::Custom,
+                    format: Some(r#"(a|b|c)"#),
+                    default: Some(Value::String("d".into())),
+                    pretty: None,
+                    items: None,
+                    multi: None,
                 },
             ]),
             filters: None,
@@ -827,6 +911,7 @@ mod tests {
                     question_type: RawQuestionType::Text,
                     items: None,
                     multi: None,
+                    format: None,
                     default: Some(Value::String("You".into())),
                 },
                 RawQuestion {
@@ -835,6 +920,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -843,6 +929,7 @@ mod tests {
                     pretty: None,
                     items: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
             ]),
@@ -878,6 +965,7 @@ mod tests {
                     items: None,
                     pretty: None,
                     multi: Some(true),
+                    format: None,
                     default: None,
                 },
                 RawQuestion {
@@ -886,6 +974,7 @@ mod tests {
                     items: Some(vec!["#feature1", "feature2", "abc.def"]),
                     pretty: None,
                     multi: None,
+                    format: None,
                     default: Some(Value::Array(vec!["feature2".into()])),
                 },
                 RawQuestion {
@@ -894,6 +983,7 @@ mod tests {
                     items: Some(vec![]),
                     pretty: None,
                     multi: None,
+                    format: None,
                     default: None,
                 },
             ]),
@@ -930,6 +1020,7 @@ mod tests {
             default: None,
             pretty: None,
             items: None,
+            format: None,
             multi: None,
         };
 
@@ -943,6 +1034,7 @@ mod tests {
             default: Some(Value::Bool(true)),
             pretty: None,
             items: None,
+            format: None,
             multi: None,
         };
 
@@ -957,6 +1049,7 @@ mod tests {
             default: Some(Value::Number(Number::from(0))),
             pretty: None,
             items: None,
+            format: None,
             multi: None,
         };
 
@@ -969,6 +1062,7 @@ mod tests {
             items: Some(vec!["item1", "item2"]),
             default: Some(Value::String("item1".into())),
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -986,6 +1080,7 @@ mod tests {
             items: Some(vec!["item1", "item2"]),
             default: Some(Value::String("item-1".into())),
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -998,6 +1093,7 @@ mod tests {
             items: Some(vec!["item1", "item2"]),
             default: Some(Value::Bool(true)),
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -1012,6 +1108,7 @@ mod tests {
             items: Some(vec!["item1", "item2"]),
             default: Some(Value::Array(vec!["item1".into()])),
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -1029,6 +1126,7 @@ mod tests {
             items: Some(vec!["item1", "item2"]),
             default: Some(Value::Array(vec!["item-1".into()])),
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -1041,6 +1139,7 @@ mod tests {
             items: Some(vec!["item1", "item2"]),
             default: Some(Value::Bool(true)),
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -1053,6 +1152,7 @@ mod tests {
             default: Some(Value::String("the content".into())),
             items: None,
             pretty: None,
+            format: None,
             multi: None,
         };
 
@@ -1070,6 +1170,7 @@ mod tests {
             default: Some(Value::String("the content".into())),
             items: None,
             pretty: None,
+            format: None,
             multi: None,
         };
 
