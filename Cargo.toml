@@ -1,6 +1,6 @@
 [package]
 name = "architect-rs"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["Alex Katlein <dev@vemilyus.com>"]
 license = "BSD 3-Clause"
 edition = "2021"
@@ -21,7 +21,6 @@ indicatif = "0.17.0-beta.1"
 # Fetching
 dircpy = "0.3.8"
 git2 = "0.13.23"
-git2_credentials = "0.7.3"
 openssl = "0.10.38"
 
 # Rendering
