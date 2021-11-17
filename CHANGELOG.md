@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.14.0 (2021-11-17)
+
+### New Features
+
+ - <csr-id-7c0e111c03fe03c7235025fba52cf56bd0a436e7/> Implemented custom formats for question values
+   Provides the ability to define custom question formats using regular expressions. The default value is also validated using that regular expression.
+   
+   Moved the config module into its own directory.
+   
+   Added info about this to the documentation and fixed some small documentation issues.
+   
+   Updated the schema.json file
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 2 commits contributed to the release.
+ - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 1 unique issue was worked on: [#9](https://github.comgit//v47-io/architect-rs/issues/9)
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **[#9](https://github.comgit//v47-io/architect-rs/issues/9)**
+    - Implemented custom formats for question values ([`7c0e111`](https://github.comgit//v47-io/architect-rs/commit/7c0e111c03fe03c7235025fba52cf56bd0a436e7))
+ * **Uncategorized**
+    - Removed unnecessary dependency and updated version for next release ([`e041af9`](https://github.comgit//v47-io/architect-rs/commit/e041af9056411a9b5c9147342f3a04ac3ee01b13))
+</details>
+
 ## 0.13.0 (2021-11-16)
 
 ### Documentation
@@ -16,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 11 commits contributed to the release over the course of 9 calendar days.
+ - 12 commits contributed to the release over the course of 9 calendar days.
  - 9 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#4](https://github.comgit//v47-io/architect-rs/issues/4)
 
@@ -29,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#4](https://github.comgit//v47-io/architect-rs/issues/4)**
     - Implemented fetching using embedded Git for portability ([`232408c`](https://github.comgit//v47-io/architect-rs/commit/232408c37feb928cbfb128f105d8ba84ea10165f))
  * **Uncategorized**
+    - Bump architect-rs v0.13.0 ([`f239755`](https://github.comgit//v47-io/architect-rs/commit/f239755337c2bffcb1340b86449c2ca0b302eab5))
     - Release architect-rs v0.13.0 ([`91640f2`](https://github.comgit//v47-io/architect-rs/commit/91640f21b59875336bc4e121751881a7f9bacf40))
     - Didn't need to update the version before release ([`d198f0b`](https://github.comgit//v47-io/architect-rs/commit/d198f0b49c2685d555583244ff8b16df6fb53a74))
     - Added note about embedded Git and local fallback ([`afd37e5`](https://github.comgit//v47-io/architect-rs/commit/afd37e546f2a988fec118b4041637ac64c1e563a))
