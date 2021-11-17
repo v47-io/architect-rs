@@ -179,32 +179,30 @@ in file or directory names are evaluated.</p>
     filters?: Filters;
 
 // Filters
-     * Specifies Glob expressions to exclude files in the target.
-     *
-     * Note that exclusions have a higher precedence than inclusions and conditional files
-     */
-    exclude?: string[];
     /**
-     * Specifies Glob expressions that indicate the files that should be rendered using Handlebars.
+     * Specifies conditions for certain files to be created.
      *
-     * This disables Handlebars rendering for all other files. Directory or file names are not affected
+     * These conditions have full access to the context that is created by the questions.
+     *
+     * Note that conditions specified here don't apply to hidden files that weren't explicitly
+     * included using `includeHidden` or files excluded using `exclude`
+     */
+    conditionalFiles?: ConditionalFiles[];
 
 // ConditionalFiles
-interface BaseQuestion {
     /**
-     * The name in the context for the value specified when answering this question.
+     * The condition that decides whether the matched files are created.
      *
-     * Can be multiple names concatenated using `.` to create hierarchical structures in
-     * the context.
+     * This is an expression that is handled by handlebars.
      *
-     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
+     * The expression is automatically wrapped in curly braces (`{{` `}}`) so you
+     * only need to specify the actual content of the expression here
      */
-    name: string;
+    condition: string;
     /**
-     * The type of the question, which indicates the expected values
+     * A Glob string specifying the files affected by the condition
      */
-    type: QuestionType;
-    /**
+    matcher: string;
 </code></pre>
 <!--@formatter:on-->
 <h2 id="templates"><a class="header" href="#templates">Templates</a></h2>

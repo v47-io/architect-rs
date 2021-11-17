@@ -197,6 +197,12 @@ a fully functional project created from a template. (<a href="https://v47-io.git
       &quot;name&quot;: &quot;project.tests&quot;,
       &quot;type&quot;: &quot;Option&quot;,
       &quot;pretty&quot;: &quot;Do you want to generate test stubs?&quot;
+    },
+    {
+      &quot;name&quot;: &quot;current.time&quot;,
+      &quot;type&quot;: &quot;Custom&quot;,
+      &quot;format&quot;: &quot;^\\d\\d:\\d\\d$&quot;,
+      &quot;pretty&quot;: &quot;What's the current time?&quot;
     }
   ],
   &quot;filters&quot;: {
@@ -418,7 +424,7 @@ export interface Config {
     filters?: Filters;
 }
 
-export type Question = SimpleQuestion | SelectionQuestion;
+export type Question = SimpleQuestion | SelectionQuestion | CustomQuestion;
 
 export interface SimpleQuestion extends BaseQuestion {
     type: QuestionType.Identifier | QuestionType.Option | QuestionType.Text;
@@ -439,6 +445,17 @@ export interface SelectionQuestion extends BaseQuestion {
      * Specifies whether multiple items can be selected
      */
     multi?: boolean;
+}
+
+export interface CustomQuestion extends BaseQuestion {
+    type: QuestionType.Custom;
+
+    /**
+     * The regular expression that is used to validate the input for this question.
+     *
+     * When specifying a default value it must match this regular expression
+     */
+    format: string;
 }
 
 /**
@@ -532,7 +549,8 @@ export enum QuestionType {
     Identifier = 'Identifier',
     Option = 'Option',
     Selection = 'Selection',
-    Text = 'Text'
+    Text = 'Text',
+    Custom = 'Custom'
 }
 </code></pre>
 <!--@formatter:on-->
@@ -660,6 +678,12 @@ of strings.</p>
 <p>Possible use-cases for this question type can be to ask for a person's full name or an email address.</p>
 <h3 id="default-values-4"><a class="header" href="#default-values-4">Default Values</a></h3>
 <p>You can set any string as the default value.</p>
+<h2 id="custom"><a class="header" href="#custom">Custom</a></h2>
+<p>You can define a custom regular expression to validate the input. Please keep in mind that the regular expression will
+look for the shortest matching string, so you must specify anchors (<code>^</code>, <code>$</code>) if you want to match the entire input.</p>
+<p>Architect uses <a href="https://docs.rs/regex/1.5.4/regex/">this</a> implementation.</p>
+<h3 id="default-values-5"><a class="header" href="#default-values-5">Default Values</a></h3>
+<p>You can set any string that matches the Regular expression as the default value.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="filters"><a class="header" href="#filters">Filters</a></h1>
 <p>The Architect configuration file allows you to define filters in multiple ways to control whether certain files get
 actually added to the target.</p>
@@ -705,32 +729,30 @@ in file or directory names are evaluated.</p>
     filters?: Filters;
 
 // Filters
-     * Specifies Glob expressions to exclude files in the target.
-     *
-     * Note that exclusions have a higher precedence than inclusions and conditional files
-     */
-    exclude?: string[];
     /**
-     * Specifies Glob expressions that indicate the files that should be rendered using Handlebars.
+     * Specifies conditions for certain files to be created.
      *
-     * This disables Handlebars rendering for all other files. Directory or file names are not affected
+     * These conditions have full access to the context that is created by the questions.
+     *
+     * Note that conditions specified here don't apply to hidden files that weren't explicitly
+     * included using `includeHidden` or files excluded using `exclude`
+     */
+    conditionalFiles?: ConditionalFiles[];
 
 // ConditionalFiles
-interface BaseQuestion {
     /**
-     * The name in the context for the value specified when answering this question.
+     * The condition that decides whether the matched files are created.
      *
-     * Can be multiple names concatenated using `.` to create hierarchical structures in
-     * the context.
+     * This is an expression that is handled by handlebars.
      *
-     * Format: `^[a-zA-Z_$][a-zA-Z0-9_$]*$`
+     * The expression is automatically wrapped in curly braces (`{{` `}}`) so you
+     * only need to specify the actual content of the expression here
      */
-    name: string;
+    condition: string;
     /**
-     * The type of the question, which indicates the expected values
+     * A Glob string specifying the files affected by the condition
      */
-    type: QuestionType;
-    /**
+    matcher: string;
 </code></pre>
 <!--@formatter:on-->
 <h2 id="templates-1"><a class="header" href="#templates-1">Templates</a></h2>

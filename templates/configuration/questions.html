@@ -214,6 +214,12 @@ of strings.</p>
 <p>Possible use-cases for this question type can be to ask for a person's full name or an email address.</p>
 <h3 id="default-values-4"><a class="header" href="#default-values-4">Default Values</a></h3>
 <p>You can set any string as the default value.</p>
+<h2 id="custom"><a class="header" href="#custom">Custom</a></h2>
+<p>You can define a custom regular expression to validate the input. Please keep in mind that the regular expression will
+look for the shortest matching string, so you must specify anchors (<code>^</code>, <code>$</code>) if you want to match the entire input.</p>
+<p>Architect uses <a href="https://docs.rs/regex/1.5.4/regex/">this</a> implementation.</p>
+<h3 id="default-values-5"><a class="header" href="#default-values-5">Default Values</a></h3>
+<p>You can set any string that matches the Regular expression as the default value.</p>
 
                     </main>
 
