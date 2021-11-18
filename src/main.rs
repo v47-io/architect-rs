@@ -35,7 +35,6 @@ use std::ffi::OsString;
 use std::process::exit;
 
 use anyhow::bail;
-use handlebars::Context;
 use path_absolutize::Absolutize;
 use serde_json::Value;
 use tempfile::tempdir;
@@ -44,7 +43,7 @@ use constants::{flags, options};
 
 use crate::args::TrimmedValueOf;
 use crate::config::{load_config_file, read_config, Config};
-use crate::context::build_context;
+use crate::context::{build_context, UnsafeContext};
 use crate::dirs::{create_target_dir, find_template_dir, is_valid_target_dir};
 use crate::fetch::{copy_git_directory, init_git_repository, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
@@ -151,7 +150,7 @@ where
 
     let context = match &config {
         Some(c) => build_context(c),
-        None => Ok(Context::null()),
+        None => Ok(UnsafeContext::empty().into()),
     }?;
 
     if tool_config.verbose && *context.data() != Value::Null {

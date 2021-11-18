@@ -51,6 +51,12 @@ impl UnsafeContext {
             _data: Value::Object(data),
         }
     }
+
+    pub(crate) fn empty() -> Self {
+        UnsafeContext {
+            _data: Value::Object(Map::new()),
+        }
+    }
 }
 
 impl From<UnsafeContext> for Context {
