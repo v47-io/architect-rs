@@ -35,6 +35,7 @@ use std::ffi::OsString;
 use std::process::exit;
 
 use anyhow::bail;
+use crossterm::style::Stylize;
 use path_absolutize::Absolutize;
 use serde_json::Value;
 use tempfile::tempdir;
@@ -47,6 +48,7 @@ use crate::context::{build_context, UnsafeContext};
 use crate::dirs::{create_target_dir, find_template_dir, is_valid_target_dir};
 use crate::fetch::{copy_git_directory, init_git_repository, FetchOptions};
 use crate::spec::{is_valid_template_spec, parse_template_spec};
+use crate::utils::context::pretty_print_context;
 use crate::utils::errors::ArchResult;
 use crate::utils::{constants, ToolConfig};
 
@@ -58,6 +60,7 @@ mod fetch;
 mod helpers;
 mod render;
 mod spec;
+mod term;
 mod utils;
 
 fn main() {
@@ -86,11 +89,11 @@ where
     };
 
     if tool_config.ignore_checks {
-        println!("Ignoring some checks")
+        println!("{}", "Ignoring some checks".stylize().dim());
     }
 
     if tool_config.verbose {
-        println!("Verbose output enabled")
+        println!("{}", "Verbose output enabled".stylize().dim());
     }
 
     let template_spec_raw = matches
@@ -104,10 +107,6 @@ where
 
     let template_spec = parse_template_spec(template_spec_raw);
 
-    if tool_config.verbose {
-        println!("Using template specification \"{}\"", template_spec);
-    }
-
     let target_dir = create_target_dir(
         &env::current_dir()?,
         &template_spec,
@@ -118,16 +117,19 @@ where
         bail!("Invalid target directory: {}", target_dir.display());
     }
 
-    if tool_config.verbose {
-        println!("Scaffolding into directory   \"{}\"", target_dir.display());
-    }
+    println!(
+        "{}    {}",
+        "Target directory:".stylize().dim(),
+        target_dir.display(),
+    );
 
     let working_dir = tempdir()?;
     if tool_config.verbose {
         println!(
-            "Using temporary directory    \"{}\"",
-            working_dir.path().absolutize()?.display()
-        )
+            "{} {}",
+            "Temporary directory:".stylize().dim(),
+            working_dir.path().absolutize()?.display(),
+        );
     }
 
     let fetch_options = FetchOptions {
@@ -141,7 +143,7 @@ where
 
     let (template_path, is_subtemplate) = find_template_dir(working_dir.path(), &tool_config)?;
 
-    let config_json = load_config_file(&template_path, &tool_config)?;
+    let config_json = load_config_file(working_dir.path(), &template_path)?;
     let config = if let Some(config_json) = &config_json {
         Some(read_config(config_json, &tool_config)?)
     } else {
@@ -154,10 +156,9 @@ where
     }?;
 
     if tool_config.verbose && *context.data() != Value::Null {
-        println!(
-            "Using context\n{}",
-            serde_json::to_string_pretty(context.data())?
-        );
+        println!("{}", "Using context".stylize().dim());
+        pretty_print_context(&context)?;
+        println!();
     }
 
     let render_result = render::render(

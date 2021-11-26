@@ -33,6 +33,7 @@
 use std::path::Path;
 
 use anyhow::Context;
+use crossterm::style::Stylize;
 use dircpy::copy_dir;
 use git2::Repository;
 
@@ -58,21 +59,22 @@ impl<'spec> TemplateSpec<'spec> {
             _ => (false, false),
         };
 
-        println!("Fetching template from {}", self);
+        println!("Template source:     {}", self);
 
         if is_local && (!local_repo || options.dirty) {
             if let TemplateSpec::Local(local_path) = self {
-                copy_dir(local_path, into)
-                    .context(format!("Failed to copy directory {}", local_path.display()))
+                if options.tool_config.verbose {
+                    println!("{}", "  > Copying local directory".stylize().dim());
+                }
+
+                copy_dir(local_path, into).context("Failed to copy local directory")
             } else {
                 panic!()
             }
         } else if options.local_git {
-            installed::fetch(self, into, &options)
-                .context(format!("Failed to fetch using local Git: {}", self))
+            installed::fetch(self, into, &options).context("Failed to fetch using local Git")
         } else {
-            embedded::fetch(self, into, &options)
-                .context(format!("Failed to fetch using embedded Git: {}", self))
+            embedded::fetch(self, into, &options).context("Failed to fetch using embedded Git")
         }
     }
 }
@@ -84,13 +86,21 @@ pub fn copy_git_directory(
 ) -> ArchResult<()> {
     if embedded::is_git_repo(parent_dir, tool_config) {
         if tool_config.verbose {
-            println!("Copying .git directory from working directory to target directory")
+            println!(
+                "{}",
+                "Copying .git directory to target directory".stylize().dim()
+            );
         }
 
         copy_dir(parent_dir.join(".git"), target_dir.join(".git"))?;
         remove_remotes(target_dir);
     } else if tool_config.verbose {
-        println!("Template not a Git repository. Not copying .git directory to target")
+        println!(
+            "{}",
+            "Template not a Git repository. Not copying .git directory to target"
+                .stylize()
+                .dim()
+        );
     }
 
     Ok(())
@@ -107,36 +117,52 @@ fn remove_remotes(dir: &Path) {
                         .for_each(|remote| match repo.remote_delete(remote) {
                             Ok(_) => (),
                             Err(err) => {
-                                eprintln!("Failed to remove remote {} ({})", remote, err);
+                                eprintln!(
+                                    "{:#}",
+                                    anyhow::Error::from(err)
+                                        .context(format!("Failed to remove remote {}", remote))
+                                );
                             }
                         })
                 })
                 .unwrap_or_else(|err| {
-                    eprintln!("Failed to retrieve remotes ({})", err);
+                    eprintln!(
+                        "{:#}",
+                        anyhow::Error::from(err).context("Failed to retrieve remotes")
+                    );
                 });
         }
         Err(err) => {
             eprintln!(
-                "Failed to open Git repository at {} ({})",
-                dir.display(),
-                err
-            )
+                "{:#}",
+                anyhow::Error::from(err).context(format!(
+                    "Failed to open Git repository in {}",
+                    dir.display()
+                ))
+            );
         }
     };
 }
 
 pub fn init_git_repository(dir: &Path, tool_config: &ToolConfig) -> ArchResult<()> {
     if tool_config.verbose {
-        println!("Initializing Git repository in target directory");
+        println!(
+            "{}",
+            "Initializing Git repository in target directory"
+                .stylize()
+                .dim()
+        );
     }
 
     match Repository::init(dir) {
         Ok(_) => (),
         Err(err) => {
             eprintln!(
-                "Failed to initialize Git repository in {} ({})",
-                dir.display(),
-                err
+                "{:#}",
+                anyhow::Error::from(err).context(format!(
+                    "Failed to initialize Git repository in {}",
+                    dir.display()
+                ))
             );
         }
     }

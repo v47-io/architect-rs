@@ -30,58 +30,57 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-use globset::{Error, GlobBuilder, GlobMatcher};
-use lazy_static::lazy_static;
-use regex::Regex;
+use std::io::{stdout, Write};
 
-pub mod constants;
-pub mod context;
-pub mod errors;
-pub mod reader;
+use anyhow::Context;
+use crossterm::execute;
+use crossterm::style::Attribute::Reset;
+use crossterm::style::Color::{Green, Red};
+use crossterm::style::{
+    Attribute, Print, ResetColor, SetAttribute, SetAttributes, SetForegroundColor,
+};
+use crossterm::tty::IsTty;
 
-pub struct ToolConfig<'tc> {
-    pub template: Option<&'tc str>,
-    pub no_history: bool,
-    pub no_init: bool,
-    pub ignore_checks: bool,
-    pub verbose: bool,
-}
+use crate::utils::errors::ArchResult;
 
-lazy_static! {
-    static ref ID_REGEX: Regex = Regex::new("^[a-zA-Z_$][a-zA-Z0-9_$]*$").unwrap();
-    pub static ref NEW_LINE_REGEX: Regex = Regex::new(r#"(\r?\n)(\s+|\r?\n)*"#).unwrap();
-}
+pub mod theme;
 
-pub fn is_identifier(value: &str) -> bool {
-    ID_REGEX.is_match(value)
-}
+pub type StatusCallback = Box<dyn Fn(&str, bool) -> ArchResult<()>>;
 
-pub fn glob(input: &str) -> Result<GlobMatcher, Error> {
-    GlobBuilder::new(input)
-        .case_insensitive(true)
-        .literal_separator(true)
-        .build()
-        .map(|it| it.compile_matcher())
-}
+pub fn write_check_ln(text: &str, attributes: &[Attribute]) -> ArchResult<StatusCallback> {
+    let is_tty = stdout().is_tty();
 
-#[cfg(test)]
-pub(crate) mod tests {
-    use std::path::PathBuf;
+    let attributes = attributes.into();
 
-    use lazy_static::lazy_static;
-
-    use super::*;
-
-    pub const REMOTE_TEMPLATE_URL: &str = "https://github.com/v47-io/architect-test-template.git";
-
-    lazy_static! {
-        pub static ref RESOURCES_DIR: PathBuf =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-resources");
+    if is_tty {
+        execute!(
+            stdout(),
+            SetAttributes(attributes),
+            Print(text),
+            SetAttribute(Reset),
+            Print(" ")
+        )
+        .context("failed to write status text to stdout")?;
+    } else {
+        write!(stdout(), "{} ", text).context("failed to write status text to stdout")?;
     }
 
-    #[test]
-    fn test_is_identifier() {
-        assert!(is_identifier("this_is_an_identifier_1$"));
-        assert!(!is_identifier("1not_an_identifier"));
-    }
+    Ok(Box::new(move |label, success| {
+        if is_tty {
+            execute!(
+                stdout(),
+                SetAttributes(attributes),
+                SetForegroundColor(if success { Green } else { Red }),
+                Print(label),
+                ResetColor,
+                SetAttribute(Reset),
+                Print("\n")
+            )
+            .context("failed to write status to stdout")
+        } else {
+            println!("{}", label);
+
+            Ok(())
+        }
+    }))
 }

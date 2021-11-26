@@ -30,58 +30,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-use globset::{Error, GlobBuilder, GlobMatcher};
-use lazy_static::lazy_static;
-use regex::Regex;
+use anyhow::Context;
+use crossterm::style::Stylize;
 
-pub mod constants;
-pub mod context;
-pub mod errors;
-pub mod reader;
+use crate::ArchResult;
 
-pub struct ToolConfig<'tc> {
-    pub template: Option<&'tc str>,
-    pub no_history: bool,
-    pub no_init: bool,
-    pub ignore_checks: bool,
-    pub verbose: bool,
-}
+pub fn pretty_print_context(context: &handlebars::Context) -> ArchResult<()> {
+    let pretty_context =
+        serde_json::to_string_pretty(context.data()).context("failed to serialize context")?;
 
-lazy_static! {
-    static ref ID_REGEX: Regex = Regex::new("^[a-zA-Z_$][a-zA-Z0-9_$]*$").unwrap();
-    pub static ref NEW_LINE_REGEX: Regex = Regex::new(r#"(\r?\n)(\s+|\r?\n)*"#).unwrap();
-}
+    let lines = pretty_context.lines().collect::<Vec<_>>();
+    let line_number_length = lines.len().to_string().len();
 
-pub fn is_identifier(value: &str) -> bool {
-    ID_REGEX.is_match(value)
-}
+    for (i, &line) in lines.iter().enumerate() {
+        let line_number = format!(" {:>width$}: ", i + 1, width = line_number_length)
+            .stylize()
+            .dim()
+            .on_grey();
 
-pub fn glob(input: &str) -> Result<GlobMatcher, Error> {
-    GlobBuilder::new(input)
-        .case_insensitive(true)
-        .literal_separator(true)
-        .build()
-        .map(|it| it.compile_matcher())
-}
-
-#[cfg(test)]
-pub(crate) mod tests {
-    use std::path::PathBuf;
-
-    use lazy_static::lazy_static;
-
-    use super::*;
-
-    pub const REMOTE_TEMPLATE_URL: &str = "https://github.com/v47-io/architect-test-template.git";
-
-    lazy_static! {
-        pub static ref RESOURCES_DIR: PathBuf =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-resources");
+        println!("{}{}", line_number, line);
     }
 
-    #[test]
-    fn test_is_identifier() {
-        assert!(is_identifier("this_is_an_identifier_1$"));
-        assert!(!is_identifier("1not_an_identifier"));
-    }
+    Ok(())
 }

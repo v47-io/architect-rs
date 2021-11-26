@@ -43,15 +43,13 @@ use serde_json::Value;
 
 use crate::utils::{glob, is_identifier, ToolConfig};
 
-pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Result<Option<String>> {
+pub fn load_config_file(root_dir: &Path, base_path: &Path) -> io::Result<Option<String>> {
     let config_file_path = base_path.join(".architect.json");
 
-    if tool_config.verbose {
-        println!(
-            "Loading config file from path {}",
-            config_file_path.display()
-        )
-    }
+    println!(
+        "Configuration file:  {}",
+        config_file_path.strip_prefix(root_dir).unwrap().display()
+    );
 
     if metadata(&config_file_path).is_ok() {
         Ok(Some(read_to_string(config_file_path)?))
@@ -654,34 +652,14 @@ mod tests {
         let working_dir = tempdir().unwrap();
 
         assert_eq!(
-            load_config_file(
-                working_dir.path(),
-                &ToolConfig {
-                    template: None,
-                    no_history: false,
-                    no_init: false,
-                    ignore_checks: false,
-                    verbose: true,
-                },
-            )
-            .unwrap(),
+            load_config_file(working_dir.path(), working_dir.path(),).unwrap(),
             None
         );
 
         fs::write(working_dir.path().join(".architect.json"), CONFIG_CONTENT).unwrap();
 
         assert_eq!(
-            load_config_file(
-                working_dir.path(),
-                &ToolConfig {
-                    template: None,
-                    no_history: false,
-                    no_init: false,
-                    ignore_checks: false,
-                    verbose: true,
-                },
-            )
-            .unwrap(),
+            load_config_file(working_dir.path(), working_dir.path(),).unwrap(),
             Some(CONFIG_CONTENT.to_string())
         );
     }
