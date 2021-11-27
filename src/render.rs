@@ -477,7 +477,10 @@ fn build_render_specs(
 
                     println!();
                 } else {
-                    println!("Copying file: {}", source_rel.display());
+                    println!(
+                        "Copying file:   {}",
+                        format!("{}", source_rel.display()).yellow()
+                    );
                 }
             }
 

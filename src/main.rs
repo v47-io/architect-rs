@@ -185,11 +185,24 @@ where
     if !render_result.conflicts.is_empty() {
         eprintln!("There were conflicts:");
         render_result.conflicts.iter().for_each(|conflict| {
-            eprintln!("  - {}:", conflict.intended_target.display());
-            conflict
-                .sources
-                .iter()
-                .for_each(|source| println!("      - {}", source.display()))
+            eprintln!(
+                "  > {}:",
+                format!(
+                    "{}",
+                    conflict
+                        .intended_target
+                        .strip_prefix(&target_dir)
+                        .unwrap()
+                        .display()
+                )
+                .yellow()
+            );
+            conflict.sources.iter().for_each(|source| {
+                println!(
+                    "      - {}",
+                    source.strip_prefix(working_dir.path()).unwrap().display()
+                )
+            })
         });
 
         working_dir.into_path();
