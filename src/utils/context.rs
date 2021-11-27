@@ -44,7 +44,6 @@ pub fn pretty_print_context(context: &handlebars::Context) -> ArchResult<()> {
 
     for (i, &line) in lines.iter().enumerate() {
         let line_number = format!(" {:>width$}: ", i + 1, width = line_number_length)
-            .stylize()
             .dim()
             .on_grey();
 

@@ -41,6 +41,7 @@ use std::str::FromStr;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 
+use crossterm::style::Stylize;
 use globset::GlobMatcher;
 use handlebars::{Context, Handlebars, RenderError};
 use indicatif::{MultiProgress, ProgressBar};
@@ -84,10 +85,7 @@ pub fn render(
     let mut handlebars = create_hbs();
     handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
 
-    let all_progress = MultiProgress::new();
-
-    let render_specs_progress = all_progress.add(ProgressBar::new_spinner());
-    render_specs_progress.set_message("Building render specifications...");
+    println!("Rendering files");
 
     let render_specs = build_render_specs(
         root_dir,
@@ -98,8 +96,6 @@ pub fn render(
         tool_config,
     )?;
 
-    render_specs_progress.finish_with_message("Render specifications built");
-
     // Creating new Handlebars instance without helpers that shouldn't be used in templates
     handlebars = create_hbs();
 
@@ -107,6 +103,8 @@ pub fn render(
     let rspec_receiver = Arc::new(Mutex::new(rspec_receiver));
 
     let rendered_files = Arc::new(Mutex::new(Vec::<RenderSpec>::new()));
+
+    let all_progress = MultiProgress::new();
 
     let conflicts: Vec<RenderConflict> = crossbeam::scope(|scope| {
         let handlebars = &handlebars;
@@ -361,15 +359,17 @@ fn build_render_specs(
 
         if dir_context_stack.last().unwrap().target_path.is_none() {
             if tool_config.verbose {
-                println!("Skipping path:        {}", entry.path().display())
+                println!(
+                    "{}",
+                    format!(
+                        "Skipping path: {}",
+                        entry.path().strip_prefix(root_dir).unwrap().display()
+                    )
+                    .dim()
+                )
             }
 
             continue;
-        }
-
-        if tool_config.verbose {
-            println!("Processing path:      {}", entry.path().display());
-            println!("Directory context:    {:?}", dir_context_stack.last())
         }
 
         if metadata.is_dir() {
@@ -452,9 +452,30 @@ fn build_render_specs(
 
             let render_specs_vec = get_render_specs_vec(&mut render_specs, &singular_target_path);
 
+            let source = entry.into_path().absolutize()?.to_path_buf();
+            let target = get_numbered_path(singular_target_path, render_specs_vec.len());
+
+            if tool_config.verbose {
+                let source_rel = source.strip_prefix(root_dir).unwrap();
+
+                if is_template {
+                    let target_rel = target.strip_prefix(target_dir).unwrap();
+
+                    print!("Rendering file: {}", source_rel.display());
+
+                    if source_rel != target_rel {
+                        print!(" => {}", target_rel.display());
+                    }
+
+                    println!();
+                } else {
+                    println!("Copying file: {}", source_rel.display());
+                }
+            }
+
             render_specs_vec.push(RenderSpec {
-                source: entry.into_path().absolutize()?.to_path_buf(),
-                target: get_numbered_path(singular_target_path, render_specs_vec.len()),
+                source,
+                target,
                 is_template,
             })
         };
@@ -493,7 +514,14 @@ fn is_not_sub_template_dir(
 ) -> bool {
     let result = !path_is_dir || path == root_dir || !path.join(".architect.json").is_file();
     if !result && tool_config.verbose {
-        println!("Skipping sub-template in: {}", path.display())
+        println!(
+            "{}",
+            format!(
+                "Skipping sub-template in: {}",
+                path.strip_prefix(root_dir).unwrap().display()
+            )
+            .dim()
+        )
     }
 
     result
@@ -518,7 +546,10 @@ fn is_not_hidden_or_is_included(
                         .any(|matcher| matcher.is_match(globbing_path));
 
                     if !result && tool_config.verbose {
-                        println!("Skipping hidden path: {}", path.display())
+                        println!(
+                            "{}",
+                            format!("Skipping hidden path: {}", globbing_path.display()).dim()
+                        )
                     }
 
                     result
@@ -531,9 +562,13 @@ fn is_not_hidden_or_is_included(
             })
             .unwrap_or_else(|err| {
                 eprintln!(
-                    "Failed to strip root dir prefix from path {} ({})",
-                    path.display(),
-                    err
+                    "{}",
+                    format!(
+                        "Failed to strip root dir prefix from path {} ({})",
+                        path.display(),
+                        err
+                    )
+                    .red()
                 );
 
                 false
@@ -559,7 +594,7 @@ fn is_conditionally_included(
                         eprintln!(
                             "Failed to evaluate condition \"{}\" for {} ({})",
                             cond_spec.condition,
-                            path.display(),
+                            globbing_path.display(),
                             e
                         );
 
@@ -568,7 +603,7 @@ fn is_conditionally_included(
                 };
 
                 if skip && tool_config.verbose {
-                    println!("Skipping path:        {}", path.display())
+                    println!("{}", format!("Skipping path: {}", path.display()).dim())
                 }
 
                 // inverting because filter needs false to exclude
@@ -580,9 +615,13 @@ fn is_conditionally_included(
         })
         .unwrap_or_else(|err| {
             eprintln!(
-                "Failed to strip root dir prefix from path {} ({})",
-                path.display(),
-                err
+                "{}",
+                format!(
+                    "Failed to strip root dir prefix from path {} ({})",
+                    path.display(),
+                    err
+                )
+                .red()
             );
 
             false
@@ -604,7 +643,10 @@ fn is_not_excluded(
                 .any(|glob| glob.is_match(globbing_path))
             {
                 if tool_config.verbose {
-                    println!("Skipping path:        {}", path.display())
+                    println!(
+                        "{}",
+                        format!("Skipping path: {}", globbing_path.display()).dim()
+                    )
                 }
 
                 false
@@ -614,9 +656,13 @@ fn is_not_excluded(
         })
         .unwrap_or_else(|err| {
             eprintln!(
-                "Failed to strip root dir prefix from path {} ({})",
-                path.display(),
-                err
+                "{}",
+                format!(
+                    "Failed to strip root dir prefix from path {} ({})",
+                    path.display(),
+                    err
+                )
+                .red()
             );
 
             false
@@ -660,9 +706,13 @@ fn matches_globs(globs: &[GlobMatcher], root_dir: &Path, path: &Path) -> bool {
         .map(|globbing_path| globs.iter().any(|it| it.is_match(globbing_path)))
         .unwrap_or_else(|err| {
             eprintln!(
-                "Failed to strip root dir prefix from path {} ({})",
-                path.display(),
-                err
+                "{}",
+                format!(
+                    "Failed to strip root dir prefix from path {} ({})",
+                    path.display(),
+                    err
+                )
+                .red()
             );
 
             false
@@ -721,7 +771,10 @@ fn is_hbs_template(path: &Path) -> io::Result<bool> {
         .any(|line| match line {
             Ok(line) => it_contains_template(line.trim()),
             Err(err) => {
-                eprintln!("Failed to read line into the buffer ({})", err);
+                eprintln!(
+                    "{}",
+                    format!("Failed to read line into the buffer ({})", err).red()
+                );
                 false
             }
         }))
@@ -742,8 +795,12 @@ fn render_line_template(template: &str, handlebars: &Handlebars, ctx: &Context) 
         Ok(result) => (NEW_LINE_REGEX.replace_all(&result, " ").to_string(), true),
         Err(error) => {
             eprintln!(
-                "Failed to render small template: '{}' ({})",
-                template, error
+                "{}",
+                format!(
+                    "Failed to render small template: '{}' ({})",
+                    template, error
+                )
+                .red()
             );
             (template.to_string(), false)
         }
@@ -759,8 +816,12 @@ fn create_proper_target_path(
         Ok(path) => path.to_path_buf(),
         Err(_) => {
             eprintln!(
-                "Failed to create absolute path of '{}'",
-                parent_dir.join(target_dir).display()
+                "{}",
+                format!(
+                    "Failed to create absolute path of '{}'",
+                    parent_dir.join(target_dir).display()
+                )
+                .red()
             );
 
             return None;
@@ -771,9 +832,13 @@ fn create_proper_target_path(
         Some(result)
     } else {
         eprintln!(
-            "Generated path '{}' would leave target directory '{}'",
-            result.display(),
-            target_dir.display()
+            "{}",
+            format!(
+                "Generated path '{}' would leave target directory '{}'",
+                result.display(),
+                target_dir.display()
+            )
+            .red()
         );
 
         None

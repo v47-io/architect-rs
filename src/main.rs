@@ -67,7 +67,7 @@ fn main() {
     exit(match run(&mut env::args_os()) {
         Ok(code) => code,
         Err(err) => {
-            eprintln!("{:?}", err);
+            eprintln!("{}", format!("{:?}", err).red());
             1
         }
     })
@@ -89,11 +89,11 @@ where
     };
 
     if tool_config.ignore_checks {
-        println!("{}", "Ignoring some checks".stylize().dim());
+        println!("{}", "Ignoring some checks".dim());
     }
 
     if tool_config.verbose {
-        println!("{}", "Verbose output enabled".stylize().dim());
+        println!("{}", "Verbose output enabled".dim());
     }
 
     let template_spec_raw = matches
@@ -117,17 +117,13 @@ where
         bail!("Invalid target directory: {}", target_dir.display());
     }
 
-    println!(
-        "{}    {}",
-        "Target directory:".stylize().dim(),
-        target_dir.display(),
-    );
+    println!("Target directory: {}", target_dir.display(),);
 
     let working_dir = tempdir()?;
     if tool_config.verbose {
         println!(
-            "{} {}",
-            "Temporary directory:".stylize().dim(),
+            "{}: {}",
+            "Temporary directory".dim(),
             working_dir.path().absolutize()?.display(),
         );
     }
@@ -156,7 +152,7 @@ where
     }?;
 
     if tool_config.verbose && *context.data() != Value::Null {
-        println!("{}", "Using context".stylize().dim());
+        println!("{}", "Using context".dim());
         pretty_print_context(&context)?;
         println!();
     }

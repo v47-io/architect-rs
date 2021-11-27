@@ -33,7 +33,6 @@
 use std::io;
 use std::mem::transmute;
 
-use crossterm::style::Stylize;
 use dialoguer::{Confirm, Input, MultiSelect, Select};
 use handlebars::Context;
 use regex::Regex;
@@ -234,9 +233,6 @@ impl Question<'_> {
         self.pretty
             .map(|it| it.to_string())
             .unwrap_or_else(|| self.path.names().join("."))
-            .stylize()
-            .bold()
-            .to_string()
     }
 }
 

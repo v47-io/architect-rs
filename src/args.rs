@@ -149,6 +149,7 @@ This requires the --no-history flag to be specified as well"#,
 
 These errors will be ignored:
   - Unexpected type of default value (for question)
+  - Default value not matching the format (for question)
   - Unknown default item (for question)
   - Condition evaluation errors (for conditional files)"#,
                 ),

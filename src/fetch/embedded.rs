@@ -68,7 +68,7 @@ pub fn is_git_repo(path: &Path, tool_config: &ToolConfig) -> bool {
 
 pub fn fetch(spec: &TemplateSpec, target: &Path, options: &FetchOptions) -> ArchResult<()> {
     if options.tool_config.verbose {
-        println!("{}", "  > Using embedded Git".stylize().dim());
+        println!("{}", "Using embedded Git".dim());
     }
 
     let (url, git_config, local) = match spec {

@@ -52,19 +52,35 @@ impl WithFormat for String {
     }
 }
 
+trait PromptPunctuation {
+    fn has_punctuation(&self) -> bool;
+}
+
+impl PromptPunctuation for str {
+    fn has_punctuation(&self) -> bool {
+        static CHARS: [char; 2] = [':', '?'];
+
+        if let Some(last) = self.chars().rev().next() {
+            CHARS.contains(&last)
+        } else {
+            false
+        }
+    }
+}
+
 impl Theme for ArchTheme {
     #[inline]
     fn format_prompt(&self, f: &mut dyn Write, prompt: &str) -> fmt::Result {
-        if prompt.ends_with('?') {
-            write!(f, "{}", prompt.stylize().bold())
+        if prompt.has_punctuation() {
+            write!(f, "{} {}", "?".yellow(), prompt.bold())
         } else {
-            write!(f, "{}:", prompt.stylize().bold())
+            write!(f, "{} {}:", "?".yellow(), prompt.bold())
         }
     }
 
     #[inline]
     fn format_error(&self, f: &mut dyn Write, err: &str) -> fmt::Result {
-        write!(f, "Error: {}", err.stylize().red())
+        write!(f, "{} Error: {}", "✘".red(), err.red())
     }
 
     fn format_confirm_prompt(
@@ -74,24 +90,24 @@ impl Theme for ArchTheme {
         default: Option<bool>,
     ) -> fmt::Result {
         if !prompt.is_empty() {
-            write!(f, "{} ", prompt.stylize().bold())?;
+            write!(f, "{} {} ", "?".yellow(), prompt.bold())?;
         }
 
-        let has_question_mark = prompt.ends_with('?');
+        let has_punctuation = prompt.has_punctuation();
 
         match default {
-            None => write!(f, "[y/n]{} ", if has_question_mark { "" } else { ":" }),
+            None => write!(f, "[y/n]{} ", if has_punctuation { "" } else { ":" }),
             Some(true) => write!(
                 f,
                 "[{}/n]{} ",
-                "Y".stylize().bold(),
-                if has_question_mark { "" } else { ":" }
+                "Y".bold(),
+                if has_punctuation { "" } else { ":" }
             ),
             Some(false) => write!(
                 f,
                 "[y/{}]{} ",
-                "N".stylize().bold(),
-                if has_question_mark { "" } else { ":" }
+                "N".bold(),
+                if has_punctuation { "" } else { ":" }
             ),
         }
     }
@@ -102,22 +118,16 @@ impl Theme for ArchTheme {
         prompt: &str,
         selection: Option<bool>,
     ) -> fmt::Result {
-        let selection = selection.map(|it| {
-            if it {
-                "Yes".stylize().green()
-            } else {
-                "No".stylize().red()
-            }
-            .bold()
-        });
+        let selection = selection.map(|it| if it { "Yes".green() } else { "No".red() }.bold());
 
         match selection {
             Some(selection) if prompt.is_empty() => write!(f, "{}", selection),
             Some(selection) => write!(
                 f,
-                "{}{} {}",
+                "{} {}{} {}",
+                "✔".green(),
                 prompt,
-                if prompt.ends_with('?') { "" } else { ":" },
+                if prompt.has_punctuation() { "" } else { ":" },
                 selection
             ),
             None if prompt.is_empty() => Ok(()),
@@ -139,20 +149,20 @@ impl Theme for ArchTheme {
             (prompt, None)
         };
 
-        let has_question_mark = prompt.ends_with('?');
-        let prompt = prompt.stylize().bold();
+        let has_punctuation = prompt.has_punctuation();
+        let prompt = prompt.bold();
+
+        write!(f, "{} {}", "?".yellow(), prompt)?;
 
         if let Some(format) = format {
-            write!(f, "{} ({})", prompt, format)?;
-        } else {
-            write!(f, "{}", prompt)?;
+            write!(f, " ({})", format)?;
         }
 
         if let Some(default) = default {
-            write!(f, " [{}]", default.stylize().dim())?;
+            write!(f, " [{}]", default.dim())?;
         }
 
-        write!(f, "{} ", if has_question_mark { "" } else { ":" })
+        write!(f, "{} ", if has_punctuation { "" } else { ":" })
     }
 
     fn format_input_prompt_selection(
@@ -169,10 +179,11 @@ impl Theme for ArchTheme {
 
         write!(
             f,
-            "{}{} {}",
+            "{} {}{} {}",
+            "✔".green(),
             prompt,
-            if prompt.ends_with('?') { "" } else { ":" },
-            sel.stylize().bold()
+            if prompt.has_punctuation() { "" } else { ":" },
+            sel.bold()
         )
     }
 
@@ -214,7 +225,7 @@ impl Theme for ArchTheme {
         let selection = if !selections.is_empty() {
             selections.join(", ")
         } else {
-            "[nothing selected]".stylize().dim().to_string()
+            "[nothing selected]".dim().to_string()
         };
 
         self.format_input_prompt_selection(f, prompt, &selection)
@@ -249,16 +260,16 @@ impl Theme for ArchTheme {
             f,
             "{} {}",
             match (checked, active) {
-                (true, true) => "> [x]".stylize().bold(),
-                (true, false) => "  [x]".stylize().bold(),
+                (true, true) => "> [x]".bold(),
+                (true, false) => "  [x]".bold(),
                 (false, true) => "> [ ]".stylize(),
-                (false, false) => "  [ ]".stylize().dim(),
+                (false, false) => "  [ ]".dim(),
             },
             match (checked, active) {
-                (true, true) => text.stylize().bold(),
-                (true, false) => text.stylize().bold(),
+                (true, true) => text.bold(),
+                (true, false) => text.bold(),
                 (false, true) => text.stylize(),
-                (false, false) => text.stylize().dim(),
+                (false, false) => text.dim(),
             }
         )
     }
@@ -274,14 +285,14 @@ impl Theme for ArchTheme {
             f,
             "{} {}",
             match (picked, active) {
-                (true, true) => "> [x]".stylize().bold(),
+                (true, true) => "> [x]".bold(),
                 (false, true) => "> [ ]".stylize(),
-                (_, false) => "  [ ]".stylize().dim(),
+                (_, false) => "  [ ]".dim(),
             },
             match (picked, active) {
-                (true, true) => text.stylize().bold(),
+                (true, true) => text.bold(),
                 (false, true) => text.stylize(),
-                (_, false) => text.stylize().dim(),
+                (_, false) => text.dim(),
             },
         )
     }

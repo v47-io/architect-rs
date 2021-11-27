@@ -43,7 +43,7 @@ use crate::utils::errors::ArchResult;
 
 pub fn fetch(spec: &TemplateSpec, target: &Path, options: &FetchOptions) -> ArchResult<()> {
     if options.tool_config.verbose {
-        println!("{}", "  > Using local Git installation".stylize().dim());
+        println!("{}", "Using local Git installation".dim());
     }
 
     let mut command = Command::new("git");
