@@ -715,6 +715,7 @@ mod tests {
         no_history: false,
         no_init: false,
         ignore_checks: false,
+        dry_run: false,
         template: None,
     };
 

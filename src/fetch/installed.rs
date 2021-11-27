@@ -85,6 +85,7 @@ mod tests {
         verbose: true,
         no_history: false,
         no_init: false,
+        dry_run: false,
         ignore_checks: false,
     };
 

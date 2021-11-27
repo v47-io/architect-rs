@@ -45,15 +45,22 @@ pub fn create_target_dir(
     base_dir: &Path,
     template_spec: &TemplateSpec,
     target_override: Option<&str>,
+    dry_run: bool,
 ) -> io::Result<PathBuf> {
     if let Some(target_dir_raw) = target_override {
         let tmp_path = Path::new(target_dir_raw.trim());
         if tmp_path.is_absolute() {
-            create_dir_all(tmp_path)?;
+            if !dry_run {
+                create_dir_all(tmp_path)?;
+            }
+
             Ok(tmp_path.to_path_buf())
         } else {
             let result = base_dir.join(target_dir_raw).absolutize()?.to_path_buf();
-            create_dir_all(&result)?;
+
+            if !dry_run {
+                create_dir_all(&result)?;
+            }
 
             Ok(result)
         }
@@ -62,7 +69,10 @@ pub fn create_target_dir(
             TemplateSpec::Local(template_path) => match template_path.file_name() {
                 Some(file_name) => {
                     let result = base_dir.join(file_name).absolutize()?.to_path_buf();
-                    create_dir_all(&result)?;
+
+                    if !dry_run {
+                        create_dir_all(&result)?;
+                    }
 
                     Ok(result)
                 }
@@ -77,7 +87,10 @@ pub fn create_target_dir(
                     };
 
                     let result = base_dir.join(dir_name).absolutize()?.to_path_buf();
-                    create_dir_all(&result)?;
+
+                    if !dry_run {
+                        create_dir_all(&result)?;
+                    }
 
                     Ok(result)
                 } else {
@@ -164,6 +177,7 @@ mod tests {
                 base_dir.path(),
                 &TemplateSpec::Remote(""),
                 Some(&abs_target_override),
+                false
             )?
         );
 
@@ -182,6 +196,7 @@ mod tests {
                 base_dir.path(),
                 &TemplateSpec::Remote(""),
                 Some(rel_target_override),
+                false
             )?
         );
 
@@ -196,7 +211,7 @@ mod tests {
 
         assert_eq!(
             local_check_path,
-            create_target_dir(base_dir.path(), &valid_local_spec, None)?
+            create_target_dir(base_dir.path(), &valid_local_spec, None, false)?
         );
 
         assert!(local_check_path.exists());
@@ -213,18 +228,18 @@ mod tests {
 
         assert_eq!(
             remote_check_path,
-            create_target_dir(base_dir.path(), &valid_remote_spec, None)?
+            create_target_dir(base_dir.path(), &valid_remote_spec, None, false)?
         );
 
         assert!(remote_check_path.exists());
 
         let invalid_local_spec = TemplateSpec::Local(PathBuf::from("/"));
 
-        assert!(create_target_dir(base_dir.path(), &invalid_local_spec, None).is_err());
+        assert!(create_target_dir(base_dir.path(), &invalid_local_spec, None, false).is_err());
 
         let invalid_remote_spec = TemplateSpec::Remote("git@github.com:project-name.git");
 
-        assert!(create_target_dir(base_dir.path(), &invalid_remote_spec, None).is_err());
+        assert!(create_target_dir(base_dir.path(), &invalid_remote_spec, None, false).is_err());
 
         Ok(())
     }
@@ -257,6 +272,7 @@ mod tests {
             verbose: true,
             no_history: false,
             no_init: false,
+            dry_run: false,
             ignore_checks: false,
         };
 
@@ -268,6 +284,7 @@ mod tests {
             verbose: true,
             no_history: false,
             no_init: false,
+            dry_run: false,
             ignore_checks: false,
         };
 
@@ -279,6 +296,7 @@ mod tests {
             verbose: true,
             no_history: false,
             no_init: false,
+            dry_run: false,
             ignore_checks: false,
         };
 

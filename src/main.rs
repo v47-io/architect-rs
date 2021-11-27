@@ -80,13 +80,7 @@ where
 {
     let matches = crate::args::get_matches(args);
 
-    let tool_config = ToolConfig {
-        template: matches.value_of_trimmed(options::TEMPLATE),
-        no_history: matches.is_present(flags::NO_HISTORY),
-        no_init: matches.is_present(flags::NO_INIT),
-        ignore_checks: matches.is_present(flags::IGNORE_CHECKS),
-        verbose: matches.is_present(flags::VERBOSE),
-    };
+    let tool_config = ToolConfig::from_matches(&matches);
 
     if tool_config.ignore_checks {
         println!("{}", "Ignoring some checks".dim());
@@ -111,9 +105,10 @@ where
         &env::current_dir()?,
         &template_spec,
         matches.value_of_trimmed(constants::args::TARGET),
+        tool_config.dry_run,
     )?;
 
-    if !is_valid_target_dir(&target_dir)? {
+    if !tool_config.dry_run && !is_valid_target_dir(&target_dir)? {
         bail!("Invalid target directory: {}", target_dir.display());
     }
 
@@ -157,6 +152,14 @@ where
         println!();
     }
 
+    print!("Rendering files");
+
+    if tool_config.dry_run {
+        print!("{}", " (dry run)".yellow());
+    }
+
+    println!();
+
     let render_result = render::render(
         &template_path,
         &target_dir,
@@ -196,6 +199,10 @@ where
         "Finished scaffolding into directory {}",
         target_dir.display()
     );
+
+    if tool_config.dry_run {
+        println!("{}", "This was a dry run!".yellow());
+    }
 
     Ok(if render_result.conflicts.is_empty() {
         0

@@ -85,8 +85,6 @@ pub fn render(
     let mut handlebars = create_hbs();
     handlebars.register_helper("package", Box::new(PACKAGE_HELPER));
 
-    println!("Rendering files");
-
     let render_specs = build_render_specs(
         root_dir,
         target_dir,
@@ -176,16 +174,18 @@ pub fn render(
         let result = render_specs
             .into_iter()
             .filter_map(|(intended_target, render_specs)| {
-                match create_dir_all(intended_target.parent().unwrap()) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        eprintln!(
-                            "Failed to create parent director(ies) of '{}' ({})",
-                            intended_target.display(),
-                            err
-                        );
+                if !tool_config.dry_run {
+                    match create_dir_all(intended_target.parent().unwrap()) {
+                        Ok(_) => (),
+                        Err(err) => {
+                            eprintln!(
+                                "Failed to create parent director(ies) of '{}' ({})",
+                                intended_target.display(),
+                                err
+                            );
 
-                        return None;
+                            return None;
+                        }
                     }
                 }
 
@@ -195,15 +195,20 @@ pub fn render(
                         sources: render_specs
                             .into_iter()
                             .map(|it| {
-                                rspec_sender.send(it.clone()).unwrap();
+                                if !tool_config.dry_run {
+                                    rspec_sender.send(it.clone()).unwrap();
+                                }
+
                                 it.source
                             })
                             .collect(),
                     })
                 } else {
-                    render_specs
-                        .into_iter()
-                        .for_each(|it| rspec_sender.send(it).unwrap());
+                    render_specs.into_iter().for_each(|it| {
+                        if !tool_config.dry_run {
+                            rspec_sender.send(it).unwrap()
+                        }
+                    });
 
                     None
                 }
@@ -358,7 +363,7 @@ fn build_render_specs(
         }
 
         if dir_context_stack.last().unwrap().target_path.is_none() {
-            if tool_config.verbose {
+            if tool_config.verbose || tool_config.dry_run {
                 println!(
                     "{}",
                     format!(
@@ -455,16 +460,19 @@ fn build_render_specs(
             let source = entry.into_path().absolutize()?.to_path_buf();
             let target = get_numbered_path(singular_target_path, render_specs_vec.len());
 
-            if tool_config.verbose {
+            if tool_config.verbose || tool_config.dry_run {
                 let source_rel = source.strip_prefix(root_dir).unwrap();
 
                 if is_template {
                     let target_rel = target.strip_prefix(target_dir).unwrap();
 
-                    print!("Rendering file: {}", source_rel.display());
+                    print!(
+                        "Rendering file: {}",
+                        format!("{}", source_rel.display()).yellow()
+                    );
 
                     if source_rel != target_rel {
-                        print!(" => {}", target_rel.display());
+                        print!(" => {}", format!("{}", target_rel.display()).yellow());
                     }
 
                     println!();
@@ -513,7 +521,7 @@ fn is_not_sub_template_dir(
     tool_config: &ToolConfig,
 ) -> bool {
     let result = !path_is_dir || path == root_dir || !path.join(".architect.json").is_file();
-    if !result && tool_config.verbose {
+    if !result && (tool_config.verbose || tool_config.dry_run) {
         println!(
             "{}",
             format!(
@@ -545,7 +553,7 @@ fn is_not_hidden_or_is_included(
                         .iter()
                         .any(|matcher| matcher.is_match(globbing_path));
 
-                    if !result && tool_config.verbose {
+                    if !result && (tool_config.verbose || tool_config.dry_run) {
                         println!(
                             "{}",
                             format!("Skipping hidden path: {}", globbing_path.display()).dim()
@@ -602,7 +610,7 @@ fn is_conditionally_included(
                     }
                 };
 
-                if skip && tool_config.verbose {
+                if skip && (tool_config.verbose || tool_config.dry_run) {
                     println!("{}", format!("Skipping path: {}", path.display()).dim())
                 }
 
@@ -642,7 +650,7 @@ fn is_not_excluded(
                 .iter()
                 .any(|glob| glob.is_match(globbing_path))
             {
-                if tool_config.verbose {
+                if tool_config.verbose || tool_config.dry_run {
                     println!(
                         "{}",
                         format!("Skipping path: {}", globbing_path.display()).dim()
@@ -957,6 +965,7 @@ mod tests {
             no_history: false,
             no_init: false,
             ignore_checks: false,
+            dry_run: false,
             verbose: true,
         };
 
@@ -1114,6 +1123,7 @@ mod tests {
             no_history: false,
             no_init: false,
             ignore_checks: false,
+            dry_run: false,
             verbose: true,
         };
 
@@ -1204,6 +1214,7 @@ mod tests {
             verbose: true,
             ignore_checks: false,
             no_history: false,
+            dry_run: false,
             no_init: false,
         };
 

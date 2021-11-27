@@ -36,6 +36,7 @@ pub mod args {
 }
 
 pub mod flags {
+    pub const DRY_RUN: &str = "dry-run";
     pub const DIRTY: &str = "dirty";
     pub const LOCAL_GIT: &str = "local-git";
     pub const NO_HISTORY: &str = "no-history";

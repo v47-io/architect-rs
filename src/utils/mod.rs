@@ -30,9 +30,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+use clap::ArgMatches;
 use globset::{Error, GlobBuilder, GlobMatcher};
 use lazy_static::lazy_static;
 use regex::Regex;
+
+use crate::{constants::*, TrimmedValueOf};
 
 pub mod constants;
 pub mod context;
@@ -44,7 +47,24 @@ pub struct ToolConfig<'tc> {
     pub no_history: bool,
     pub no_init: bool,
     pub ignore_checks: bool,
+    pub dry_run: bool,
     pub verbose: bool,
+}
+
+impl<'tc> ToolConfig<'tc> {
+    pub fn from_matches<'arg>(matches: &'arg ArgMatches<'arg>) -> ToolConfig<'tc>
+    where
+        'arg: 'tc,
+    {
+        ToolConfig {
+            template: matches.value_of_trimmed(options::TEMPLATE),
+            no_history: matches.is_present(flags::NO_HISTORY),
+            no_init: matches.is_present(flags::NO_INIT),
+            ignore_checks: matches.is_present(flags::IGNORE_CHECKS),
+            dry_run: matches.is_present(flags::DRY_RUN),
+            verbose: matches.is_present(flags::VERBOSE),
+        }
+    }
 }
 
 lazy_static! {
