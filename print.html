@@ -145,7 +145,7 @@
 project.</p>
 <p>For its templating Architect uses the Handlebars templating language. Please check the documentation for more
 information.</p>
-<h2 id="a-hrefhttpsv47-iogithubioarchitect-rs--documentation-a"><a class="header" href="#a-hrefhttpsv47-iogithubioarchitect-rs--documentation-a"><a href="https://v47-io.github.io/architect-rs/">&gt;&gt; 📚 Documentation &lt;&lt;</a></a></h2>
+<h2 id="-documentation"><a class="header" href="#-documentation"><a href="https://v47-io.github.io/architect-rs/">&gt;&gt; 📚 Documentation &lt;&lt;</a></a></h2>
 <h2 id="tldr"><a class="header" href="#tldr">TL;DR</a></h2>
 <p>Architect uses Handlebars and Git to create proper projects from template repositories.</p>
 <ol>
@@ -262,28 +262,27 @@ you can get the source from GitHub and build Architect yourself.</p>
 <pre><code class="language-shell">cargo test --bin architect
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
-<p>Architect provides a simple command-line interface that uses sensible default values to get going
-as quickly as possible.</p>
+<p>Architect provides a simple command-line interface that uses sensible default values to get going as quickly as
+possible.</p>
 <p>To instantiate a template in a child directory of the working directory execute this command:</p>
 <pre><code class="language-shell">architect &lt;PATH-OR-URL&gt;
 </code></pre>
-<p>Architect follows the Git way of determining the output directory. If you don't explicitly specify 
-an output directory, it will use the name of the source Git repository or the directory name of the
-path as the target directory name.</p>
+<p>Architect follows the Git way of determining the output directory. If you don't explicitly specify an output directory,
+it will use the name of the source Git repository or the directory name of the path as the target directory name.</p>
 <p><strong>Example</strong>:</p>
 <ul>
 <li>Git repository: <code>https://github.com/v47-io/architect-test-template.git</code></li>
 <li>Output directory: <code>./architect-test-template</code></li>
 </ul>
-<p>Additionally, you can also specify a target directory yourself, e.g. if you don't want to use the name
-of the source repository:</p>
+<p>Additionally, you can also specify a target directory yourself, e.g. if you don't want to use the name of the source
+repository:</p>
 <pre><code class="language-shell">architect &lt;PATH-OR-URL&gt; some-directory
 </code></pre>
-<p>Architect behaves the same as Git in this instance, it will create a directory with this name, relative
-to the working directory. Of course, you can also specify an absolute path.</p>
-<p>By default, Architect will copy the entire Git history of the source repository to the target, or 
-initialize the target as a Git repository. To prevent you from accidentally overwriting the template
-Architect removes the original Git remotes from the target.</p>
+<p>Architect behaves the same as Git in this instance, it will create a directory with this name, relative to the working
+directory. Of course, you can also specify an absolute path.</p>
+<p>By default, Architect will copy the entire Git history of the source repository to the target, or initialize the target
+as a Git repository. To prevent you from accidentally overwriting the template Architect removes the original Git
+remotes from the target.</p>
 <h2 id="options"><a class="header" href="#options">Options</a></h2>
 <p>Architect offers some options to customize the behavior of Architect.</p>
 <h3 id="--b---branch-branch"><a class="header" href="#--b---branch-branch">--b, --branch &lt;branch&gt;</a></h3>
@@ -292,20 +291,28 @@ Architect removes the original Git remotes from the target.</p>
 <p>To customize the behavior of Architect even further you can specify one or more flags as described here.</p>
 <h3 id="--local-git"><a class="header" href="#--local-git">--local-git</a></h3>
 <p>Use your local Git installation instead of embedded Git.</p>
-<p>This is intended as an escape hatch if you are using authentication scenarios not supported by the
-embedded Git functionality in Architect.</p>
-<p>Architect is able to use most SSH agent scenarios and username/password authentication, so this 
-should not be needed often.</p>
+<p>This is intended as an escape hatch if you are using authentication scenarios not supported by the embedded Git
+functionality in Architect.</p>
+<p>Architect is able to use most SSH agent scenarios and username/password authentication, so this should not be needed
+often.</p>
+<h3 id="--dry-run"><a class="header" href="#--dry-run">--dry-run</a></h3>
+<p>Produces the same terminal output as normal operation without performing it.</p>
+<p>This allows you to inspect the log output to determine whether Architect would perform its operations as intended.</p>
+<p>Architect still takes all your input into account, it just stops shy of actually rendering and copying files to the
+target directory.</p>
 <h3 id="--dirty"><a class="header" href="#--dirty">--dirty</a></h3>
 <p>Use the template source in its current (dirty) state.</p>
-<p>This only has an effect if a local path is specified as the source repository. In that case Architect
-won't perform a Git clone but will just copy the directory, regardless of the local state.</p>
-<p>This is most useful to test a template locally while you are developing it. </p>
+<p>This only has an effect if a local path is specified as the source repository. In that case Architect won't perform a
+Git clone but will just copy the directory, regardless of the local state.</p>
+<p>This is most useful to test a template locally while you are developing it.</p>
 <p>This option has no effect with remote repositories.</p>
 <h3 id="--ignore-checks"><a class="header" href="#--ignore-checks">--ignore-checks</a></h3>
 <p>Ignore some failed checks that would prevent Architect from creating the target files.</p>
 <p>These errors will be ignored:</p>
 <ul>
+<li>Unexpected type of default value (for any question type)</li>
+<li>Default value not matching the format (for custom questions)</li>
+<li>Unknown default item (for selection questions)</li>
 <li>Condition evaluation errors (for conditional files)</li>
 </ul>
 <h3 id="--no-history"><a class="header" href="#--no-history">--no-history</a></h3>
@@ -386,7 +393,7 @@ things to consider.</p>
 will then be inserted into the path which will give us the final path <code>src/main/java/com/github/example</code>.</p>
 <p>Architect will then create that path's nested directories copy all files from the source directory into 
 this new, dynamically created directory.</p>
-<h2 id="a-hreftemplatesconfigurationarchitectjsona"><a class="header" href="#a-hreftemplatesconfigurationarchitectjsona"><a href="templates/configuration/">.architect.json</a></a></h2>
+<h2 id="architectjson"><a class="header" href="#architectjson"><a href="templates/configuration/">.architect.json</a></a></h2>
 <p>The template directory can also contain a <code>.architect.json</code> file which can specify various configuration
 values influencing template rendering.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="configuration"><a class="header" href="#configuration">Configuration</a></h1>
