@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0 (2021-11-28)
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 2 commits contributed to the release.
+ - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 1 unique issue was worked on: [#12](https://github.comgit//v47-io/architect-rs/issues/12)
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **[#12](https://github.comgit//v47-io/architect-rs/issues/12)**
+    - Better release artifacts, and windows includes debug information ([`7b39f79`](https://github.comgit//v47-io/architect-rs/commit/7b39f79c8853bc8cc011133f406d966d81c3a4d3))
+ * **Uncategorized**
+    - Updated version number for next release ([`90a92ce`](https://github.comgit//v47-io/architect-rs/commit/90a92ce594060a4e6833cd1c290c28e35a6fabc2))
+</details>
+
 ## 0.15.0 (2021-11-28)
 
 ### New Features
@@ -24,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 10 commits contributed to the release over the course of 9 calendar days.
+ - 11 commits contributed to the release over the course of 10 calendar days.
  - 10 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#6](https://github.comgit//v47-io/architect-rs/issues/6)
 
@@ -39,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Completely restyled terminal output and reorganized some output ([`b59a0f1`](https://github.comgit//v47-io/architect-rs/commit/b59a0f1ab7169d829d035234745c5751f7ac925b))
     - Implemented custom theme for dialoguer ([`a9a25ee`](https://github.comgit//v47-io/architect-rs/commit/a9a25ee8a24e25e059632f4bafdfc060a60c76e3))
  * **Uncategorized**
+    - Bump architect-rs v0.15.0 ([`4561e69`](https://github.comgit//v47-io/architect-rs/commit/4561e6926fd3c3dd3cfb13308b49aa768bc5ccf3))
     - Updated some dependency versions and lockfile ([`0faa67b`](https://github.comgit//v47-io/architect-rs/commit/0faa67bfb24a51977f0996cba31e3f8bef57b3dd))
     - Added cache to test jobs ([`089b118`](https://github.comgit//v47-io/architect-rs/commit/089b1189d59480ddad2e0784e60e40072420c71d))
     - Updated version number for next release ([`adb128a`](https://github.comgit//v47-io/architect-rs/commit/adb128ad107529f7f7557fa2ed7fd97e36ac8387))
