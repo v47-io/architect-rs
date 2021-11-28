@@ -17,7 +17,7 @@ jobs:
             artifact_name: target/release/architect
             asset_name: linux
           - os: windows-latest
-            artifact_name: target/release/architect.exe
+            artifact_name: target/release/architect.*
             asset_name: windows
           - os: macos-latest
             artifact_name: target/release/architect
@@ -44,6 +44,9 @@ jobs:
 
       - name: Build
         run: cargo build --release --bin architect --locked
+
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: rm target/release/architect.d
 
       - name: Upload binaries to release
         uses: actions/upload-artifact@v2
@@ -75,13 +78,24 @@ jobs:
         with:
           path: artifacts
 
+      - run: sudo apt-get install zip
+
       - name: Prepare Release Assets
         working-directory: ${{ steps.download.outputs.download-path }}
         run: |
           VERSION=$(echo $VERSION | sed 's/^v//')
-          mv linux/architect       linux/architect-$VERSION-linux-x86_64
-          mv macos/architect       macos/architect-$VERSION-darwin
-          mv windows/architect.exe windows/architect-$VERSION-win-x86_64.exe 
+          
+          chmod +x {linux,macos}/architect
+          
+          LINUX_NAME=architect-$VERSION-linux-amd64.tar.gz
+          MACOS_NAME=architect-$VERSION-darwin-amd64.tar.gz
+          WINDO_NAME=architect-$VERSION-windows-amd64.zip
+          
+          cd linux && tar -czf $LINUX_NAME * && mv $LINUX_NAME ../ && cd ..
+          cd macos && tar -czf $MACOS_NAME * && mv $MACOS_NAME ../ && cd ..
+          zip -j -r $WINDO_NAME windows
+          
+          rm -rf linux macos windows
 
       - name: Uploading Release Assets
         uses: dwenegar/upload-release-assets@v1
