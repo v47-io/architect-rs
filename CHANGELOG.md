@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.15.0 (2021-11-28)
+
+### New Features
+
+ - <csr-id-45abfb590bd6743a05418e1a81671a92a5bf165c/> Implemented dry run feature
+   This produces all the expected log output, without actually rendering or copying files to a target directory.
+ - <csr-id-b59a0f1ab7169d829d035234745c5751f7ac925b/> Completely restyled terminal output and reorganized some output
+ - <csr-id-a9a25ee8a24e25e059632f4bafdfc060a60c76e3/> Implemented custom theme for dialoguer
+   Also pretty printing the context, and added crossterm to style verbose output
+
+### Bug Fixes
+
+ - <csr-id-3f3a26bca1afe7f322ebe8024cae9b47cdd3ce46/> Creating an empty Context instead of null Context
+   `null` Context leads to issues further down the line because `build_file_context` expected a Context containing a `Value::Object(_)`, not `Value::Null`
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 10 commits contributed to the release over the course of 9 calendar days.
+ - 10 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 1 unique issue was worked on: [#6](https://github.comgit//v47-io/architect-rs/issues/6)
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **[#6](https://github.comgit//v47-io/architect-rs/issues/6)**
+    - Implemented dry run feature ([`45abfb5`](https://github.comgit//v47-io/architect-rs/commit/45abfb590bd6743a05418e1a81671a92a5bf165c))
+    - Completely restyled terminal output and reorganized some output ([`b59a0f1`](https://github.comgit//v47-io/architect-rs/commit/b59a0f1ab7169d829d035234745c5751f7ac925b))
+    - Implemented custom theme for dialoguer ([`a9a25ee`](https://github.comgit//v47-io/architect-rs/commit/a9a25ee8a24e25e059632f4bafdfc060a60c76e3))
+ * **Uncategorized**
+    - Updated some dependency versions and lockfile ([`0faa67b`](https://github.comgit//v47-io/architect-rs/commit/0faa67bfb24a51977f0996cba31e3f8bef57b3dd))
+    - Added cache to test jobs ([`089b118`](https://github.comgit//v47-io/architect-rs/commit/089b1189d59480ddad2e0784e60e40072420c71d))
+    - Updated version number for next release ([`adb128a`](https://github.comgit//v47-io/architect-rs/commit/adb128ad107529f7f7557fa2ed7fd97e36ac8387))
+    - Merge pull request #14 from v47-io/feat/better-terminal-handling-#6 ([`9d00641`](https://github.comgit//v47-io/architect-rs/commit/9d00641a0b99dfc037fecf9ba4657ae9d9b45e4a))
+    - Added expect test for dry-run feature ([`cb278b5`](https://github.comgit//v47-io/architect-rs/commit/cb278b54eb08879a7c7983e63dc1026ec0175809))
+    - Implemented proper output for render conflicts ([`84b3d35`](https://github.comgit//v47-io/architect-rs/commit/84b3d35f22ae6db8d106cfc007dd3e5e37aff7ce))
+    - Creating an empty Context instead of null Context ([`3f3a26b`](https://github.comgit//v47-io/architect-rs/commit/3f3a26bca1afe7f322ebe8024cae9b47cdd3ce46))
+</details>
+
 ## 0.14.0 (2021-11-17)
 
 ### New Features
@@ -22,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 2 commits contributed to the release.
+ - 3 commits contributed to the release.
  - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#9](https://github.comgit//v47-io/architect-rs/issues/9)
 
@@ -35,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#9](https://github.comgit//v47-io/architect-rs/issues/9)**
     - Implemented custom formats for question values ([`7c0e111`](https://github.comgit//v47-io/architect-rs/commit/7c0e111c03fe03c7235025fba52cf56bd0a436e7))
  * **Uncategorized**
+    - Bump architect-rs v0.14.0 ([`03498c4`](https://github.comgit//v47-io/architect-rs/commit/03498c48cbf9ccac027964c90f6ae1b643c8e036))
     - Removed unnecessary dependency and updated version for next release ([`e041af9`](https://github.comgit//v47-io/architect-rs/commit/e041af9056411a9b5c9147342f3a04ac3ee01b13))
 </details>
 
