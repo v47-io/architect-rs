@@ -30,22 +30,57 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-pub mod args {
-    pub const REPOSITORY: &str = "REPOSITORY";
-    pub const TARGET: &str = "TARGET";
-}
+use std::io::{stdout, Write};
 
-pub mod flags {
-    pub const DRY_RUN: &str = "dry-run";
-    pub const DIRTY: &str = "dirty";
-    pub const LOCAL_GIT: &str = "local-git";
-    pub const NO_HISTORY: &str = "no-history";
-    pub const NO_INIT: &str = "no-init";
-    pub const IGNORE_CHECKS: &str = "ignore-checks";
-    pub const VERBOSE: &str = "verbose";
-}
+use anyhow::Context;
+use crossterm::execute;
+use crossterm::style::Attribute::Reset;
+use crossterm::style::Color::{Green, Red};
+use crossterm::style::{
+    Attribute, Print, ResetColor, SetAttribute, SetAttributes, SetForegroundColor,
+};
+use crossterm::tty::IsTty;
 
-pub mod options {
-    pub const BRANCH: &str = "branch";
-    pub const TEMPLATE: &str = "template";
+use crate::utils::errors::ArchResult;
+
+pub mod theme;
+
+pub type StatusCallback = Box<dyn Fn(&str, bool) -> ArchResult<()>>;
+
+pub fn write_check_ln(text: &str, attributes: &[Attribute]) -> ArchResult<StatusCallback> {
+    let is_tty = stdout().is_tty();
+
+    let attributes = attributes.into();
+
+    if is_tty {
+        execute!(
+            stdout(),
+            SetAttributes(attributes),
+            Print(text),
+            SetAttribute(Reset),
+            Print(" ")
+        )
+        .context("failed to write status text to stdout")?;
+    } else {
+        write!(stdout(), "{} ", text).context("failed to write status text to stdout")?;
+    }
+
+    Ok(Box::new(move |label, success| {
+        if is_tty {
+            execute!(
+                stdout(),
+                SetAttributes(attributes),
+                SetForegroundColor(if success { Green } else { Red }),
+                Print(label),
+                ResetColor,
+                SetAttribute(Reset),
+                Print("\n")
+            )
+            .context("failed to write status to stdout")
+        } else {
+            println!("{}", label);
+
+            Ok(())
+        }
+    }))
 }

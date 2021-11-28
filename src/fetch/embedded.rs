@@ -36,6 +36,7 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::Context;
+use crossterm::style::{Attribute, Stylize};
 use dialoguer::{Input, Password};
 use git2::build::{CheckoutBuilder, CloneLocal, RepoBuilder};
 use git2::{self, BranchType, ErrorClass, Repository, RepositoryOpenFlags};
@@ -44,19 +45,22 @@ use lazy_static::lazy_static;
 
 use crate::fetch::FetchOptions;
 use crate::spec::TemplateSpec;
+use crate::term::write_check_ln;
 use crate::utils::errors::ArchResult;
 use crate::utils::ToolConfig;
 
 pub fn is_git_repo(path: &Path, tool_config: &ToolConfig) -> bool {
-    if tool_config.verbose {
-        println!("Checking if Git repository: {}", path.display());
-    }
+    let status_callback = if tool_config.verbose {
+        Some(write_check_ln("Local directory is Git repository:", &[Attribute::Dim]).unwrap())
+    } else {
+        None
+    };
 
     let result =
         { Repository::open_ext(path, RepositoryOpenFlags::NO_SEARCH, &[] as &[&OsStr]).is_ok() };
 
-    if !result && tool_config.verbose {
-        eprintln!("  > No Git repository");
+    if tool_config.verbose {
+        status_callback.unwrap()(if result { "YES" } else { "NO" }, result).unwrap();
     }
 
     result
@@ -64,7 +68,7 @@ pub fn is_git_repo(path: &Path, tool_config: &ToolConfig) -> bool {
 
 pub fn fetch(spec: &TemplateSpec, target: &Path, options: &FetchOptions) -> ArchResult<()> {
     if options.tool_config.verbose {
-        println!("  > Using embedded Git")
+        println!("{}", "Using embedded Git".dim());
     }
 
     let (url, git_config, local) = match spec {
@@ -389,6 +393,7 @@ mod tests {
         verbose: true,
         no_history: false,
         no_init: false,
+        dry_run: false,
         ignore_checks: false,
     };
 

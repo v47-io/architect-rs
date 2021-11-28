@@ -36,22 +36,21 @@ use std::io;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 
+use crossterm::style::Stylize;
 use globset::GlobMatcher;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::utils::{glob, is_identifier, ToolConfig};
+use crate::utils::{glob, is_identifier, ToolConfig, ID_REGEX};
 
-pub fn load_config_file(base_path: &Path, tool_config: &ToolConfig) -> io::Result<Option<String>> {
+pub fn load_config_file(root_dir: &Path, base_path: &Path) -> io::Result<Option<String>> {
     let config_file_path = base_path.join(".architect.json");
 
-    if tool_config.verbose {
-        println!(
-            "Loading config file from path {}",
-            config_file_path.display()
-        )
-    }
+    println!(
+        "Configuration file: {}",
+        config_file_path.strip_prefix(root_dir).unwrap().display()
+    );
 
     if metadata(&config_file_path).is_ok() {
         Ok(Some(read_to_string(config_file_path)?))
@@ -73,15 +72,21 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
             let path = match QuestionPath::parse(raw_question.name) {
                 Some(path) => path,
                 None => {
-                    eprintln!("\"{}\" is not a valid question name", raw_question.name);
+                    eprintln!(
+                        "{}: It doesn't match the format => dot-delimited {}",
+                        format!("'{}' is an invalid question name", raw_question.name).red(),
+                        ID_REGEX.as_str().bold()
+                    );
+
                     return None;
                 }
             };
 
             if *path.names().first().unwrap() == "__template__" {
                 eprintln!(
-                    "\"{}\" is not a valid question name (__template__)",
-                    raw_question.name
+                    "{}: '{}' is a reserved name",
+                    format!("'{}' is an invalid question name", raw_question.name).red(),
+                    "__template__".bold()
                 );
 
                 return None;
@@ -89,8 +94,8 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
 
             if !check_context_tree(&mut context_tree, path.names()) {
                 eprintln!(
-                    "\"{}\" is not a valid question name (cannot add children to value)",
-                    raw_question.name
+                    "{}: Some of its parts refer to a value, not an object",
+                    format!("'{}' is an invalid question name", raw_question.name).red()
                 );
 
                 return None;
@@ -102,7 +107,18 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
             ) {
                 Ok(value) => value,
                 Err(err) => {
-                    eprintln!("{}", err);
+                    let mut styled_message = format!("Question '{}' has an issue", raw_question.name).stylize();
+                    styled_message = if tool_config.ignore_checks {
+                        styled_message.dark_yellow()
+                    } else {
+                        styled_message.red()
+                    };
+
+                    eprintln!(
+                        "{}: {}",
+                        styled_message,
+                        err
+                    );
 
                     if tool_config.ignore_checks {
                         None
@@ -146,15 +162,26 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
                         };
 
                         if items.is_empty() {
-                            eprintln!("Question {} doesn't specify any items", raw_question.name);
+                            eprintln!(
+                                "{}: No items were specified",
+                                format!("Question '{}' has an issue", raw_question.name).red()
+                            );
+
                             return None;
                         }
 
                         let default = get_default_str_list(default_value);
                         let mut default = if default.iter().any(|item| !items.contains(&&**item)) {
+                            let mut styled_message = format!("Question '{}' has an issue", raw_question.name).stylize();
+                            styled_message = if tool_config.ignore_checks {
+                                styled_message.dark_yellow()
+                            } else {
+                                styled_message.red()
+                            };
+
                             eprintln!(
-                                "Default value for question {} contains unknown items",
-                                raw_question.name
+                                "{}: The default value contains unknown items",
+                                styled_message
                             );
 
                             if tool_config.ignore_checks {
@@ -169,7 +196,10 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
                         let multi = raw_question.multi.unwrap_or(false);
 
                         let default = if !multi && default.len() > 1 {
-                            eprintln!("Multiple default values specified, but selection doesn't allow multiple selection");
+                            eprintln!(
+                                "{}: Taking first value as the default, because selection doesn't allow multiple selections",
+                                format!("Question '{}' has an issue", raw_question.name).dark_yellow()
+                            );
 
                             vec![default.remove(0)]
                         } else {
@@ -186,7 +216,11 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
                         let format = match raw_question.format {
                             Some(format) => format.trim(),
                             None => {
-                                eprintln!("Format missing for custom question type");
+                                eprintln!(
+                                    "{}: The question type is 'Custom' but no format was specified",
+                                    format!("Question '{}' has an issue", raw_question.name).red()
+                                );
+
                                 return None;
                             }
                         };
@@ -194,7 +228,12 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
                         let regex = match Regex::new(format) {
                             Ok(regex) => regex,
                             Err(err) => {
-                                eprintln!("Invalid regular expression in format '{}' ({})", format, err);
+                                eprintln!(
+                                    "{}: {:?}\n",
+                                    format!("Question '{}' has an issue", raw_question.name).red(),
+                                    anyhow::Error::from(err).context("Invalid regular expression in format")
+                                );
+
                                 return None;
                             }
                         };
@@ -203,8 +242,18 @@ pub fn read_config<'cfg>(input: &'cfg str, tool_config: &ToolConfig) -> io::Resu
 
                         if let Some(default) = &default {
                             if !regex.is_match(default) {
-                                eprintln!("The default value doesn't match the format '{}': {}", format, default);
-                                return None;
+                                let mut styled_message = format!("Question '{}' has an issue", raw_question.name).stylize();
+                                styled_message = if tool_config.ignore_checks {
+                                    styled_message.dark_yellow()
+                                } else {
+                                    styled_message.red()
+                                };
+
+                                eprintln!("{}: The default value doesn't match the format '{}': {}", styled_message, format, default);
+
+                                if !tool_config.ignore_checks {
+                                    return None;
+                                }
                             }
                         }
 
@@ -237,16 +286,24 @@ fn read_filters(raw_filters: RawFilters) -> Filters {
         .filter_map(|raw_cond_templates| {
             if raw_cond_templates.matcher.trim().is_empty() {
                 eprintln!(
-                    "Matcher for condition {} is blank",
-                    raw_cond_templates.condition
+                    "{}",
+                    format!(
+                        "Matcher for condition {} is blank",
+                        raw_cond_templates.condition
+                    )
+                    .red()
                 );
                 return None;
             }
 
             if raw_cond_templates.condition.trim().is_empty() {
                 eprintln!(
-                    "Condition for matcher {} is blank",
-                    raw_cond_templates.matcher
+                    "{}",
+                    format!(
+                        "Condition for matcher {} is blank",
+                        raw_cond_templates.matcher
+                    )
+                    .red()
                 );
                 return None;
             }
@@ -258,8 +315,12 @@ fn read_filters(raw_filters: RawFilters) -> Filters {
                 }),
                 Err(e) => {
                     eprintln!(
-                        "Failed to parse glob expression {} ({})",
-                        raw_cond_templates.matcher, e
+                        "{}",
+                        format!(
+                            "Failed to parse glob expression {} ({})",
+                            raw_cond_templates.matcher, e
+                        )
+                        .red()
                     );
                     None
                 }
@@ -269,21 +330,29 @@ fn read_filters(raw_filters: RawFilters) -> Filters {
 
     Filters {
         conditional_files: cond_files_specs,
-        include_hidden: map_glob_matchers(raw_filters.include_hidden.as_ref()).unwrap_or_default(),
-        exclude: map_glob_matchers(raw_filters.exclude.as_ref()).unwrap_or_default(),
-        templates: map_glob_matchers(raw_filters.templates.as_ref()),
-        non_templates: map_glob_matchers(raw_filters.non_templates.as_ref()),
+        include_hidden: map_glob_matchers(raw_filters.include_hidden.as_ref(), "includeHidden")
+            .unwrap_or_default(),
+        exclude: map_glob_matchers(raw_filters.exclude.as_ref(), "exclude").unwrap_or_default(),
+        templates: map_glob_matchers(raw_filters.templates.as_ref(), "templates"),
+        non_templates: map_glob_matchers(raw_filters.non_templates.as_ref(), "nonTemplates"),
     }
 }
 
-fn map_glob_matchers(raw: Option<&Vec<&str>>) -> Option<Vec<GlobMatcher>> {
+fn map_glob_matchers(raw: Option<&Vec<&str>>, property_name: &str) -> Option<Vec<GlobMatcher>> {
     let result = raw
         .unwrap_or(&vec![])
         .iter()
         .filter_map(|&raw_glob| match glob(raw_glob) {
             Ok(matcher) => Some(matcher),
             Err(e) => {
-                eprintln!("Failed to parse glob expression {} ({})", raw_glob, e);
+                eprintln!(
+                    "{}",
+                    format!(
+                        "Failed to parse glob expression {} ({}) in {}",
+                        raw_glob, e, property_name
+                    )
+                    .red()
+                );
                 None
             }
         })
@@ -646,6 +715,7 @@ mod tests {
         no_history: false,
         no_init: false,
         ignore_checks: false,
+        dry_run: false,
         template: None,
     };
 
@@ -654,34 +724,14 @@ mod tests {
         let working_dir = tempdir().unwrap();
 
         assert_eq!(
-            load_config_file(
-                working_dir.path(),
-                &ToolConfig {
-                    template: None,
-                    no_history: false,
-                    no_init: false,
-                    ignore_checks: false,
-                    verbose: true,
-                },
-            )
-            .unwrap(),
+            load_config_file(working_dir.path(), working_dir.path(),).unwrap(),
             None
         );
 
         fs::write(working_dir.path().join(".architect.json"), CONFIG_CONTENT).unwrap();
 
         assert_eq!(
-            load_config_file(
-                working_dir.path(),
-                &ToolConfig {
-                    template: None,
-                    no_history: false,
-                    no_init: false,
-                    ignore_checks: false,
-                    verbose: true,
-                },
-            )
-            .unwrap(),
+            load_config_file(working_dir.path(), working_dir.path(),).unwrap(),
             Some(CONFIG_CONTENT.to_string())
         );
     }

@@ -39,6 +39,7 @@ use regex::Regex;
 use serde_json::{to_value, Map, Value};
 
 use crate::config::{Config, Question, QuestionSpec};
+use crate::term::theme::WithFormat;
 use crate::utils::is_identifier;
 
 pub(crate) struct UnsafeContext {
@@ -49,6 +50,12 @@ impl UnsafeContext {
     pub(crate) fn new(data: Map<String, Value>) -> Self {
         UnsafeContext {
             _data: Value::Object(data),
+        }
+    }
+
+    pub(crate) fn empty() -> Self {
+        UnsafeContext {
+            _data: Value::Object(Map::new()),
         }
     }
 }
@@ -92,7 +99,7 @@ fn ask_for_text(
 ) -> io::Result<Value> {
     let prompt = question.prompt();
 
-    let mut text_input = Input::<String>::new();
+    let mut text_input = Input::<String>::with_theme(&crate::term::theme::INSTANCE);
     text_input.with_prompt(prompt);
 
     if let Some(value) = default {
@@ -113,7 +120,7 @@ fn ask_for_text(
 }
 
 fn ask_for_option(question: &Question, default: &Option<bool>) -> io::Result<Value> {
-    let mut confirm_prompt = Confirm::new();
+    let mut confirm_prompt = Confirm::with_theme(&crate::term::theme::INSTANCE);
     confirm_prompt.with_prompt(question.prompt());
 
     if let Some(default) = default {
@@ -137,13 +144,13 @@ fn ask_for_selection(
         .collect::<Vec<_>>();
 
     let selection = if multi_select {
-        MultiSelect::new()
+        MultiSelect::with_theme(&crate::term::theme::INSTANCE)
             .with_prompt(prompt)
             .items(items)
             .defaults(&*defaults)
             .interact()?
     } else {
-        let mut select = Select::new();
+        let mut select = Select::with_theme(&crate::term::theme::INSTANCE);
         select.with_prompt(prompt);
         select.items(items);
 
@@ -173,9 +180,9 @@ fn ask_for_custom(
     format: &str,
     default: &Option<String>,
 ) -> io::Result<Value> {
-    let prompt = question.prompt();
+    let prompt = question.prompt().with_format(format);
 
-    let mut text_input = Input::<String>::new();
+    let mut text_input = Input::<String>::with_theme(&crate::term::theme::INSTANCE);
     text_input.with_prompt(prompt);
 
     if let Some(value) = default {

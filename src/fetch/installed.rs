@@ -34,13 +34,16 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Command;
 
+use anyhow::{Context, Error};
+use crossterm::style::Stylize;
+
 use crate::fetch::FetchOptions;
 use crate::spec::TemplateSpec;
 use crate::utils::errors::ArchResult;
 
 pub fn fetch(spec: &TemplateSpec, target: &Path, options: &FetchOptions) -> ArchResult<()> {
     if options.tool_config.verbose {
-        println!("  > Using local Git installation")
+        println!("{}", "Using local Git installation".dim());
     }
 
     let mut command = Command::new("git");
@@ -56,9 +59,18 @@ pub fn fetch(spec: &TemplateSpec, target: &Path, options: &FetchOptions) -> Arch
     }
 
     let mut child = command.spawn()?;
-    while child.try_wait()?.is_none() {}
+    let exit_status = match child.try_wait() {
+        Ok(Some(status)) => Ok(status),
+        Ok(None) => child.wait(),
+        Err(err) => Err(err),
+    }
+    .context("failed to wait for completion of Git process")?;
 
-    Ok(())
+    if exit_status.success() {
+        Ok(())
+    } else {
+        Err(Error::msg("Git process failed"))
+    }
 }
 
 #[cfg(test)]
@@ -73,6 +85,7 @@ mod tests {
         verbose: true,
         no_history: false,
         no_init: false,
+        dry_run: false,
         ignore_checks: false,
     };
 

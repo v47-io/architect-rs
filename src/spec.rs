@@ -33,6 +33,7 @@
 use std::fmt::{Display, Error, Formatter};
 use std::path::{Path, PathBuf};
 
+use crossterm::style::Stylize;
 use path_absolutize::Absolutize;
 
 #[derive(Debug, PartialEq)]
@@ -85,15 +86,22 @@ fn template_spec_as_path(template_spec: &str) -> Option<PathBuf> {
                 Some(dir.to_path_buf())
             } else {
                 eprintln!(
-                    "Path doesn't point to a directory: {} (original: {})",
-                    dir.display(),
-                    template_spec
+                    "{}",
+                    format!(
+                        "Path doesn't point to a directory: {} (original: {})",
+                        dir.display(),
+                        template_spec
+                    )
+                    .dim()
                 );
                 None
             }
         }
         Err(err) => {
-            eprintln!("Not pointing to a valid path: {} ({})", template_spec, err);
+            eprintln!(
+                "{}",
+                format!("Not pointing to a valid path: {} ({})", template_spec, err).dim()
+            );
             None
         }
     }

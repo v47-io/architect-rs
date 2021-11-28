@@ -30,22 +30,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-pub mod args {
-    pub const REPOSITORY: &str = "REPOSITORY";
-    pub const TARGET: &str = "TARGET";
-}
+use anyhow::Context;
+use crossterm::style::Stylize;
 
-pub mod flags {
-    pub const DRY_RUN: &str = "dry-run";
-    pub const DIRTY: &str = "dirty";
-    pub const LOCAL_GIT: &str = "local-git";
-    pub const NO_HISTORY: &str = "no-history";
-    pub const NO_INIT: &str = "no-init";
-    pub const IGNORE_CHECKS: &str = "ignore-checks";
-    pub const VERBOSE: &str = "verbose";
-}
+use crate::ArchResult;
 
-pub mod options {
-    pub const BRANCH: &str = "branch";
-    pub const TEMPLATE: &str = "template";
+pub fn pretty_print_context(context: &handlebars::Context) -> ArchResult<()> {
+    let pretty_context =
+        serde_json::to_string_pretty(context.data()).context("failed to serialize context")?;
+
+    let lines = pretty_context.lines().collect::<Vec<_>>();
+    let line_number_length = lines.len().to_string().len();
+
+    for (i, &line) in lines.iter().enumerate() {
+        let line_number = format!(" {:>width$}: ", i + 1, width = line_number_length)
+            .dim()
+            .on_grey();
+
+        println!("{}{}", line_number, line);
+    }
+
+    Ok(())
 }

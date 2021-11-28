@@ -69,6 +69,20 @@ Example: git@github.com:some-user/his-template-repo.git"#,
                 .help("The remote branch to fetch instead of the default branch"),
         )
         .arg(
+            Arg::with_name(flags::DRY_RUN)
+                .long(flags::DRY_RUN)
+                .help("Produces the same terminal output as normal operation without performing it")
+                .long_help(
+                    r#"Produces the same terminal output as normal operation without performing it.
+
+This allows you to inspect the log output to determine whether Architect would
+perform its operations as intended.
+
+This takes all your input into account, it just stops shy of actually rendering
+and copying files to the target directory."#,
+                ),
+        )
+        .arg(
             Arg::with_name(flags::DIRTY)
                 .long(flags::DIRTY)
                 .help("Uses the template repository in it's current (dirty) state")
@@ -148,8 +162,9 @@ This requires the --no-history flag to be specified as well"#,
                     r#"Ignores some failed checks that would prevent generation otherwise.
 
 These errors will be ignored:
-  - Unexpected type of default value (for question)
-  - Unknown default item (for question)
+  - Unexpected type of default value (for any question type)
+  - Default value not matching the format (for custom questions)
+  - Unknown default item (for selection questions)
   - Condition evaluation errors (for conditional files)"#,
                 ),
         )
