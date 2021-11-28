@@ -66,6 +66,10 @@ jobs:
           chmod +x target/debug/architect
           chmod +x .github/scripts/*.sh
           .github/scripts/test-architect.sh
+          
+          .github/scripts/test-architect-dry-run.sh
+          [ -d /tmp/output-dry ] && echo 'Dry run created some files' && exit 1
+          
           .github/scripts/test-architect-select.sh
 
   lint:
