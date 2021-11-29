@@ -596,33 +596,38 @@ fn is_conditionally_included(
 ) -> bool {
     path.strip_prefix(root_dir)
         .map(|globbing_path| {
-            if let Some(cond_spec) =
-                find_condition_spec(globbing_path, &config.filters.conditional_files)
-            {
-                let skip = match eval_condition(cond_spec, hbs, ctx) {
-                    Ok(is_match) => !is_match,
-                    Err(e) => {
-                        eprintln!(
-                            "Failed to evaluate condition \"{}\" for {} ({})",
-                            cond_spec.condition,
-                            globbing_path.display(),
-                            e
-                        );
+            let mut matched_cond_spec = false;
 
-                        !tool_config.ignore_checks
+            let include = config
+                .filters
+                .conditional_files
+                .iter()
+                .filter(|&cond_spec| cond_spec.matcher.is_match(globbing_path))
+                .any(|cond_spec| {
+                    matched_cond_spec = true;
+
+                    match eval_condition(cond_spec, hbs, ctx) {
+                        Ok(truthy) => truthy,
+                        Err(e) => {
+                            eprintln!(
+                                "{:?}",
+                                anyhow::Error::from(e).context(format!(
+                                    "Failed to evaluate condition '{}'",
+                                    cond_spec.condition
+                                ))
+                            );
+
+                            tool_config.ignore_checks
+                        }
                     }
-                };
+                })
+                || !matched_cond_spec;
 
-                if skip && (tool_config.verbose || tool_config.dry_run) {
-                    println!("{}", format!("Skipping path: {}", path.display()).dim())
-                }
-
-                // inverting because filter needs false to exclude
-                !skip
-            } else {
-                // Didn't find a condition spec so file is not excluded
-                true
+            if !include && (tool_config.verbose || tool_config.dry_run) {
+                println!("{}", format!("Skipping path: {}", path.display()).dim());
             }
+
+            include
         })
         .unwrap_or_else(|err| {
             eprintln!(
@@ -678,15 +683,6 @@ fn is_not_excluded(
 
             false
         })
-}
-
-fn find_condition_spec<'a>(
-    path: &Path,
-    conditional_files_specs: &'a [ConditionalFilesSpec<'a>],
-) -> Option<&'a ConditionalFilesSpec<'a>> {
-    conditional_files_specs
-        .iter()
-        .find(|&cond_files_spec| cond_files_spec.matcher.is_match(path))
 }
 
 fn eval_condition(
