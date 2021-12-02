@@ -5,13 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.1.0 (2021-12-02)
+
+### Bug Fixes
+
+ - <csr-id-8c657599dff5148d45c474b672069d66835642ab/> Corrected the behavior of conditional files
+   Now evaluating all matching conditions if the file should be rendered or copied
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 2 commits contributed to the release over the course of 3 calendar days.
+ - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' where seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Updated version number for next release ([`d4a2206`](https://github.comgit//v47-io/architect-rs/commit/d4a2206f91f9991763418f542033b2d04e129266))
+    - Corrected the behavior of conditional files ([`8c65759`](https://github.comgit//v47-io/architect-rs/commit/8c657599dff5148d45c474b672069d66835642ab))
+</details>
+
 ## 1.0.0 (2021-11-28)
 
 ### Commit Statistics
 
 <csr-read-only-do-not-edit/>
 
- - 2 commits contributed to the release.
+ - 3 commits contributed to the release.
  - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 1 unique issue was worked on: [#12](https://github.comgit//v47-io/architect-rs/issues/12)
 
@@ -24,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * **[#12](https://github.comgit//v47-io/architect-rs/issues/12)**
     - Better release artifacts, and windows includes debug information ([`7b39f79`](https://github.comgit//v47-io/architect-rs/commit/7b39f79c8853bc8cc011133f406d966d81c3a4d3))
  * **Uncategorized**
+    - Bump architect-rs v1.0.0 ([`1d23a04`](https://github.comgit//v47-io/architect-rs/commit/1d23a0454e47eb2052ac3639340ee6260c31fc10))
     - Updated version number for next release ([`90a92ce`](https://github.comgit//v47-io/architect-rs/commit/90a92ce594060a4e6833cd1c290c28e35a6fabc2))
 </details>
 
