@@ -554,7 +554,7 @@ enum RawQuestionType {
     Custom,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(bound(deserialize = "'de: 'cfg"))]
 struct RawFilters<'cfg> {
     #[serde(rename(
@@ -568,18 +568,6 @@ struct RawFilters<'cfg> {
     templates: Option<Vec<&'cfg str>>,
     #[serde(rename(deserialize = "nonTemplates", serialize = "nonTemplates"))]
     non_templates: Option<Vec<&'cfg str>>,
-}
-
-impl Default for RawFilters<'_> {
-    fn default() -> Self {
-        RawFilters {
-            conditional_files: None,
-            include_hidden: None,
-            exclude: None,
-            templates: None,
-            non_templates: None,
-        }
-    }
 }
 
 #[derive(Deserialize, Serialize)]
