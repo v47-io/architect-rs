@@ -39,8 +39,8 @@ Please keep in mind that you cannot include the top-level `.git` directory or an
 
 ## Conditional Files
 
-Architect will only include matched files if the specified condition returns a "truthy" result. Here, ordering matters,
-as Architect will only evaluate the condition for the first match.
+Architect will only include matched files if the specified condition returns a "truthy" result. Architect will evaluate
+all matching conditions in sequence until one returns a "truthy" value.
 
 Here you define _glob_ expressions to match files, and Handlebars expressions to determine whether these files should be
 included. These Handlebars expression don't need to be delimited by `{{` and `}}`, and have full access to the context.

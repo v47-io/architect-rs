@@ -32,7 +32,7 @@ you can get the source from GitHub and build Architect yourself.
 
 Fork it or get the source from the [repository](https://github.com/v47-io/architect-rs), and you're ready to go.
 
-Make sure you've got at least Rust 2018 installed and the `cargo` command is available.
+Make sure you've got at least Rust 2021 installed and the `cargo` command is available.
 
 ### Building
 
