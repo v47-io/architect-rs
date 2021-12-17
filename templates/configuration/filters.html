@@ -162,8 +162,8 @@ dot (<code>.</code>) character, files marked as hidden in Windows will still be 
 <p>Define <em>glob</em> expressions to match hidden files you want to include anyway.</p>
 <p>Please keep in mind that you cannot include the top-level <code>.git</code> directory or any of its descendants using this.</p>
 <h2 id="conditional-files"><a class="header" href="#conditional-files">Conditional Files</a></h2>
-<p>Architect will only include matched files if the specified condition returns a &quot;truthy&quot; result. Here, ordering matters,
-as Architect will only evaluate the condition for the first match.</p>
+<p>Architect will only include matched files if the specified condition returns a &quot;truthy&quot; result. Architect will evaluate
+all matching conditions in sequence until one returns a &quot;truthy&quot; value.</p>
 <p>Here you define <em>glob</em> expressions to match files, and Handlebars expressions to determine whether these files should be
 included. These Handlebars expression don't need to be delimited by <code>{{</code> and <code>}}</code>, and have full access to the context.</p>
 <p>The <em>glob</em> expression will be applied to the file in the source repository, so before any possible Handlebars templates
